@@ -3,7 +3,9 @@
 
 ### Add bot:
 
-https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=3072
+https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=3080
+
+#### Permissions for bot
 
 | Permission      | Hex        | Dec  |
 |-----------------|------------|------|
@@ -11,3 +13,4 @@ https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&p
 | SEND_MESSAGES   | 0x00000800 | 2048 |
 | MANAGE_CHANNELS | 0x00000010 | 16   |
 | Combined        | 0x00000C10 | 3080 |
+

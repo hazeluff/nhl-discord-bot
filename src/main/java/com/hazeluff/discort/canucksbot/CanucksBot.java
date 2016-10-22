@@ -1,29 +1,33 @@
 package com.hazeluff.discort.canucksbot;
 
-import com.google.common.util.concurrent.FutureCallback;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import de.btobastian.javacord.DiscordAPI;
-import de.btobastian.javacord.Javacord;
-import de.btobastian.javacord.entities.message.Message;
-import de.btobastian.javacord.listener.message.MessageCreateListener;
+import sx.blah.discord.api.ClientBuilder;
+import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.api.events.EventDispatcher;
+import sx.blah.discord.util.DiscordException;
+
 
 public class CanucksBot {
-	public CanucksBot() {
-		DiscordAPI api = Javacord.getApi(Config.BOT_TOKEN, true);
-        api.connect(new FutureCallback<DiscordAPI>() {
-            public void onSuccess(DiscordAPI api) {
-                api.registerListener(new MessageCreateListener() {
-                    public void onMessageCreate(DiscordAPI api, Message message) {
-						if (message.getContent().equalsIgnoreCase("Fuck Messier")) {
-							message.reply("FUCK MESSIER\nhttps://www.youtube.com/watch?v=niAI6qRoBLQ");
-                        }
-                    }
-                });
-            }
+	private static final Logger LOGGER = LogManager.getLogger(CanucksBot.class);
 
-            public void onFailure(Throwable t) {
-                t.printStackTrace();
-            }
-        });
+	private IDiscordClient client;
+
+	public CanucksBot() {
+		client = getClient(Config.BOT_TOKEN);
+		EventDispatcher dispatcher = client.getDispatcher();
+		dispatcher.registerListener(new CommandListener(client));
+	}
+
+	public static IDiscordClient getClient(String token) {
+		ClientBuilder clientBuilder = new ClientBuilder();
+		clientBuilder.withToken(token);
+		try {
+			return clientBuilder.login();
+		} catch (DiscordException e) {
+			LOGGER.error(e);
+			return null;
+		}
 	}
 }
