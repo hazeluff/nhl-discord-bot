@@ -1,6 +1,8 @@
 # discord-canucks-bot
 # Fuck Messier
 
+![CanucksBot](https://cdn.discordapp.com/attachments/239331036364931073/239335602191990784/unknown.png)
+
 ## Add bot:
 
 https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=3080
