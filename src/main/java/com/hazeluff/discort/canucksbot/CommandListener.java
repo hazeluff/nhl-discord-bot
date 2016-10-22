@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import sx.blah.discord.api.IDiscordClient;
-import sx.blah.discord.api.events.IListener;
+import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
@@ -13,7 +13,7 @@ import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
-public class CommandListener implements IListener<MessageReceivedEvent>{
+public class CommandListener {
 	private static final Logger LOGGER = LogManager.getLogger(CommandListener.class);
 
 	private IDiscordClient client;
@@ -22,8 +22,8 @@ public class CommandListener implements IListener<MessageReceivedEvent>{
 		this.client = client;
 	}
 
-	@Override
-	public void handle(MessageReceivedEvent event) {
+	@EventSubscriber
+	public void fuckMessier(MessageReceivedEvent event) {
 		IMessage message = event.getMessage();
 		IChannel channel = message.getChannel();
 		String strMessage = message.getContent();
