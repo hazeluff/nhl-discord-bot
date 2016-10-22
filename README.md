@@ -1,2 +1,2 @@
-# discord-nhl-bot
-Discord Bot that posts NHL game events
+# discord-canucks-bot
+Fuck Messier
