@@ -19,5 +19,4 @@ https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&p
 
 ## Commands
 `@CanucksBot [command]`
-- !fuckmessier
--- Fuck Messier
+- !fuckmessier: Fuck Messier
