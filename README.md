@@ -1,11 +1,11 @@
-## discord-canucks-bot
-#Fuck Messier
+# discord-canucks-bot
+# Fuck Messier
 
-### Add bot:
+## Add bot:
 
 https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=3080
 
-#### Permissions for bot
+### Permissions for bot
 
 | Permission      | Hex        | Dec  |
 |-----------------|------------|------|
@@ -14,3 +14,10 @@ https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&p
 | MANAGE_CHANNELS | 0x00000010 | 16   |
 | Combined        | 0x00000C10 | 3080 |
 
+## Game Day Channel
+- Create channels the day/days before the next game.
+
+## Commands
+`@CanucksBot [command]`
+- !fuckmessier
+-- Fuck Messier
