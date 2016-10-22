@@ -4,7 +4,7 @@ package com.hazeluff.discord.canucksbot.CanucksBot;
  * Hello world!
  *
  */
-public class App 
+public class CanucksBot 
 {
     public static void main( String[] args )
     {
