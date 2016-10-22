@@ -33,7 +33,7 @@ public class ReadyListener extends MessageSender {
 
 	@EventSubscriber
 	public void onReady(ReadyEvent event) {
-		client.changeStatus(Status.stream("git", Config.GIT_URL));
+		client.changeStatus(Status.game("hazeluff.com"));
 		URIBuilder uriBuilder = null;
 		String strJSONSchedule = "";
 		try {
