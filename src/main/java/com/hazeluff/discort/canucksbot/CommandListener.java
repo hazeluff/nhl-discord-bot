@@ -1,5 +1,11 @@
 package com.hazeluff.discort.canucksbot;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,6 +32,8 @@ import sx.blah.discord.util.DiscordException;
 public class CommandListener extends MessageSender {
 	private static final Logger LOGGER = LogManager.getLogger(CommandListener.class);
 
+	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
+
 	public CommandListener(IDiscordClient client) {
 		super(client);
 	}
@@ -35,6 +43,8 @@ public class CommandListener extends MessageSender {
 		IMessage message = event.getMessage();
 		IChannel channel = message.getChannel();
 		IGuild guild = channel.getGuild();
+		// Not String so that isBotMentioned can modify the value of the
+		// parameter
 		StringBuilder strMessage = new StringBuilder(message.getContent());
 		LOGGER.info("[" + guild.getName() + "][" + channel.getName() + "][" + message + "]");
 		// If CanucksBot is mentioned
@@ -43,12 +53,14 @@ public class CommandListener extends MessageSender {
 			// fuckmessier
 			if (arguments[0].toString().equalsIgnoreCase("fuckmessier")) {
 				sendMessage(channel, "FUCK MESSIER");
+				return;
 			}
 			
 			// nextgame
 			if (arguments[0].toString().equalsIgnoreCase("nextgame")) {
 				NHLGame nextGame = NHLGameScheduler.nextGame(NHLTeam.VANCOUVER_CANUCKS);
 				sendMessage(channel, nextGame.getDetailsMessage());
+				return;
 			}
 
 			// score
@@ -61,21 +73,30 @@ public class CommandListener extends MessageSender {
 				} else {
 					sendMessage(channel, game.getScoreMessage());
 				}
+				return;
 			}
 
 			// Hi
 			if (arguments[0].toString().equalsIgnoreCase("hi") || arguments[0].toString().equalsIgnoreCase("hello")) {
 				sendMessage(channel, "Hi There. :kissing_heart:");
+				return;
 			}
 
-			// About
+			// about
 			if (arguments[0].toString().equalsIgnoreCase("about")) {
 				sendMessage(channel,
 						"Written by <@225742618422673409>\n"
-								+ "Checkout my GitHub: https://github.com/hazeluff/discord-canucks-bot");
+								+ "Checkout my GitHub: https://github.com/hazeluff/discord-canucks-bot"
+								+ "Contact me: me@hazeluff.com");
+				return;
 			}
 
 			// ༼つ ◕_◕ ༽つ CANUCKS TAKE MY ENERGY ༼ つ ◕_◕ ༽つ
+		}
+
+		if (shouldFuckMessier(channel, strMessage.toString())) {
+			sendMessage(channel, "FUCK MESSIER");
+			return;
 		}
 	}
 
@@ -99,6 +120,35 @@ public class CommandListener extends MessageSender {
 		if (strMessage.toString().startsWith(mentionedBotUser.toString())) {
 			strMessage.replace(0, mentionedBotUser.length(), "");
 			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Parses message for if 'messier' is mentioned and increments a counter.
+	 * Returns true to indicate a message should be sent to the channel with
+	 * "Fuck Messier" if the number of submissions in the last minute is over 5.
+	 * Resets the counter once reached.
+	 * 
+	 * @param message
+	 *            message to parse
+	 * @return true, if we should display "Fuck Messier" message<br>
+	 *         false, otherwise (but should be never).
+	 */
+	public boolean shouldFuckMessier(IChannel channel, String message) {
+		String messageLowerCase = message.toLowerCase();
+		if(!messierCounter.containsKey(channel)) {
+			messierCounter.put(channel, new ArrayList<Long>());
+		}
+		List<Long> counter = messierCounter.get(channel);
+		if (messageLowerCase.contains("messier")) {
+			long currentTime = (new Date()).getTime();
+			counter.add(currentTime);
+			counter.removeIf(time -> currentTime - time > 60000);
+			if (counter.size() >= 5) {
+				counter.clear();
+				return true;
+			}
 		}
 		return false;
 	}
