@@ -25,3 +25,4 @@ https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&p
 - `fuckmessier` Fuck Messier.
 - `nextgame` Replies with information about the next game.
 - `score` If used in a game channel, it will display the score of that game.
+- `help` Display list of commands.

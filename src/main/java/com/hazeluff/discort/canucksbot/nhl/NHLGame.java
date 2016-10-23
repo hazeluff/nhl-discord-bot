@@ -19,10 +19,6 @@ import com.hazeluff.discort.canucksbot.utils.HttpUtils;
 public class NHLGame {
 	private static final Logger LOGGER = LogManager.getLogger(NHLGame.class);
 
-	private static final SimpleDateFormat API_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEEE dd'XX' MMM yyyy");
-	private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm aaa");
-	private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("yy-MM-dd");
 	private final Date date;
 	private final int gamePk;
 	private final NHLTeam awayTeam;
@@ -33,7 +29,8 @@ public class NHLGame {
 
 	public NHLGame (JSONObject jsonGame) {
 		try {
-			date = API_FORMAT.parse(jsonGame.getString("gameDate").replaceAll("Z", "+0000"));
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+			date = dateFormat.parse(jsonGame.getString("gameDate").replaceAll("Z", "+0000"));
 			gamePk = jsonGame.getInt("gamePk");
 			awayTeam = NHLTeam
 					.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
@@ -56,7 +53,8 @@ public class NHLGame {
 	 * @return the date in the format "YY-MM-DD"
 	 */
 	public String getShortDate() {
-		return SHORT_DATE_FORMAT.format(date);
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yy-MM-dd");
+		return dateFormat.format(date);
 	}
 
 	/**
@@ -67,7 +65,8 @@ public class NHLGame {
 	public String getNiceDate() {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(date);
-		return DATE_FORMAT.format(date).replaceAll("XX", getDayOfMonthSuffix(cal.get(Calendar.DAY_OF_MONTH)));
+		SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE dd'XX' MMM yyyy");
+		return dateFormat.format(date).replaceAll("XX", getDayOfMonthSuffix(cal.get(Calendar.DAY_OF_MONTH)));
 	}
 
 	/**
@@ -76,7 +75,8 @@ public class NHLGame {
 	 * @return the time in the format "HH:mm aaa"
 	 */
 	public String getTime() {
-		return TIME_FORMAT.format(date);
+		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm aaa");
+		return dateFormat.format(date);
 	}
 
 	String getDayOfMonthSuffix(final int n) {
@@ -128,8 +128,10 @@ public class NHLGame {
 	 *         yy-MM-DD is a date format
 	 */
 	public String getChannelName() {
-		StringBuilder channelName = new StringBuilder(homeTeam.getCode()).append("_vs_").append(awayTeam.getCode())
-				.append("_").append(getShortDate());
+		String channelName = String.format("%.3s_vs_%.3s_%s",
+				homeTeam.getCode(),
+				awayTeam.getCode(),
+				getShortDate());
 		return channelName.toString();
 	}
 
@@ -141,9 +143,11 @@ public class NHLGame {
 	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
 	 */
 	public String getDetailsMessage() {
-		StringBuilder message = new StringBuilder("The next game is:\n**").append(homeTeam.getFullName())
-				.append("** vs **").append(awayTeam.getFullName()).append("** at ").append(getTime()).append(" on ")
-				.append(getNiceDate());
+		String message = String.format("The next game is:\n**%s** vs **%s** at %s on %s",
+				homeTeam.getFullName(),
+				awayTeam.getFullName(),
+				getTime(),
+				getNiceDate());
 		return message.toString();
 	}
 
@@ -162,10 +166,6 @@ public class NHLGame {
 
 	public NHLGameStatus getStatus() {
 		return status;
-	}
-
-	public void setStatus(NHLGameStatus status) {
-		this.status = status;
 	}
 
 	@Override
@@ -260,6 +260,6 @@ public class NHLGame {
 	private void updateValues(JSONObject jsonGame) {
 		awayScore = jsonGame.getJSONObject("teams").getJSONObject("away").getInt("score");
 		homeScore = jsonGame.getJSONObject("teams").getJSONObject("home").getInt("score");
-		setStatus(NHLGameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode"))));
+		status = NHLGameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode")));
 	}
 }

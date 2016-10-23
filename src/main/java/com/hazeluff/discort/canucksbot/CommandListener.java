@@ -75,19 +75,30 @@ public class CommandListener extends MessageSender {
 				}
 				return;
 			}
-
-			// Hi
-			if (arguments[0].toString().equalsIgnoreCase("hi") || arguments[0].toString().equalsIgnoreCase("hello")) {
-				sendMessage(channel, "Hi There. :kissing_heart:");
-				return;
+			
+			if (arguments[0].toString().equalsIgnoreCase("help")) {
+				sendMessage(channel, "Here are a list of commands:\n"
+						+ "`nextgame` - Displays information of the next game.\n"
+						+ "`score` - Displays the score of the game. "
+						+ "You must be in a 'Game Day Channel' to use this command.\n"
+						+ "`about` - Displays information about me.\n");
 			}
 
 			// about
 			if (arguments[0].toString().equalsIgnoreCase("about")) {
-				sendMessage(channel,
-						"Written by <@225742618422673409>\n"
-								+ "Checkout my GitHub: https://github.com/hazeluff/discord-canucks-bot"
-								+ "Contact me: me@hazeluff.com");
+				sendMessage(channel, String.format(
+						"Written by <@%>\n"
+								+ "Checkout my GitHub: %s\n"
+								+ "Contact me: %s",
+								Config.HAZELUFF_ID, 
+								Config.GIT_URL,
+								Config.HAZELUFF_EMAIL));
+				return;
+			}
+
+			// Hi
+			if (arguments[0].toString().equalsIgnoreCase("hi") || arguments[0].toString().equalsIgnoreCase("hello")) {
+				sendMessage(channel, "Hi There. :kissing_heart:");
 				return;
 			}
 
@@ -116,8 +127,8 @@ public class CommandListener extends MessageSender {
 			LOGGER.error("Failed to get Application Client ID", e);
 			throw new RuntimeException(e);
 		}
-		StringBuilder mentionedBotUser = new StringBuilder("<@").append(id).append(">");
-		if (strMessage.toString().startsWith(mentionedBotUser.toString())) {
+		String mentionedBotUser = "<@" + id + ">";
+		if (strMessage.toString().startsWith(mentionedBotUser)) {
 			strMessage.replace(0, mentionedBotUser.length(), "");
 			return true;
 		}
