@@ -35,13 +35,13 @@
 		
     </Appenders>
     <Loggers>    
-        <Root level="INFO">
+        <Root level="DEBUG">
             <AppenderRef ref="Console"/>
         </Root>
         
         <logger name="com.hazeluff.discord.cancucksbot" level="INFO" additivity="false">    	
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="File" level="DEBUG"/>
+            <AppenderRef ref="File" level="INFO"/>
             <AppenderRef ref="ErrorFile" level ="ERROR"/>
 		</logger>
     </Loggers>

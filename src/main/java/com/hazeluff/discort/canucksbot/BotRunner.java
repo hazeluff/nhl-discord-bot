@@ -12,7 +12,7 @@ public class BotRunner
 {
 	public static void main(String[] args) throws DiscordException, MissingPermissionsException, RateLimitException
     {
-		CanucksBot bot = new CanucksBot();
+		CanucksBot bot = new CanucksBot(args[0]);
     }
 
 

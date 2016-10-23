@@ -6,8 +6,8 @@ import java.util.Map;
 public enum NHLConference {
 	WESTERN(5, "Western"), EASTERN(6, "Eastern");
 	
-	public final int id;
-	public final String name;
+	private final int id;
+	private final String name;
 	
 	private static final Map<Integer, NHLConference> VALUES_MAP = new HashMap<>();
 	
@@ -22,7 +22,15 @@ public enum NHLConference {
 		this.name = name;
 	}
 
-    public static NHLConference parse(int id) {
+	public int getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public static NHLConference parse(int id) {
     	NHLConference result = VALUES_MAP.get(id);
         if (result == null) {
 			throw new IllegalArgumentException("No value exists for: " + id);

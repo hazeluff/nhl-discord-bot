@@ -1,37 +1,45 @@
 package com.hazeluff.discort.canucksbot.nhl;
 
+import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.List;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.hazeluff.discort.canucksbot.utils.DateUtils;
+import com.hazeluff.discort.canucksbot.utils.HttpUtils;
+
 public class NHLGame {
 	private static final Logger LOGGER = LogManager.getLogger(NHLGame.class);
 
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+	private static final SimpleDateFormat API_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEEE dd'XX' MMM yyyy");
+	private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm aaa");
 	private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("yy-MM-dd");
 	private final Date date;
 	private final int gamePk;
 	private final NHLTeam awayTeam;
 	private final NHLTeam homeTeam;
-	private final int awayScore;
-	private final int homeScore;
+	private int awayScore;
+	private int homeScore;
+	private NHLGameStatus status;
 
 	public NHLGame (JSONObject jsonGame) {
 		try {
-			date = DATE_FORMAT.parse(jsonGame.getString("gameDate").replaceAll("Z", "+0000"));
+			date = API_FORMAT.parse(jsonGame.getString("gameDate").replaceAll("Z", "+0000"));
 			gamePk = jsonGame.getInt("gamePk");
 			awayTeam = NHLTeam
 					.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
 			homeTeam = NHLTeam
 					.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
-			awayScore = jsonGame.getJSONObject("teams").getJSONObject("away").getInt("score");
-			homeScore = jsonGame.getJSONObject("teams").getJSONObject("home").getInt("score");
+			updateValues(jsonGame);
 		} catch (JSONException | ParseException e) {
 			LOGGER.error(e);
 			throw new RuntimeException(e);
@@ -51,6 +59,42 @@ public class NHLGame {
 		return SHORT_DATE_FORMAT.format(date);
 	}
 
+	/**
+	 * Gets the date in the format "EEEE dd MMM yyyy"
+	 * 
+	 * @return the date in the format "EEEE dd MMM yyyy"
+	 */
+	public String getNiceDate() {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		return DATE_FORMAT.format(date).replaceAll("XX", getDayOfMonthSuffix(cal.get(Calendar.DAY_OF_MONTH)));
+	}
+
+	/**
+	 * Gets the time in the format "HH:mm aaa"
+	 * 
+	 * @return the time in the format "HH:mm aaa"
+	 */
+	public String getTime() {
+		return TIME_FORMAT.format(date);
+	}
+
+	String getDayOfMonthSuffix(final int n) {
+		if (n >= 11 && n <= 13) {
+			return "th";
+		}
+		switch (n % 10) {
+		case 1:
+			return "st";
+		case 2:
+			return "nd";
+		case 3:
+			return "rd";
+		default:
+			return "th";
+		}
+	}
+
 	public int getGamePk() {
 		return gamePk;
 	}
@@ -63,6 +107,10 @@ public class NHLGame {
 		return homeTeam;
 	}
 
+	public boolean containsTeam(NHLTeam team) {
+		return awayTeam == team || homeTeam == team;
+	}
+
 	public int getAwayScore() {
 		return awayScore;
 	}
@@ -71,14 +119,147 @@ public class NHLGame {
 		return homeScore;
 	}
 
+	/**
+	 * Gets the name that a channel in Discord related to this game would have.
+	 * 
+	 * @return channel name in format: "AAA_vs_BBB-yy-MM-DD". <br>
+	 *         AAA is the 3 letter code of home team<br>
+	 *         BBB is the 3 letter code of away team<br>
+	 *         yy-MM-DD is a date format
+	 */
+	public String getChannelName() {
+		StringBuilder channelName = new StringBuilder(homeTeam.getCode()).append("_vs_").append(awayTeam.getCode())
+				.append("_").append(getShortDate());
+		return channelName.toString();
+	}
+
+	/**
+	 * Gets the message that CanucksBot will respond with when queried about
+	 * this game
+	 * 
+	 * @return message in the format: "The next game is:\n<br>
+	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
+	 */
+	public String getDetailsMessage() {
+		StringBuilder message = new StringBuilder("The next game is:\n**").append(homeTeam.getFullName())
+				.append("** vs **").append(awayTeam.getFullName()).append("** at ").append(getTime()).append(" on ")
+				.append(getNiceDate());
+		return message.toString();
+	}
+
+	/**
+	 * Gets the message that CanucksBot will respond with when queried about the
+	 * score of this game
+	 * 
+	 * @return message in the format : "Home Team **homeScore** - **awayScore**
+	 *         Away Team"
+	 */
+	public String getScoreMessage() {
+		StringBuilder message = new StringBuilder(homeTeam.getName()).append(" **").append(homeScore)
+				.append("** - **").append(awayScore).append("** ").append(awayTeam.getName());
+		return message.toString();
+	}
+
+	public NHLGameStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(NHLGameStatus status) {
+		this.status = status;
+	}
+
 	@Override
 	public String toString() {
 		return "NHLGame [date=" + date + ", gamePk=" + gamePk + ", awayTeam=" + awayTeam + ", homeTeam=" + homeTeam
-				+ ", awayScore=" + awayScore + ", homeScore=" + homeScore + "]";
+				+ ", awayScore=" + awayScore + ", homeScore=" + homeScore + ", status=" + status + "]";
 	}
 
-	public static NHLGame nextGame(List<NHLGame> games) {
-		Date currentDate = new Date();
-		return games.stream().filter(d -> d.getDate().compareTo(currentDate) >= 0).findFirst().get();
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + awayScore;
+		result = prime * result + ((awayTeam == null) ? 0 : awayTeam.hashCode());
+		result = prime * result + ((date == null) ? 0 : date.hashCode());
+		result = prime * result + gamePk;
+		result = prime * result + homeScore;
+		result = prime * result + ((homeTeam == null) ? 0 : homeTeam.hashCode());
+		result = prime * result + ((status == null) ? 0 : status.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		NHLGame other = (NHLGame) obj;
+		if (awayScore != other.awayScore)
+			return false;
+		if (awayTeam != other.awayTeam)
+			return false;
+		if (date == null) {
+			if (other.date != null)
+				return false;
+		} else if (!date.equals(other.date))
+			return false;
+		if (gamePk != other.gamePk)
+			return false;
+		if (homeScore != other.homeScore)
+			return false;
+		if (homeTeam != other.homeTeam)
+			return false;
+		if (status != other.status)
+			return false;
+		return true;
+	}
+
+	public static Comparator<NHLGame> getDateComparator() {
+		return new Comparator<NHLGame>() {
+			public int compare(NHLGame g1, NHLGame g2) {
+				return (g1.date.compareTo(g2.date));
+			}
+		};
+	}
+
+	public boolean isOnDate(Date date) {
+		return DateUtils.compareNoTime(this.date, date) == 0;
+	}
+
+	/**
+	 * Calls the NHL API and gets the current information of the game and
+	 * updates all the update-able members in this class
+	 */
+	public void update() {
+		LOGGER.info("Updating. [" + this + "]");
+		URIBuilder uriBuilder = null;
+		String strJSONSchedule = "";
+		try {
+			uriBuilder = new URIBuilder("https://statsapi.web.nhl.com/api/v1/schedule");
+			uriBuilder.addParameter("gamePk", Integer.toString(gamePk));
+			uriBuilder.addParameter("expand", "schedule.scoringplays");
+			strJSONSchedule = HttpUtils.get(uriBuilder.build());
+		} catch (URISyntaxException e) {
+			LOGGER.error("Error building URI", e);
+		}
+		JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
+		JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
+				.getJSONObject(0);
+
+		updateValues(jsonGame);
+	}
+
+	/**
+	 * Updates values of all update-able members in this class.
+	 * 
+	 * @param jsonGame
+	 */
+	private void updateValues(JSONObject jsonGame) {
+		awayScore = jsonGame.getJSONObject("teams").getJSONObject("away").getInt("score");
+		homeScore = jsonGame.getJSONObject("teams").getJSONObject("home").getInt("score");
+		setStatus(NHLGameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode"))));
 	}
 }

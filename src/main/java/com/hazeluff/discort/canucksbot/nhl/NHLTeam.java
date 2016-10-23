@@ -36,11 +36,11 @@ public enum NHLTeam {
 	ARIZONA_COYOTES(53, "Arizona", "Coyotes", "ARI", NHLDivision.PACIFIC);
 	
 
-	public final int id;
-	public final String location;
-	public final String name;
-	public final String code;
-	public final NHLDivision division;
+	private final int id;
+	private final String location;
+	private final String name;
+	private final String code;
+	private final NHLDivision division;
 
 	private static final Map<Integer, NHLTeam> VALUES_MAP = new HashMap<>();
 
@@ -56,6 +56,30 @@ public enum NHLTeam {
 		this.name = name;
 		this.code = code;
 		this.division = division;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public String getLocation() {
+		return location;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getFullName() {
+		return location + " " + name;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public NHLDivision getDivision() {
+		return division;
 	}
 
 	public static NHLTeam parse(int id) {

@@ -14,8 +14,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.hazeluff.discort.canucksbot.Config;
 
-public class HttpUtil {
-	private static final Logger LOGGER = LogManager.getLogger(HttpUtil.class);
+public class HttpUtils {
+	private static final Logger LOGGER = LogManager.getLogger(HttpUtils.class);
 
 	public static String get(URI uri) {
 		HttpClient client = HttpClientBuilder.create().build();

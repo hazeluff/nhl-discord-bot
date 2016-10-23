@@ -9,9 +9,9 @@ public enum NHLDivision {
 	METRO(18, "Metropolitan", NHLConference.EASTERN), 
 	PACIFIC(15, "Pacific", NHLConference.WESTERN);
 
-	public final int id;
-	public final String name;
-	public final NHLConference conference;
+	private final int id;
+	private final String name;
+	private final NHLConference conference;
 
 	private static final Map<Integer, NHLDivision> VALUES_MAP = new HashMap<>();
 
@@ -25,6 +25,18 @@ public enum NHLDivision {
 		this.id = id;
 		this.name = name;
 		this.conference = conference;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public NHLConference getConference() {
+		return conference;
 	}
 
 	public static NHLDivision parse(int id) {

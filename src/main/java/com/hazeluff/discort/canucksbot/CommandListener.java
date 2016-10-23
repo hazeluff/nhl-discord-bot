@@ -3,12 +3,18 @@ package com.hazeluff.discort.canucksbot;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.hazeluff.discort.canucksbot.nhl.NHLGame;
+import com.hazeluff.discort.canucksbot.nhl.NHLGameScheduler;
+import com.hazeluff.discort.canucksbot.nhl.NHLGameStatus;
+import com.hazeluff.discort.canucksbot.nhl.NHLTeam;
+
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.util.DiscordException;
 
 public class CommandListener extends MessageSender {
 	private static final Logger LOGGER = LogManager.getLogger(CommandListener.class);
@@ -31,6 +37,38 @@ public class CommandListener extends MessageSender {
 			if (arguments[0].toString().equalsIgnoreCase("fuckmessier")) {
 				sendMessage(channel, "FUCK MESSIER");
 			}
+			
+			// nextgame
+			if (arguments[0].toString().equalsIgnoreCase("nextgame")) {
+				NHLGame nextGame = NHLGameScheduler.nextGame(NHLTeam.VANCOUVER_CANUCKS);
+				sendMessage(channel, nextGame.getDetailsMessage());
+			}
+
+			// score
+			if (arguments[0].toString().equalsIgnoreCase("score")) {
+				NHLGame game = NHLGameScheduler.getGameByChannelName(channel.getName());
+				if (game == null) {
+					sendMessage(channel, "Please run this command in a channel specific for games.");
+				} else if (game.getStatus() == NHLGameStatus.PREVIEW) {
+					sendMessage(channel, "The game hasn't started yet. **0** - **0**");
+				} else {
+					sendMessage(channel, game.getScoreMessage());
+				}
+			}
+
+			// Hi
+			if (arguments[0].toString().equalsIgnoreCase("hi") || arguments[0].toString().equalsIgnoreCase("hello")) {
+				sendMessage(channel, "Hi There. :kissing_heart:");
+			}
+
+			// About
+			if (arguments[0].toString().equalsIgnoreCase("about")) {
+				sendMessage(channel,
+						"Written by <@225742618422673409>\n"
+								+ "Checkout my GitHub: https://github.com/hazeluff/discord-canucks-bot");
+			}
+
+			// ༼つ ◕_◕ ༽つ CANUCKS TAKE MY ENERGY ༼ つ ◕_◕ ༽つ
 		}
 	}
 
@@ -43,7 +81,14 @@ public class CommandListener extends MessageSender {
 	 * @return true, if CanucksBot is mentioned; false, otherwise.
 	 */
 	public boolean isBotMentioned(StringBuilder strMessage) {
-		StringBuilder mentionedBotUser = new StringBuilder("<@").append(Config.BOT_ID).append(">");
+		String id = null;
+		try {
+			id = client.getApplicationClientID();
+		} catch (DiscordException e) {
+			LOGGER.error("Failed to get Application Client ID", e);
+			throw new RuntimeException(e);
+		}
+		StringBuilder mentionedBotUser = new StringBuilder("<@").append(id).append(">");
 		if (strMessage.toString().startsWith(mentionedBotUser.toString())) {
 			strMessage.replace(0, mentionedBotUser.length(), "");
 			return true;

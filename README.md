@@ -18,7 +18,10 @@ https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&p
 
 ## Game Day Channel
 - Create channels the day/days before the next game.
+- Give warnings before the game starts (60/30/10 minutes before).
 
 ## Commands
 `@CanucksBot [command]`
-- !fuckmessier: Fuck Messier
+- `fuckmessier` Fuck Messier.
+- `nextgame` Replies with information about the next game.
+- `score` If used in a game channel, it will display the score of that game.
