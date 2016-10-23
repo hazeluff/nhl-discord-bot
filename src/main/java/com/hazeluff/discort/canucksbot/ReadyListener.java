@@ -12,14 +12,20 @@ import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.Status;
 
+/**
+ * Listens for the ReadyEvent and initializes the bot.
+ * 
+ * @author hazeluff
+ *
+ */
 public class ReadyListener extends MessageSender {
 	private static final Logger LOGGER = LogManager.getLogger(ReadyListener.class);
 
 	private NHLGameScheduler gameScheduler;
 
-	public ReadyListener(IDiscordClient client, NHLGameScheduler gameScheduler) {
+	public ReadyListener(IDiscordClient client) {
 		super(client);
-		this.gameScheduler = gameScheduler;
+		this.gameScheduler = new NHLGameScheduler(client);
 	}
 
 	@EventSubscriber

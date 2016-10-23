@@ -3,8 +3,6 @@ package com.hazeluff.discort.canucksbot;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hazeluff.discort.canucksbot.nhl.NHLGameScheduler;
-
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
@@ -18,9 +16,8 @@ public class CanucksBot {
 
 	public CanucksBot(String botToken) {
 		client = getClient(botToken);
-		NHLGameScheduler nhlGameScheduler = new NHLGameScheduler(client);
 		EventDispatcher dispatcher = client.getDispatcher();
-		dispatcher.registerListener(new ReadyListener(client, nhlGameScheduler));
+		dispatcher.registerListener(new ReadyListener(client));
 		dispatcher.registerListener(new CommandListener(client));
 	}
 
