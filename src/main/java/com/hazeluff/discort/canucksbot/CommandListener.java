@@ -16,6 +16,13 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.DiscordException;
 
+/**
+ * Listens for MessageReceivedEvents and will process the messages for commands.
+ * 
+ * Commands need to be in format '@CanucksBot command'.
+ * @author hazeluff
+ *
+ */
 public class CommandListener extends MessageSender {
 	private static final Logger LOGGER = LogManager.getLogger(CommandListener.class);
 

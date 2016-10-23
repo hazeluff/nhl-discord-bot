@@ -22,16 +22,33 @@ import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
+/**
+ * <p>
+ * Creates Channels in Guilds that are subscribed to the teams in this game.
+ * </p>
+ * 
+ * <p>
+ * Creates a thread that polls and sees whether a game is starting soon, and
+ * triggers updates for the NHLGame.
+ * </p>
+ * 
+ * <p>
+ * Events are sent as messages to the channels created.
+ * </p>
+ * 
+ * @author hazeluff
+ *
+ */
 public class NHLGameTracker extends MessageSender {
 	private static final Logger LOGGER = LogManager.getLogger(NHLGameTracker.class);
 
 	// Poll for if game is close to starting every minute
-	private static final int IDLE_POLL_RATE = 1;
+	private static final long IDLE_POLL_RATE = 60000l;
 	// Poll for game events every 5 seconds if game is close to
 	// starting/started.
-	private static final int ACTIVE_POLL_RATE = 5000;
+	private static final long ACTIVE_POLL_RATE = 5000l;
 	// Poll for if game is close to starting every 30 minutes
-	private static final int GAME_START_THRESHOLD = -1800000;
+	private static final long GAME_START_THRESHOLD = 1800000l;
 
 	List<IChannel> channels = new ArrayList<IChannel>();
 
@@ -43,12 +60,10 @@ public class NHLGameTracker extends MessageSender {
 		subscribedGuilds.addAll(NHLGameScheduler.getSubscribedGuilds(game.getAwayTeam()));
 
 		String channelName = game.getChannelName();
-		LOGGER.info(subscribedGuilds.size());
 		for (IGuild guild : subscribedGuilds) {
-			LOGGER.info(guild.getName());
 			if (!guild.getChannels().stream().anyMatch(c -> c.getName().equalsIgnoreCase(channelName))) {
 				try {
-					LOGGER.info("Creating Channel [" + channelName + "]");
+					LOGGER.info("Creating Channel [" + channelName + "] in [" + guild.getName() + "]");
 					IChannel channel = guild.createChannel(channelName.toString());
 					channel.changeTopic("Go Canucks Go!");
 					IMessage message = sendMessage(channel, game.getDetailsMessage());
@@ -78,6 +93,7 @@ public class NHLGameTracker extends MessageSender {
 				timeTillWarnings.put(600000l, "10 minutes till puck drop.");
 				boolean firstIteration = true;
 				long timeTillGame;
+				LOGGER.info("Idling until near game start.");
 				do {
 					timeTillGame = DateUtils.diff(game.getDate(), new Date());
 					long lowestThreshold = Long.MAX_VALUE;
@@ -100,7 +116,7 @@ public class NHLGameTracker extends MessageSender {
 						}
 					}
 					try {
-						LOGGER.info("Sleeping for [" + IDLE_POLL_RATE + "]");
+						LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE + "]");
 						sleep(IDLE_POLL_RATE);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
@@ -108,16 +124,19 @@ public class NHLGameTracker extends MessageSender {
 					lowestThreshold = Long.MAX_VALUE;
 					message = null;
 					firstIteration = true;
-				} while (!((started = timeTillGame < GAME_START_THRESHOLD)));
+					started = timeTillGame < GAME_START_THRESHOLD;
+				} while (!started);
+				LOGGER.info("Game is about to start. Polling more actively.");
 				while (started && game.getStatus() != NHLGameStatus.FINAL) {
 					game.update();
 					try {
-						LOGGER.info("Sleeping for [" + ACTIVE_POLL_RATE + "]");
+						LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
 						sleep(ACTIVE_POLL_RATE);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
+				LOGGER.info("Game is over.");
 			}
 		}.start();
 	}

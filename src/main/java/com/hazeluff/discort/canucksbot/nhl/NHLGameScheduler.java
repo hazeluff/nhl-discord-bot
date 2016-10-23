@@ -88,6 +88,13 @@ public class NHLGameScheduler extends Thread {
 		LOGGER.info("Finished Initialization.");
 	}
 
+	/**
+	 * Gets the next game for the provided team.
+	 * 
+	 * @param team
+	 *            team to get next game for
+	 * @return NHLGame of next game for the provided team
+	 */
 	public static NHLGame nextGame(NHLTeam team) {
 		if (ready) {
 		Date currentDate = new Date();
@@ -119,7 +126,7 @@ public class NHLGameScheduler extends Thread {
 					});
 				}
 				try {
-					LOGGER.info("Sleeping for [" + POLL_RATE + "]");
+					LOGGER.trace("Sleeping for [" + POLL_RATE + "]");
 					sleep(POLL_RATE);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
