@@ -101,7 +101,7 @@ public class NHLGameTracker extends MessageSender {
 				boolean justRestarted = true;
 				long timeTillGame = Long.MAX_VALUE;
 				LOGGER.info("Idling until near game start.");
-				// Poll slowly until we are close to the game starting
+				// Not close to game starting. Slow poll.
 				do {
 					timeTillGame = DateUtils.diff(game.getDate(), new Date());
 					almostStart = timeTillGame < GAME_START_THRESHOLD;
@@ -132,7 +132,7 @@ public class NHLGameTracker extends MessageSender {
 					justRestarted = false;
 				} while (!almostStart);
 
-				// Poll faster
+				// Game is close to starting. Poll faster.
 				if (!justRestarted) {
 					LOGGER.info("Game is about to start. Polling more actively.");
 				}
@@ -149,6 +149,7 @@ public class NHLGameTracker extends MessageSender {
 					justRestarted = false;
 				} while (!started);
 
+				// Game started
 				if (!justRestarted) {
 					LOGGER.info("Game has started!");
 					sendMessage(channels, "Game has started. GO CANUCKS GO!");
@@ -160,11 +161,12 @@ public class NHLGameTracker extends MessageSender {
 					game.update();
 					game.getNewEvents().stream().forEach(event -> {
 						int eventId = event.getIdx();
+						String message = buildEventMessage(event);
 						if(eventMessages.containsKey(eventId)) {
 							List<IMessage> sentMessages = eventMessages.get(eventId);
-							updateMessage(sentMessages, "Update Event: " + event);
+							updateMessage(sentMessages, message);
 						} else {
-							List<IMessage> sentMessages = sendMessage(channels, "New Event: " + event);
+							List<IMessage> sentMessages = sendMessage(channels, message);
 							eventMessages.put(eventId, sentMessages);
 							
 						}
@@ -173,10 +175,13 @@ public class NHLGameTracker extends MessageSender {
 					ThreadUtils.sleep(ACTIVE_POLL_RATE);
 					justRestarted = false;
 				}
+
+				// Game is over
 				LOGGER.info("Game is over.");
 				if (!justRestarted) {
 					sendMessage(channels, "Game has ended. Thanks for joining!");
 					sendMessage(channels, "Final Score: " + game.getScoreMessage());
+					sendMessage(channels, "Goals Scored: " + game.getScoreMessage());
 					sendMessage(channels, "The next game is: "
 							+ NHLGameScheduler.getNextGame(NHLTeam.VANCOUVER_CANUCKS).getDetailsMessage());
 					for (IChannel channel : channels) {
@@ -196,10 +201,48 @@ public class NHLGameTracker extends MessageSender {
 		}.start();
 	}
 
+	/**
+	 * Build a message to deliver based on the event.
+	 * 
+	 * @param event
+	 *            event to build message from
+	 * @return message to send
+	 */
+	private String buildEventMessage(NHLGameEvent event) {
+		NHLGameEventStrength strength = event.getStrength();
+		List<NHLPlayer> players = event.getPlayers();
+		StringBuilder message = new StringBuilder();
+		if (strength == NHLGameEventStrength.EVEN) {
+			message.append(
+					String.format("%s goal by **%s**!", event.getTeam().getLocation(), players.get(0).getFullName()));
+		} else {
+			message.append(String.format("%s %s goal by **%s**!", strength.getValue().toLowerCase(),
+					event.getTeam().getLocation(), players.get(0).getFullName()));
+		}
+		if (players.size() > 1) {
+			message.append(String.format(" Assists: %s", players.get(1).getFullName()));
+		}
+		if (players.size() > 2) {
+			message.append(String.format(", %s", players.get(2).getFullName()));
+		}
+		return message.toString();
+	}
+
+	/**
+	 * Determines if game is finished.
+	 * 
+	 * @return true, if game has ended<br>
+	 *         false, otherwise
+	 */
 	public boolean isEnded() {
 		return ended;
 	}
 
+	/**
+	 * Gets the game that is tracked.
+	 * 
+	 * @return NHLGame being tracked
+	 */
 	public NHLGame getGame() {
 		return game;
 	}

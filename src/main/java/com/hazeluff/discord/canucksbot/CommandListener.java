@@ -5,18 +5,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.hazeluff.discord.canucksbot.nhl.NHLGame;
-import com.hazeluff.discord.canucksbot.nhl.NHLGameEvent;
-import com.hazeluff.discord.canucksbot.nhl.NHLGamePeriod;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameStatus;
-import com.hazeluff.discord.canucksbot.nhl.NHLPlayer;
 import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
 
 import sx.blah.discord.api.IDiscordClient;
@@ -96,61 +91,7 @@ public class CommandListener extends MessageSender {
 					sendMessage(channel, "The game hasn't started yet.");
 				} else {
 					game.update();
-					List<NHLGameEvent> goals = game.getNewEvents();
-					StringBuilder response = new StringBuilder();
-					response.append(game.getScoreMessage()).append("\n```");
-					for (int i = 1; i <= 3; i++) {
-						switch (i) {
-						case 1:
-							response.append("1st Period:");
-							break;
-						case 2:
-							response.append("\n\n2nd Period:");
-							break;
-						case 3:
-							response.append("\n\n3rd Period:");
-							break;
-						}
-						int period = i;
-						Predicate<NHLGameEvent> isPeriod = gameEvent -> gameEvent.getPeriod().getPeriodNum() == period;
-						if (goals.stream().anyMatch(isPeriod)) {
-							for (NHLGameEvent gameEvent : goals.stream().filter(isPeriod)
-									.collect(Collectors.toList())) {
-								List<NHLPlayer> players = gameEvent.getPlayers();
-								response.append(String.format("\n%s - %-18s", gameEvent.getPeriodTime(),
-										players.get(0).getFullName()));
-								if (players.size() > 1) {
-									response.append("  Assists: ");
-									response.append(players.get(1).getFullName());
-								}
-								if (players.size() > 2) {
-									response.append(", ");
-									response.append(players.get(2).getFullName());
-								}
-							}
-						} else {
-							response.append("\nNone");
-						}
-					}
-					Predicate<NHLGameEvent> isOtherPeriod = gameEvent -> gameEvent.getPeriod().getPeriodNum() > 3;
-					if (goals.stream().anyMatch(isOtherPeriod)) {
-						NHLGameEvent gameEvent = goals.stream().filter(isOtherPeriod).findFirst().get();
-						NHLGamePeriod period = gameEvent.getPeriod();
-						response.append("\n\n").append(period.getDisplayValue()).append(":");
-						List<NHLPlayer> players = gameEvent.getPlayers();
-						response.append(
-								String.format("\n%s - %-18s", gameEvent.getPeriodTime(), players.get(0).getFullName()));
-						if (players.size() > 1) {
-							response.append("  Assists: ");
-							response.append(players.get(1).getFullName());
-						}
-						if (players.size() > 2) {
-							response.append(", ");
-							response.append(players.get(2).getFullName());
-						}
-					}
-					response.append("\n```");
-					sendMessage(channel, response.toString());
+					sendMessage(channel, game.getGoalsMessage());
 				}
 				return;
 			}

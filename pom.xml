@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.hazeluff.discord</groupId>
   <artifactId>canucksbot</artifactId>
-  <version>0.1.1</version>
+  <version>0.1.2</version>
   <packaging>jar</packaging>
   <name>CanucksBot</name>
   <url>http://maven.apache.org</url>
@@ -26,6 +26,7 @@
       <groupId>com.github.austinv11</groupId>
       <artifactId>Discord4j</artifactId>
       <version>2.6.1</version>
+      <classifier>shaded</classifier>
     </dependency>
     <dependency>
       <groupId>org.json</groupId>
