@@ -29,6 +29,7 @@ Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801
 - `nextgame` Replies with information about the next game.
 - `about` Displays information about bot/author.
 - `help` Display list of commands.
+
 ### In 'Game Day Channels' only
 - `score` Displays score of that game.
 - `goals` Displays goals of that game.
