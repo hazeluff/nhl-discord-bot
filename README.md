@@ -10,12 +10,13 @@ Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801
 
 ### Permissions for bot
 
-| Permission      | Hex        | Dec  |
-|-----------------|------------|------|
-| READ_MESSAGES   | 0x00000400 | 1024 |
-| SEND_MESSAGES   | 0x00000800 | 2048 |
-| MANAGE_CHANNELS | 0x00000010 | 16   |
-| Combined        | 0x00000C10 | 3088 |
+| Permission      | Hex        | Dec   |
+|-----------------|------------|-------|
+| READ_MESSAGES   | 0x00000400 | 1024  |
+| SEND_MESSAGES   | 0x00000800 | 2048  |
+| MANAGE_MESSAGES | 0x00002000 | 8192  |
+| MANAGE_CHANNELS | 0x00000010 | 16    |
+| Combined        | 0x00000C10 | 11208 |
 
 ## Game Day Channel
 - Create channels the day/days before the next game.
