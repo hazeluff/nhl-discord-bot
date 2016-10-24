@@ -36,10 +36,16 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <executable>true</executable>
+        <archive>
+          <manifest>
+            <mainClass>com.hazeluff.discord.canucksbot.BotRunner</mainClass>
+          </manifest>
+        </archive>
+        <descriptorRefs>
+          <descriptorRef>jar-with-dependencies</descriptorRef>
+        </descriptorRefs>
         </configuration>
       </plugin>
       <plugin>
