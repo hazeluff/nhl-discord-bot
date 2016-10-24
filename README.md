@@ -5,8 +5,8 @@
 
 ## Add bot:
 
-Develop: https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=3088
-Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801&scope=bot&permissions=3088
+Develop: https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=11280
+Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801&scope=bot&permissions=11280
 
 ### Permissions for bot
 
@@ -16,7 +16,7 @@ Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801
 | SEND_MESSAGES   | 0x00000800 | 2048  |
 | MANAGE_MESSAGES | 0x00002000 | 8192  |
 | MANAGE_CHANNELS | 0x00000010 | 16    |
-| Combined        | 0x00000C10 | 11208 |
+| Combined        | 0x00000C10 | 11280 |
 
 ## Game Day Channel
 - Create channels the day/days before the next game.
