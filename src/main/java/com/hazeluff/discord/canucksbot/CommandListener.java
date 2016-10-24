@@ -109,7 +109,7 @@ public class CommandListener extends MessageSender {
 			// about
 			if (arguments[0].toString().equalsIgnoreCase("about")) {
 				sendMessage(channel, String.format(
-						"Written by <@%>\n"
+						"Written by <@%s>\n"
 								+ "Checkout my GitHub: %s\n"
 								+ "Contact me: %s",
 								Config.HAZELUFF_ID, 
