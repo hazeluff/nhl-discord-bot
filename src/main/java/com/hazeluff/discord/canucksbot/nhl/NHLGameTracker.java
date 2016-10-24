@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.MessageSender;
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
@@ -41,7 +41,7 @@ import sx.blah.discord.util.RateLimitException;
  *
  */
 public class NHLGameTracker extends MessageSender {
-	private static final Logger LOGGER = LogManager.getLogger(NHLGameTracker.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(NHLGameTracker.class);
 
 	// Poll for if game is close to starting every minute
 	private static final long IDLE_POLL_RATE = 60000l;

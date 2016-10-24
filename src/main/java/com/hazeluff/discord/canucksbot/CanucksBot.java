@@ -1,7 +1,7 @@
 package com.hazeluff.discord.canucksbot;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
@@ -10,7 +10,7 @@ import sx.blah.discord.util.DiscordException;
 
 
 public class CanucksBot {
-	private static final Logger LOGGER = LogManager.getLogger(CanucksBot.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CanucksBot.class);
 
 	private static IDiscordClient client;
 
@@ -27,7 +27,7 @@ public class CanucksBot {
 		try {
 			return clientBuilder.login();
 		} catch (DiscordException e) {
-			LOGGER.error(e);
+			LOGGER.error("Could not login.", e);
 			return null;
 		}
 	}

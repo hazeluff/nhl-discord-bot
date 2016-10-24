@@ -11,16 +11,17 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
 import com.hazeluff.discord.canucksbot.utils.HttpUtils;
 
+
 public class NHLGame {
-	private static final Logger LOGGER = LogManager.getLogger(NHLGame.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(NHLGame.class);
 
 	private final Date date;
 	private final int gamePk;

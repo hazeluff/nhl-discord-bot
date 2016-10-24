@@ -6,11 +6,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DateUtils {
-	private static final Logger LOGGER = LogManager.getLogger(DateUtils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DateUtils.class);
 
 	private static final SimpleDateFormat NHL_API_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 	private static final SimpleDateFormat DEBUG_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ");

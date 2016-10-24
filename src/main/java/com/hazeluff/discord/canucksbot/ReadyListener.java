@@ -1,7 +1,7 @@
 package com.hazeluff.discord.canucksbot;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
 import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
@@ -19,7 +19,7 @@ import sx.blah.discord.handle.obj.Status;
  *
  */
 public class ReadyListener extends MessageSender {
-	private static final Logger LOGGER = LogManager.getLogger(ReadyListener.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReadyListener.class);
 
 	private NHLGameScheduler gameScheduler;
 

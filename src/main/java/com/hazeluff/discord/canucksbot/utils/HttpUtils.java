@@ -9,13 +9,13 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.Config;
 
 public class HttpUtils {
-	private static final Logger LOGGER = LogManager.getLogger(HttpUtils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(HttpUtils.class);
 
 	public static String get(URI uri) {
 		HttpClient client = HttpClientBuilder.create().build();
@@ -26,7 +26,7 @@ public class HttpUtils {
 			try {
 				response = client.execute(request);
 			} catch (IOException e) {
-				LOGGER.warn(e);
+				LOGGER.error("Failed to request page [" + uri.toString() + "]", e);
 			}
 		} while ((response == null || response.getStatusLine().getStatusCode() != 200) && retries > 0);
 		if (retries <= 0) {	

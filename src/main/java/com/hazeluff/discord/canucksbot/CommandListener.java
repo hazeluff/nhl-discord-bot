@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.nhl.NHLGame;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
@@ -30,7 +30,7 @@ import sx.blah.discord.util.DiscordException;
  *
  */
 public class CommandListener extends MessageSender {
-	private static final Logger LOGGER = LogManager.getLogger(CommandListener.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListener.class);
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
 

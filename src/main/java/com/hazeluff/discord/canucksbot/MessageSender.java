@@ -3,8 +3,8 @@ package com.hazeluff.discord.canucksbot;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
@@ -15,7 +15,7 @@ import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
 public class MessageSender {
-	private static final Logger LOGGER = LogManager.getLogger(MessageSender.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MessageSender.class);
 
 	protected IDiscordClient client;
 
@@ -27,16 +27,13 @@ public class MessageSender {
 		try {
 			return new MessageBuilder(client).withChannel(channel).withContent(message).send();
 		} catch (RateLimitException e) {
-			LOGGER.error("Sending messages too quickly!");
-			LOGGER.error(e);
+			LOGGER.error("Sending messages too quickly!", e);
 			throw new RuntimeException(e);
 		} catch (DiscordException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e);
+			LOGGER.error(e.getErrorMessage(), e);
 			throw new RuntimeException(e);
 		} catch (MissingPermissionsException e) {
-			LOGGER.error("Missing permissions for channel!");
-			LOGGER.error(e);
+			LOGGER.error("Missing permissions for channel!", e);
 			throw new RuntimeException(e);
 		}
 
@@ -54,16 +51,13 @@ public class MessageSender {
 		try {
 			message.edit(newMessage);
 		} catch (RateLimitException e) {
-			LOGGER.error("Updating messages too quickly!");
-			LOGGER.error(e);
+			LOGGER.error("Updating messages too quickly!", e);
 			throw new RuntimeException(e);
 		} catch (DiscordException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e);
+			LOGGER.error(e.getErrorMessage(), e);
 			throw new RuntimeException(e);
 		} catch (MissingPermissionsException e) {
-			LOGGER.error("Missing permissions for channel!");
-			LOGGER.error(e);
+			LOGGER.error("Missing permissions for channel!", e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -81,7 +75,7 @@ public class MessageSender {
 			LOGGER.error("Too many requests.", e);
 			throw new RuntimeException(e);
 		} catch (DiscordException e) {
-			LOGGER.error(e);
+			LOGGER.error("Could not get pinned messages", e);
 			throw new RuntimeException(e);
 		}
 	}
