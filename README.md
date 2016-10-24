@@ -19,13 +19,16 @@ Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801
 | Combined        | 0x00000C10 | 11280 |
 
 ## Game Day Channel
-- Create channels the day/days before the next game.
+- Create channel for next game.
 - Give warnings before the game starts (60/30/10 minutes before).
+- Display messages for when goals are scored.
 
 ## Commands
 `@CanucksBot [command]`
 - `fuckmessier` Fuck Messier.
 - `nextgame` Replies with information about the next game.
-- `score` If used in a game channel, it will display the score of that game.
-- `goals` If used in a game channel, it will display the goals of that game.
+- `about` Displays information about bot/author.
 - `help` Display list of commands.
+### In 'Game Day Channels' only
+- `score` Displays score of that game.
+- `goals` Displays goals of that game.
