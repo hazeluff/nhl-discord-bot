@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.hazeluff.discord.canucksbot.MessageSender;
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
+import com.hazeluff.discord.canucksbot.utils.ThreadUtils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
@@ -50,14 +51,16 @@ public class NHLGameTracker extends MessageSender {
 	// Time before game to poll faster
 	private static final long GAME_START_THRESHOLD = 300000l;
 
+	private boolean ended = false;
 	List<IChannel> channels = new ArrayList<IChannel>();
-
 	// Map<NHLGameEvent.idx, List<IMessage>>
 	Map<Integer, List<IMessage>> eventMessages = new HashMap<Integer, List<IMessage>>();
 
+	private final NHLGame game;
+
 	public NHLGameTracker(IDiscordClient client, NHLGame game) {
 		super(client);
-
+		this.game = game;
 		List<IGuild> subscribedGuilds = new ArrayList<>();
 		subscribedGuilds.addAll(NHLGameScheduler.getSubscribedGuilds(game.getHomeTeam()));
 		subscribedGuilds.addAll(NHLGameScheduler.getSubscribedGuilds(game.getAwayTeam()));
@@ -95,9 +98,10 @@ public class NHLGameTracker extends MessageSender {
 				timeTillWarnings.put(1800000l, "30 minutes till puck drop.");
 				timeTillWarnings.put(600000l, "10 minutes till puck drop.");
 				timeTillWarnings.put(600000l, "5 minutes till puck drop.");
-				boolean firstIteration = true;
+				boolean justRestarted = true;
 				long timeTillGame = Long.MAX_VALUE;
 				LOGGER.info("Idling until near game start.");
+				// Poll slowly until we are close to the game starting
 				do {
 					timeTillGame = DateUtils.diff(game.getDate(), new Date());
 					almostStart = timeTillGame < GAME_START_THRESHOLD;
@@ -118,38 +122,41 @@ public class NHLGameTracker extends MessageSender {
 							it.remove();
 						}
 					}
-					if (!firstIteration && message != null) {
+					if (!justRestarted && message != null) {
 						sendMessage(channels, message);
 					}
-					try {
-						LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE + "]");
-						sleep(IDLE_POLL_RATE);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+					LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE + "]");
+					ThreadUtils.sleep(IDLE_POLL_RATE);
 					lowestThreshold = Long.MAX_VALUE;
 					message = null;
-					firstIteration = false;
+					justRestarted = false;
 				} while (!almostStart);
-				LOGGER.info("Game is about to start. Polling more actively.");
 
+				// Poll faster
+				if (!justRestarted) {
+					LOGGER.info("Game is about to start. Polling more actively.");
+				}
 				boolean started = false;
-				while (!started) {
+				do {
 					game.update();
+					game.clearNewEvents();
 					started = game.getStatus() != NHLGameStatus.PREVIEW;
 					if (started) {
 						break;
 					}
-					try {
-						LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
-						sleep(ACTIVE_POLL_RATE);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+					LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
+					ThreadUtils.sleep(ACTIVE_POLL_RATE);
+					justRestarted = false;
+				} while (!started);
+
+				if (!justRestarted) {
+					LOGGER.info("Game has started!");
+					sendMessage(channels, "Game has started. GO CANUCKS GO!");
+				} else {
+					LOGGER.info("Game already started!");
 				}
-				LOGGER.info("Game started!");
-				sendMessage(channels, "Game has started. GO CANUCKS GO!");
-				while (started && game.getStatus() != NHLGameStatus.FINAL) {
+
+				while (game.getStatus() != NHLGameStatus.FINAL) {
 					game.update();
 					game.getNewEvents().stream().forEach(event -> {
 						int eventId = event.getIdx();
@@ -162,15 +169,38 @@ public class NHLGameTracker extends MessageSender {
 							
 						}
 					});
-					try {
-						LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
-						sleep(ACTIVE_POLL_RATE);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+					LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
+					ThreadUtils.sleep(ACTIVE_POLL_RATE);
+					justRestarted = false;
 				}
 				LOGGER.info("Game is over.");
+				if (!justRestarted) {
+					sendMessage(channels, "Game has ended. Thanks for joining!");
+					sendMessage(channels, "Final Score: " + game.getScoreMessage());
+					sendMessage(channels, "The next game is: "
+							+ NHLGameScheduler.getNextGame(NHLTeam.VANCOUVER_CANUCKS).getDetailsMessage());
+					for (IChannel channel : channels) {
+						for (IMessage message : getPinnedMessages(channel)) {
+							if (message.getAuthor().getID().equals(client.getOurUser().getID())) {
+								StringBuilder strMessage = new StringBuilder();
+								strMessage.append(game.getDetailsMessage()).append("\n");
+								strMessage.append(game.getScoreMessage()).append("\n");
+								editMessage(message, strMessage.toString());
+							}
+						}
+
+					}
+				}
+				ended = true;
 			}
 		}.start();
+	}
+
+	public boolean isEnded() {
+		return ended;
+	}
+
+	public NHLGame getGame() {
+		return game;
 	}
 }

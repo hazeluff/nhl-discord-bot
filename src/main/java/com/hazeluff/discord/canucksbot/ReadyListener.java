@@ -25,7 +25,7 @@ public class ReadyListener extends MessageSender {
 
 	public ReadyListener(IDiscordClient client) {
 		super(client);
-		this.gameScheduler = new NHLGameScheduler(client);
+		gameScheduler = new NHLGameScheduler(client);
 	}
 
 	@EventSubscriber

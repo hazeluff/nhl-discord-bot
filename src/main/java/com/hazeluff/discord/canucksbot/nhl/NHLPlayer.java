@@ -43,6 +43,14 @@ public class NHLPlayer {
 		this.role = EventRole.parse(jsonPlayer.getString("playerType"));
 	}
 
+	public String getFullName() {
+		return fullName;
+	}
+
+	public EventRole getRole() {
+		return role;
+	}
+
 	@Override
 	public String toString() {
 		return "NHLPlayer [id=" + id + ", fullName=" + fullName + ", role=" + role + "]";

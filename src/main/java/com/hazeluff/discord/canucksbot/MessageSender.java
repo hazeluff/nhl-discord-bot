@@ -50,7 +50,7 @@ public class MessageSender {
 		return messages;
 	}
 
-	protected void updateMessage(IMessage message, String newMessage) {
+	protected void editMessage(IMessage message, String newMessage) {
 		try {
 			message.edit(newMessage);
 		} catch (RateLimitException e) {
@@ -70,7 +70,19 @@ public class MessageSender {
 
 	protected void updateMessage(List<IMessage> messages, String newMessage) {
 		for (IMessage message : messages) {
-			updateMessage(message, newMessage);
+			editMessage(message, newMessage);
+		}
+	}
+
+	protected List<IMessage> getPinnedMessages(IChannel channel) {
+		try {
+			return channel.getPinnedMessages();
+		} catch (RateLimitException e) {
+			LOGGER.error("Too many requests.", e);
+			throw new RuntimeException(e);
+		} catch (DiscordException e) {
+			LOGGER.error(e);
+			throw new RuntimeException(e);
 		}
 	}
 }

@@ -12,7 +12,7 @@ import sx.blah.discord.util.DiscordException;
 public class CanucksBot {
 	private static final Logger LOGGER = LogManager.getLogger(CanucksBot.class);
 
-	private IDiscordClient client;
+	private static IDiscordClient client;
 
 	public CanucksBot(String botToken) {
 		client = getClient(botToken);

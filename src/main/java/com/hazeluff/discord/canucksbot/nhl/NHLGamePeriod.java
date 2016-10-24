@@ -58,7 +58,16 @@ public class NHLGamePeriod {
 	}
 
 	public String getDisplayValue() {
-		return type == Type.SHOOTOUT ? type.value : String.format("%s %s", ordinalNum, type.value);
+		switch (type) {
+		case REGULAR:
+			return String.format("%s Period", ordinalNum);
+		case OVERTIME:
+			return String.format("%s Overtime", ordinalNum, type.value);
+		case SHOOTOUT:
+			return "Shootout";
+		default:
+			return null;
+		}
 	}
 
 	@Override

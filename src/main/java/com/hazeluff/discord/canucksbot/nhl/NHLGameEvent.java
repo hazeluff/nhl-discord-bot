@@ -4,16 +4,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
 
 public class NHLGameEvent {
-	private static final Logger LOGGER = LogManager.getLogger(NHLGame.class);
-
 	private final int id;
 	private int idx;
 	private Date date;

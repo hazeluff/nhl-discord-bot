@@ -141,7 +141,7 @@ public class NHLGame {
 	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
 	 */
 	public String getDetailsMessage() {
-		String message = String.format("The next game is:\n**%s** vs **%s** at %s on %s",
+		String message = String.format("**%s** vs **%s** at %s on %s",
 				homeTeam.getFullName(),
 				awayTeam.getFullName(),
 				getTime(),
@@ -174,6 +174,10 @@ public class NHLGame {
 		List<NHLGameEvent> value = new ArrayList<>(newEvents);
 		newEvents.clear();
 		return value;
+	}
+
+	public void clearNewEvents() {
+		newEvents.clear();
 	}
 
 	@Override
@@ -223,6 +227,10 @@ public class NHLGame {
 		if (status != other.status)
 			return false;
 		return true;
+	}
+
+	public boolean equals(NHLGame other) {
+		return gamePk == other.gamePk;
 	}
 
 	public static Comparator<NHLGame> getDateComparator() {

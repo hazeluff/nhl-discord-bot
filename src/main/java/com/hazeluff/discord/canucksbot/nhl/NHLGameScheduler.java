@@ -18,8 +18,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hazeluff.discord.canucksbot.Config;
-import com.hazeluff.discord.canucksbot.utils.DateUtils;
 import com.hazeluff.discord.canucksbot.utils.HttpUtils;
+import com.hazeluff.discord.canucksbot.utils.ThreadUtils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IGuild;
@@ -36,24 +36,25 @@ public class NHLGameScheduler extends Thread {
 	private static final Logger LOGGER = LogManager.getLogger(NHLGameScheduler.class);
 
 	// Poll for if the day has rolled over every 30 minutes
-	private static final int POLL_RATE = 1800000;
+	private static final int UPDATE_RATE = 1800000;
 
 	private static boolean ready = false;
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
 	private static List<NHLGame> games;
 	private static Map<NHLTeam, Set<IGuild>> teamSubscriptions = new HashMap<>();
-	private static List<NHLGameTracker> todayGames;
+	private static Map<NHLTeam, NHLGameTracker> currentGames = new HashMap<>();
 
-	private IDiscordClient client;
+	private final IDiscordClient client;
 
 	public NHLGameScheduler(IDiscordClient client) {
 		LOGGER.info("Initializing");
-		// Init variables
 		this.client = client;
+		// Init variables
 		for (NHLTeam team : NHLTeam.values()) {
 			teamSubscriptions.put(team, new HashSet<IGuild>());
 		}
+		currentGames.put(NHLTeam.VANCOUVER_CANUCKS, null);
 		
 		// Retrieve schedule/game information from NHL API
 		Set<NHLGame> setGames = new HashSet<>();
@@ -82,7 +83,6 @@ public class NHLGameScheduler extends Thread {
 		}
 		games = new ArrayList<>(setGames);
 		Collections.sort(games, NHLGame.getDateComparator());
-
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");
 
 		ready = true;
@@ -96,7 +96,7 @@ public class NHLGameScheduler extends Thread {
 	 *            team to get next game for
 	 * @return NHLGame of next game for the provided team
 	 */
-	public static NHLGame nextGame(NHLTeam team) {
+	public static NHLGame getNextGame(NHLTeam team) {
 		if (ready) {
 		Date currentDate = new Date();
 		return games.stream().filter(game -> game.containsTeam(team))
@@ -109,34 +109,47 @@ public class NHLGameScheduler extends Thread {
 
 
 	/**
-	 * Poll to see if the date has rolled over.
+	 * Poll to see if the current games are finished.
 	 */
 	public void run() {
+		LOGGER.info("Started.");
 		if (ready) {
-			Date lastDate = null;
-
 			while (true) {
-				LOGGER.info("Started.");
-				Date currentDate = new Date();
-				todayGames = new ArrayList<>();
-				if (lastDate == null || DateUtils.compareNoTime(lastDate, currentDate) < 0) {
-					lastDate = currentDate;
-					games.stream().filter(game -> game.isOnDate(currentDate)).forEach(game -> {
-						todayGames.add(new NHLGameTracker(client, game));
-					});
+				LOGGER.info("Checking for if games are finished");
+				Set<NHLTeam> teamsWithEndedGames = new HashSet<>();
+				currentGames.forEach((team, gameTracker) -> {
+					if (gameTracker == null || gameTracker.isEnded()) {
+						teamsWithEndedGames.add(team);
+					}
+				});
+				for(NHLTeam team : teamsWithEndedGames) {
+					if (team == NHLTeam.VANCOUVER_CANUCKS) {
+						NHLGame nextGame = getNextGame(team);
+						NHLGameTracker gameTracker = getExistingGameTracker(nextGame);
+						if (gameTracker != null) {
+							currentGames.put(team, gameTracker);
+						} else {
+							currentGames.put(team, new NHLGameTracker(client, nextGame));
+						}
+					}
 				}
-				try {
-					LOGGER.trace("Sleeping for [" + POLL_RATE + "]");
-					sleep(POLL_RATE);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				LOGGER.info("Sleeping for [" + UPDATE_RATE + "]");
+				ThreadUtils.sleep(UPDATE_RATE);
 			}
 		} else {
 			throw new NHLGameSchedulerException("Not yet initialized");
 		}
 	}
 	
+	private NHLGameTracker getExistingGameTracker(NHLGame game) {
+		for(NHLGameTracker gameTracker : currentGames.values()) {
+			if (gameTracker != null && gameTracker.getGame().equals(game)) {
+				return gameTracker;
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * Subscribes a channel to a game. So that events in the game are posted to
 	 * the channel.
