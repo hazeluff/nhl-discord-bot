@@ -1,4 +1,4 @@
-package com.hazeluff.discort.canucksbot.utils;
+package com.hazeluff.discord.canucksbot.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hazeluff.discort.canucksbot.Config;
+import com.hazeluff.discord.canucksbot.Config;
 
 public class HttpUtils {
 	private static final Logger LOGGER = LogManager.getLogger(HttpUtils.class);

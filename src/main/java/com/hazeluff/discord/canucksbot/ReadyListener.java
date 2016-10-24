@@ -1,10 +1,10 @@
-package com.hazeluff.discort.canucksbot;
+package com.hazeluff.discord.canucksbot;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hazeluff.discort.canucksbot.nhl.NHLGameScheduler;
-import com.hazeluff.discort.canucksbot.nhl.NHLTeam;
+import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
+import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;

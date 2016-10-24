@@ -1,20 +1,21 @@
-package com.hazeluff.discort.canucksbot.nhl;
+package com.hazeluff.discord.canucksbot.nhl;
 
 import java.net.URISyntaxException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.hazeluff.discort.canucksbot.utils.DateUtils;
-import com.hazeluff.discort.canucksbot.utils.HttpUtils;
+import com.hazeluff.discord.canucksbot.utils.DateUtils;
+import com.hazeluff.discord.canucksbot.utils.HttpUtils;
 
 public class NHLGame {
 	private static final Logger LOGGER = LogManager.getLogger(NHLGame.class);
@@ -26,21 +27,18 @@ public class NHLGame {
 	private int awayScore;
 	private int homeScore;
 	private NHLGameStatus status;
+	private List<NHLGameEvent> events = new ArrayList<>();
+	private List<NHLGameEvent> newEvents = new ArrayList<>();
 
 	public NHLGame (JSONObject jsonGame) {
-		try {
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-			date = dateFormat.parse(jsonGame.getString("gameDate").replaceAll("Z", "+0000"));
-			gamePk = jsonGame.getInt("gamePk");
-			awayTeam = NHLTeam
-					.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
-			homeTeam = NHLTeam
-					.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
-			updateValues(jsonGame);
-		} catch (JSONException | ParseException e) {
-			LOGGER.error(e);
-			throw new RuntimeException(e);
-		}
+		date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
+		gamePk = jsonGame.getInt("gamePk");
+		awayTeam = NHLTeam
+				.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
+		homeTeam = NHLTeam
+				.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
+		updateInfo(jsonGame);
+
 	}
 
 	public Date getDate() {
@@ -168,6 +166,16 @@ public class NHLGame {
 		return status;
 	}
 
+	public List<NHLGameEvent> getEvents() {
+		return events;
+	}
+
+	public List<NHLGameEvent> getNewEvents() {
+		List<NHLGameEvent> value = new ArrayList<>(newEvents);
+		newEvents.clear();
+		return value;
+	}
+
 	@Override
 	public String toString() {
 		return "NHLGame [date=" + date + ", gamePk=" + gamePk + ", awayTeam=" + awayTeam + ", homeTeam=" + homeTeam
@@ -234,7 +242,7 @@ public class NHLGame {
 	 * updates all the update-able members in this class
 	 */
 	public void update() {
-		LOGGER.info("Updating. [" + this + "]");
+		LOGGER.debug("Updating. [" + gamePk + "]");
 		URIBuilder uriBuilder = null;
 		String strJSONSchedule = "";
 		try {
@@ -249,17 +257,42 @@ public class NHLGame {
 		JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
 				.getJSONObject(0);
 
-		updateValues(jsonGame);
+		updateInfo(jsonGame);
+		updatePlays(jsonGame);
 	}
 
 	/**
-	 * Updates values of all update-able members in this class.
+	 * Updates information about the game.
+	 * <UL>
+	 * <LI>Scores</LI>
+	 * <LI>Status</LI>
+	 * </UL>
 	 * 
 	 * @param jsonGame
 	 */
-	private void updateValues(JSONObject jsonGame) {
+	private void updateInfo(JSONObject jsonGame) {
 		awayScore = jsonGame.getJSONObject("teams").getJSONObject("away").getInt("score");
 		homeScore = jsonGame.getJSONObject("teams").getJSONObject("home").getInt("score");
 		status = NHLGameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode")));
+	}
+
+	/**
+	 * Updates about specific plays in the game
+	 */
+
+	private void updatePlays(JSONObject jsonGame) {
+		boolean displayLog = !newEvents.isEmpty();
+		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
+		for (int i = 0; i < jsonScoringPlays.length(); i++) {
+			NHLGameEvent newEvent = new NHLGameEvent(jsonScoringPlays.getJSONObject(i));
+			if (!events.stream().anyMatch(event -> event.getId() == newEvent.getId())) {
+				events.add(newEvent);
+				newEvents.add(newEvent);
+			}
+		}
+		displayLog ^= !newEvents.isEmpty();
+		if (displayLog) {
+			newEvents.stream().forEach(event -> LOGGER.info("New event: " + event));
+		}
 	}
 }

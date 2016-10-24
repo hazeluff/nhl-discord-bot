@@ -1,4 +1,4 @@
-package com.hazeluff.discort.canucksbot;
+package com.hazeluff.discord.canucksbot;
 
 /**
  * Hello world!

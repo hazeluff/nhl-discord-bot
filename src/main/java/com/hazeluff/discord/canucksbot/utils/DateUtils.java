@@ -1,15 +1,31 @@
-package com.hazeluff.discort.canucksbot.utils;
+package com.hazeluff.discord.canucksbot.utils;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class DateUtils {
+	private static final Logger LOGGER = LogManager.getLogger(DateUtils.class);
+
+	private static final SimpleDateFormat NHL_API_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 	private static final SimpleDateFormat DEBUG_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ");
 
 	public static String toString(Date date) {
 		return date == null ? "" : DEBUG_FORMAT.format(date);
+	}
+
+	public static Date parseNHLDate(String date) {
+		try {
+			return NHL_API_FORMAT.parse(date.replaceAll("Z", "+0000"));
+		} catch (ParseException e) {
+			LOGGER.error("Could not parse date [" + date + "]", e);
+			return null;
+		}
 	}
 
 	public static int compareNoTime(Date date1, Date date2) {

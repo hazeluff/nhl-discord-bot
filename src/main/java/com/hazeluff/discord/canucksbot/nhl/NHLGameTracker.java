@@ -1,4 +1,4 @@
-package com.hazeluff.discort.canucksbot.nhl;
+package com.hazeluff.discord.canucksbot.nhl;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hazeluff.discort.canucksbot.MessageSender;
-import com.hazeluff.discort.canucksbot.utils.DateUtils;
+import com.hazeluff.discord.canucksbot.MessageSender;
+import com.hazeluff.discord.canucksbot.utils.DateUtils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
@@ -47,10 +47,13 @@ public class NHLGameTracker extends MessageSender {
 	// Poll for game events every 5 seconds if game is close to
 	// starting/started.
 	private static final long ACTIVE_POLL_RATE = 5000l;
-	// Poll for if game is close to starting every 30 minutes
-	private static final long GAME_START_THRESHOLD = 1800000l;
+	// Time before game to poll faster
+	private static final long GAME_START_THRESHOLD = 300000l;
 
 	List<IChannel> channels = new ArrayList<IChannel>();
+
+	// Map<NHLGameEvent.idx, List<IMessage>>
+	Map<Integer, List<IMessage>> eventMessages = new HashMap<Integer, List<IMessage>>();
 
 	public NHLGameTracker(IDiscordClient client, NHLGame game) {
 		super(client);
@@ -84,18 +87,23 @@ public class NHLGameTracker extends MessageSender {
 		new Thread() {
 			public void run() {
 				LOGGER.info("Started thread for [" + game + "]");
-				boolean started = false;
+				boolean almostStart = false;
 
 				// <threshold,message>
 				Map<Long, String> timeTillWarnings = new HashMap<>();
 				timeTillWarnings.put(3600000l, "60 minutes till puck drop.");
 				timeTillWarnings.put(1800000l, "30 minutes till puck drop.");
 				timeTillWarnings.put(600000l, "10 minutes till puck drop.");
+				timeTillWarnings.put(600000l, "5 minutes till puck drop.");
 				boolean firstIteration = true;
-				long timeTillGame;
+				long timeTillGame = Long.MAX_VALUE;
 				LOGGER.info("Idling until near game start.");
 				do {
 					timeTillGame = DateUtils.diff(game.getDate(), new Date());
+					almostStart = timeTillGame < GAME_START_THRESHOLD;
+					if (almostStart) {
+						break;
+					}
 					long lowestThreshold = Long.MAX_VALUE;
 					String message = null;
 					Iterator<Entry<Long, String>> it = timeTillWarnings.entrySet().iterator();
@@ -111,9 +119,7 @@ public class NHLGameTracker extends MessageSender {
 						}
 					}
 					if (!firstIteration && message != null) {
-						for (IChannel channel : channels) {
-							sendMessage(channel, message);
-						}
+						sendMessage(channels, message);
 					}
 					try {
 						LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE + "]");
@@ -123,12 +129,39 @@ public class NHLGameTracker extends MessageSender {
 					}
 					lowestThreshold = Long.MAX_VALUE;
 					message = null;
-					firstIteration = true;
-					started = timeTillGame < GAME_START_THRESHOLD;
-				} while (!started);
+					firstIteration = false;
+				} while (!almostStart);
 				LOGGER.info("Game is about to start. Polling more actively.");
+
+				boolean started = false;
+				while (!started) {
+					game.update();
+					started = game.getStatus() != NHLGameStatus.PREVIEW;
+					if (started) {
+						break;
+					}
+					try {
+						LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
+						sleep(ACTIVE_POLL_RATE);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				LOGGER.info("Game started!");
+				sendMessage(channels, "Game has started. GO CANUCKS GO!");
 				while (started && game.getStatus() != NHLGameStatus.FINAL) {
 					game.update();
+					game.getNewEvents().stream().forEach(event -> {
+						int eventId = event.getIdx();
+						if(eventMessages.containsKey(eventId)) {
+							List<IMessage> sentMessages = eventMessages.get(eventId);
+							updateMessage(sentMessages, "Update Event: " + event);
+						} else {
+							List<IMessage> sentMessages = sendMessage(channels, "New Event: " + event);
+							eventMessages.put(eventId, sentMessages);
+							
+						}
+					});
 					try {
 						LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
 						sleep(ACTIVE_POLL_RATE);

@@ -1,4 +1,4 @@
-package com.hazeluff.discort.canucksbot;
+package com.hazeluff.discord.canucksbot;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,10 +9,10 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hazeluff.discort.canucksbot.nhl.NHLGame;
-import com.hazeluff.discort.canucksbot.nhl.NHLGameScheduler;
-import com.hazeluff.discort.canucksbot.nhl.NHLGameStatus;
-import com.hazeluff.discort.canucksbot.nhl.NHLTeam;
+import com.hazeluff.discord.canucksbot.nhl.NHLGame;
+import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
+import com.hazeluff.discord.canucksbot.nhl.NHLGameStatus;
+import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
@@ -43,10 +43,13 @@ public class CommandListener extends MessageSender {
 		IMessage message = event.getMessage();
 		IChannel channel = message.getChannel();
 		IGuild guild = channel.getGuild();
-		// Not String so that isBotMentioned can modify the value of the
-		// parameter
+		// Not String so that isBotMentioned can modify the value of the parameter
 		StringBuilder strMessage = new StringBuilder(message.getContent());
-		LOGGER.info("[" + guild.getName() + "][" + channel.getName() + "][" + message + "]");
+		LOGGER.info(String.format("[%s][%s][%s][%s]",
+				guild.getName(),
+				channel.getName(),
+				message.getAuthor().getName(),
+				message.getContent()));
 		// If CanucksBot is mentioned
 		if (isBotMentioned(strMessage)) {
 			String[] arguments = strMessage.toString().trim().split("\\s+");
@@ -69,13 +72,30 @@ public class CommandListener extends MessageSender {
 				if (game == null) {
 					sendMessage(channel, "Please run this command in a channel specific for games.");
 				} else if (game.getStatus() == NHLGameStatus.PREVIEW) {
+					game.update();
 					sendMessage(channel, "The game hasn't started yet. **0** - **0**");
 				} else {
+					game.update();
 					sendMessage(channel, game.getScoreMessage());
 				}
 				return;
 			}
 			
+			// goals
+			if (arguments[0].toString().equalsIgnoreCase("goals")) {
+				NHLGame game = NHLGameScheduler.getGameByChannelName(channel.getName());
+				if (game == null) {
+					sendMessage(channel, "Please run this command in a channel specific for games.");
+				} else if (game.getStatus() == NHLGameStatus.PREVIEW) {
+					game.update();
+					sendMessage(channel, "The game hasn't started yet.");
+				} else {
+					game.update();
+					game.getNewEvents().stream().forEach(LOGGER::info);
+				}
+				return;
+			}
+
 			if (arguments[0].toString().equalsIgnoreCase("help")) {
 				sendMessage(channel, "Here are a list of commands:\n"
 						+ "`nextgame` - Displays information of the next game.\n"
@@ -102,7 +122,7 @@ public class CommandListener extends MessageSender {
 				return;
 			}
 
-			// ༼つ ◕_◕ ༽つ CANUCKS TAKE MY ENERGY ༼ つ ◕_◕ ༽つ
+			// ༼つ ◕\_◕ ༽つ CANUCKS TAKE MY ENERGY ༼ つ ◕_◕ ༽つ
 		}
 
 		if (shouldFuckMessier(channel, strMessage.toString())) {

@@ -1,4 +1,4 @@
-package com.hazeluff.discort.canucksbot;
+package com.hazeluff.discord.canucksbot;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

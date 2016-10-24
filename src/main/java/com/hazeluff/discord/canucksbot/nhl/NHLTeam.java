@@ -1,4 +1,4 @@
-package com.hazeluff.discort.canucksbot.nhl;
+package com.hazeluff.discord.canucksbot.nhl;
 
 import java.util.HashMap;
 import java.util.Map;

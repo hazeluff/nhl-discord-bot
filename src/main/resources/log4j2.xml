@@ -39,7 +39,7 @@
             <AppenderRef ref="Console"/>
         </Root>
         
-        <logger name="com.hazeluff.discord.cancucksbot" level="INFO" additivity="false">    	
+        <logger name="com.hazeluff.discord.canucksbot" level="INFO" additivity="false">    	
             <AppenderRef ref="Console"/>
             <AppenderRef ref="File" level="INFO"/>
             <AppenderRef ref="ErrorFile" level ="ERROR"/>

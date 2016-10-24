@@ -1,4 +1,4 @@
-package com.hazeluff.discort.canucksbot.nhl;
+package com.hazeluff.discord.canucksbot.nhl;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -17,8 +17,9 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.hazeluff.discort.canucksbot.utils.DateUtils;
-import com.hazeluff.discort.canucksbot.utils.HttpUtils;
+import com.hazeluff.discord.canucksbot.Config;
+import com.hazeluff.discord.canucksbot.utils.DateUtils;
+import com.hazeluff.discord.canucksbot.utils.HttpUtils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IGuild;
@@ -62,7 +63,7 @@ public class NHLGameScheduler extends Thread {
 				URIBuilder uriBuilder = null;
 				String strJSONSchedule = "";
 				try {
-					uriBuilder = new URIBuilder("https://statsapi.web.nhl.com/api/v1/schedule");
+					uriBuilder = new URIBuilder(Config.NHL_API_URL + "/schedule");
 					uriBuilder.addParameter("startDate", "2016-08-01");
 					uriBuilder.addParameter("endDate", "2017-08-01");
 					uriBuilder.addParameter("teamId", String.valueOf(team.getId()));
@@ -117,7 +118,6 @@ public class NHLGameScheduler extends Thread {
 			while (true) {
 				LOGGER.info("Started.");
 				Date currentDate = new Date();
-				LOGGER.debug("Last Date: " + lastDate + ", Current Date: " + currentDate);
 				todayGames = new ArrayList<>();
 				if (lastDate == null || DateUtils.compareNoTime(lastDate, currentDate) < 0) {
 					lastDate = currentDate;
@@ -155,6 +155,12 @@ public class NHLGameScheduler extends Thread {
 		}
 	}
 
+	/**
+	 * Gets all guilds that are subscribed to the given team.
+	 * 
+	 * @param team
+	 * @return list of guilds the subscribed to the given team
+	 */
 	public static List<IGuild> getSubscribedGuilds(NHLTeam team) {
 		if (ready) {
 			return new ArrayList<>(teamSubscriptions.get(team));

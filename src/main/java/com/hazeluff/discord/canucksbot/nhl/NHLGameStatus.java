@@ -1,11 +1,12 @@
-package com.hazeluff.discort.canucksbot.nhl;
+package com.hazeluff.discord.canucksbot.nhl;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public enum NHLGameStatus {
 	PREVIEW(new int[] { 1 }, "Pre-game"), 
-	STARTED(new int[] { 2,3,4 } , "Started"), // I have no idea what these codes translate to
+	STARTED(new int[] { 2, 4 }, "Started"), // I have no idea what these codes translate to
+	LIVE(new int[] { 3 }, "LIVE"),
 	FINAL(new int[] { 5, 6, 7 }, "Final");
 	
 	private final int[] ids;
