@@ -19,9 +19,11 @@ Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801
 | Combined        | 0x00000C10 | 11280 |
 
 ## Game Day Channel
-- Create channel for next game.
-- Give warnings before the game starts (60/30/10 minutes before).
-- Display messages for when goals are scored.
+- [x] Maintain two game channels. Remove old channels
+- [x] Give warnings before the game starts (60/30/10 minutes before).
+- [x] Display messages for when goals are scored.
+- [ ] Special messages for when canucks score.
+- [ ] Bot messages during gameplay to cheer on team.
 
 ## Commands
 `@CanucksBot [command]`
