@@ -14,6 +14,7 @@ import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameStatus;
 import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
 
+import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
@@ -33,13 +34,11 @@ public class CommandListener extends DiscordManager {
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
 
-	private final CanucksBot bot;
 	private final NHLGameScheduler gameScheduler;
 
-	public CommandListener(CanucksBot bot) {
-		super(bot.getClient());
-		this.gameScheduler = bot.getNHLGameScheduler();
-		this.bot = bot;
+	public CommandListener(IDiscordClient client, NHLGameScheduler gameScheduler) {
+		super(client);
+		this.gameScheduler = gameScheduler;
 	}
 
 	@EventSubscriber
@@ -114,10 +113,10 @@ public class CommandListener extends DiscordManager {
 			if (arguments[0].toString().equalsIgnoreCase("about")) {
 				sendMessage(channel, String.format(
 						"Version: %s\nWritten by <@%s>\nCheckout my GitHub: %s\nContact me: %s",
-								bot.getVersion(),
-								Config.HAZELUFF_ID, 
-								Config.GIT_URL,
-								Config.HAZELUFF_EMAIL));
+						Config.VERSION,
+						Config.HAZELUFF_ID,
+						Config.GIT_URL,
+						Config.HAZELUFF_EMAIL));
 				return;
 			}
 

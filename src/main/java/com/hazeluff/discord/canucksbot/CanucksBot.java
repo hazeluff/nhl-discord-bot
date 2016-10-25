@@ -1,9 +1,5 @@
 package com.hazeluff.discord.canucksbot;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,24 +16,14 @@ public class CanucksBot {
 
 	private final IDiscordClient client;
 	private final NHLGameScheduler nhlGameScheduler;
-	private String version = "?";
 
 	public CanucksBot(String botToken) {
 		client = getClient(botToken);
 		nhlGameScheduler = new NHLGameScheduler(client);
-		InputStream resourceAsStream = this.getClass()
-				.getResourceAsStream("/META-INF/maven/com.hazeluff.discord/canucksbot/pom.properties");
-		Properties prop = new Properties();
-		try {
-			prop.load(resourceAsStream);
-			version = prop.getProperty("version");
-		} catch (IOException e) {
-			LOGGER.warn("Failed to get version.");
-		}
 
 		EventDispatcher dispatcher = client.getDispatcher();
-		dispatcher.registerListener(new ReadyListener(this));
-		dispatcher.registerListener(new CommandListener(this));
+		dispatcher.registerListener(new ReadyListener(client, nhlGameScheduler));
+		dispatcher.registerListener(new CommandListener(client, nhlGameScheduler));
 	}
 
 	public static IDiscordClient getClient(String token) {
@@ -49,17 +35,5 @@ public class CanucksBot {
 			LOGGER.error("Could not login.", e);
 			return null;
 		}
-	}
-
-	public IDiscordClient getClient() {
-		return client;
-	}
-
-	public NHLGameScheduler getNHLGameScheduler() {
-		return nhlGameScheduler;
-	}
-
-	public String getVersion() {
-		return version;
 	}
 }
