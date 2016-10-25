@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
 import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IGuild;
@@ -21,12 +20,13 @@ import sx.blah.discord.handle.obj.Status;
 public class ReadyListener extends DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReadyListener.class);
 
-	private NHLGameScheduler gameScheduler;
+	private final NHLGameScheduler gameScheduler;
 
-	public ReadyListener(IDiscordClient client, NHLGameScheduler gameScheduler) {
-		super(client);
-		this.gameScheduler = gameScheduler;
+	public ReadyListener(CanucksBot bot) {
+		super(bot.getClient());
+		this.gameScheduler = bot.getNHLGameScheduler();
 	}
+
 
 	@EventSubscriber
 	public void onReady(ReadyEvent event) {
