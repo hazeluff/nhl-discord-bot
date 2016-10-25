@@ -31,6 +31,7 @@ public class ReadyListener extends DiscordManager {
 
 	@EventSubscriber
 	public void onReady(ReadyEvent event) {
+		LOGGER.info("Bot is ready.");
 		client.changeStatus(Status.game("hazeluff.com"));
 		for (IGuild guild : client.getGuilds()) {
 			gameScheduler.subscribe(NHLTeam.VANCOUVER_CANUCKS, guild);

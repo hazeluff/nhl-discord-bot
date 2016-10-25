@@ -18,6 +18,7 @@ public class CanucksBot {
 	private final NHLGameScheduler nhlGameScheduler;
 
 	public CanucksBot(String botToken) {
+		LOGGER.info("Running CanucksBot v" + Config.VERSION);
 		client = getClient(botToken);
 		nhlGameScheduler = new NHLGameScheduler(client);
 

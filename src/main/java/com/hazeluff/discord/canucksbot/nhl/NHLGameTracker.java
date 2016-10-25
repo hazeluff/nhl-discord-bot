@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.DiscordManager;
+import com.hazeluff.discord.canucksbot.nhl.canucks.CanucksCustomMessages;
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
 import com.hazeluff.discord.canucksbot.utils.ThreadUtils;
 
@@ -215,6 +216,14 @@ public class NHLGameTracker extends DiscordManager {
 		NHLGameEventStrength strength = event.getStrength();
 		List<NHLPlayer> players = event.getPlayers();
 		StringBuilder message = new StringBuilder();
+		
+		// Custom goal message
+		String customMessage = CanucksCustomMessages.getMessage(event.getPlayers());
+		if (event.getId() % 1 == 0 && customMessage != null) {
+			return customMessage;
+		}
+
+		// Regular message
 		if (strength == NHLGameEventStrength.EVEN) {
 			message.append(
 					String.format("%s goal by **%s**!", event.getTeam().getLocation(), players.get(0).getFullName()));
