@@ -29,13 +29,16 @@ import sx.blah.discord.util.DiscordException;
  * @author hazeluff
  *
  */
-public class CommandListener extends MessageSender {
+public class CommandListener extends DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListener.class);
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
 
-	public CommandListener(IDiscordClient client) {
+	private NHLGameScheduler gameScheduler;
+
+	public CommandListener(IDiscordClient client, NHLGameScheduler gameScheduler) {
 		super(client);
+		this.gameScheduler = gameScheduler;
 	}
 
 	@EventSubscriber
@@ -61,14 +64,14 @@ public class CommandListener extends MessageSender {
 			
 			// nextgame
 			if (arguments[0].toString().equalsIgnoreCase("nextgame")) {
-				NHLGame nextGame = NHLGameScheduler.getNextGame(NHLTeam.VANCOUVER_CANUCKS);
+				NHLGame nextGame = gameScheduler.getNextGame(NHLTeam.VANCOUVER_CANUCKS);
 				sendMessage(channel, "The next game is:\n" + nextGame.getDetailsMessage());
 				return;
 			}
 
 			// score
 			if (arguments[0].toString().equalsIgnoreCase("score")) {
-				NHLGame game = NHLGameScheduler.getGameByChannelName(channel.getName());
+				NHLGame game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
 					sendMessage(channel, "Please run this command in a channel specific for games.");
 				} else if (game.getStatus() == NHLGameStatus.PREVIEW) {
@@ -83,7 +86,7 @@ public class CommandListener extends MessageSender {
 			
 			// goals
 			if (arguments[0].toString().equalsIgnoreCase("goals")) {
-				NHLGame game = NHLGameScheduler.getGameByChannelName(channel.getName());
+				NHLGame game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
 					sendMessage(channel, "Please run this command in a channel specific for games.");
 				} else if (game.getStatus() == NHLGameStatus.PREVIEW) {

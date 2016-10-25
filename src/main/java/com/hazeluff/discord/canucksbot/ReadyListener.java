@@ -18,32 +18,21 @@ import sx.blah.discord.handle.obj.Status;
  * @author hazeluff
  *
  */
-public class ReadyListener extends MessageSender {
+public class ReadyListener extends DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReadyListener.class);
 
 	private NHLGameScheduler gameScheduler;
 
-	public ReadyListener(IDiscordClient client) {
+	public ReadyListener(IDiscordClient client, NHLGameScheduler gameScheduler) {
 		super(client);
-		gameScheduler = new NHLGameScheduler(client);
+		this.gameScheduler = gameScheduler;
 	}
 
 	@EventSubscriber
 	public void onReady(ReadyEvent event) {
 		client.changeStatus(Status.game("hazeluff.com"));
-
 		for (IGuild guild : client.getGuilds()) {
-			NHLGameScheduler.subscribe(NHLTeam.VANCOUVER_CANUCKS, guild);
-		}
-
-		LOGGER.info("Waiting for NHLGameScheduler to be ready.");
-		while (!gameScheduler.isReady()) {
-			LOGGER.trace("Waiting for NHLGameScheduler to be ready.");
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			gameScheduler.subscribe(NHLTeam.VANCOUVER_CANUCKS, guild);
 		}
 		gameScheduler.start();
 	}

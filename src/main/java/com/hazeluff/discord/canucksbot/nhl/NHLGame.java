@@ -3,6 +3,7 @@ package com.hazeluff.discord.canucksbot.nhl;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -106,6 +107,26 @@ public class NHLGame {
 
 	public NHLTeam getHomeTeam() {
 		return homeTeam;
+	}
+
+	/**
+	 * Gets both home and aways teams as a list
+	 * 
+	 * @return list containing both home and away teams
+	 */
+	public List<NHLTeam> getTeams() {
+		return Arrays.asList(homeTeam, awayTeam);
+	}
+
+	/**
+	 * Determines if the given team is participating in this game
+	 * 
+	 * @param team
+	 * @return true, if team is a participant<br>
+	 *         false, otherwise
+	 */
+	public boolean isContain(NHLTeam team) {
+		return homeTeam == team || awayTeam == team;
 	}
 
 	public boolean containsTeam(NHLTeam team) {
