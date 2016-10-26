@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.canucksbot.DiscordManager;
 import com.hazeluff.discord.canucksbot.nhl.canucks.CanucksCustomMessages;
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
-import com.hazeluff.discord.canucksbot.utils.ThreadUtils;
+import com.hazeluff.discord.canucksbot.utils.Utils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
@@ -127,7 +127,7 @@ public class NHLGameTracker extends DiscordManager {
 							sendMessage(channels, message);
 						}
 						LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE + "]");
-						ThreadUtils.sleep(IDLE_POLL_RATE);
+						Utils.sleep(IDLE_POLL_RATE);
 						lowestThreshold = Long.MAX_VALUE;
 						message = null;
 						justRestarted = false;
@@ -146,7 +146,7 @@ public class NHLGameTracker extends DiscordManager {
 							break;
 						}
 						LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE + "]");
-						ThreadUtils.sleep(ACTIVE_POLL_RATE);
+						Utils.sleep(ACTIVE_POLL_RATE);
 						justRestarted = false;
 					} while (!started);
 
@@ -173,7 +173,7 @@ public class NHLGameTracker extends DiscordManager {
 							}
 						});
 						LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE + "]");
-						ThreadUtils.sleep(ACTIVE_POLL_RATE);
+						Utils.sleep(ACTIVE_POLL_RATE);
 						justRestarted = false;
 					}
 

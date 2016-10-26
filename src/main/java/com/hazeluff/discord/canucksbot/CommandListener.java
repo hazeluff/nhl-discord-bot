@@ -1,12 +1,10 @@
 package com.hazeluff.discord.canucksbot;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +13,7 @@ import com.hazeluff.discord.canucksbot.nhl.NHLGame;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameStatus;
 import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
+import com.hazeluff.discord.canucksbot.utils.Utils;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
@@ -60,32 +59,43 @@ public class CommandListener extends DiscordManager {
 		String strMessage = strbuilderMessage.toString();
 		
 		if (isBotMentioned(strMessage)) {
-			// Reply to rude phrases
-			List<String> rudePhrases = Arrays.asList("fuckoff", "fuck off", "shutup", "shut up", "fuck you", "fuck u");
-			List<String> responses = Arrays.asList(
-					"Nah, you should fuck off.", 
-					"Go kill yourself.", 
-					"You can suck my dick.", 
-					"Go take it, and shove it up your butt.",
-					"Please, eat shit and die.",
-					"Get fucked.",
-					"You are cordially invited to get fucked.",
-					"Bleep Bloop. I am just a robot.",
-					"Ok. Twat.",
-					"Why you gotta be so ruuuddee :musical_note:\nhttps://goo.gl/aMwOxY");
+			String author = "<@" + message.getAuthor().getID() + ">";
 			
-			rudePhrases.stream().forEach(rudePhrase -> {
+			// Reply to rude phrases
+			BotPhrases.RUDE.stream().forEach(rudePhrase -> {
 				if (strMessage.toLowerCase().contains(rudePhrase)) {
-					sendMessage(channel, "<@" + message.getAuthor().getID() + ">"
-							+ responses.get(new Random().nextInt(responses.size())));
+					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.COMEBACK));
 				return;
 			}});
+
+			// Hi
+			BotPhrases.HELLO.stream().forEach(phrase -> {
+				if(strMessage.toLowerCase().contains(phrase)) {
+					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.FRIENDLY));
+					return;
+				}
+			});
+
+			// Sup
+			BotPhrases.WHATSUP.stream().forEach(phrase -> {
+				if (strMessage.toLowerCase().contains(phrase)) {
+					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.WHATSUP_RESPONSE));
+					return;
+				}
+			});
+
+			// Sup
+			BotPhrases.LOVE.stream().forEach(phrase -> {
+				if (strMessage.toLowerCase().contains(phrase)) {
+					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.LOVE_RESPONSE));
+					return;
+				}
+			});
 				
 		}
 		
 		if (isBotCommand(strbuilderMessage)) {
 			String[] arguments = strbuilderMessage.toString().trim().split("\\s+");
-			
 			
 			// fuckmessier
 			if (arguments[0].toString().equalsIgnoreCase("fuckmessier")) {
@@ -143,25 +153,16 @@ public class CommandListener extends DiscordManager {
 			// about
 			if (arguments[0].toString().equalsIgnoreCase("about")) {
 				sendMessage(channel, String.format(
-						"Version: %s\nWritten by <@%s>\nCheckout my GitHub: %s\nContact me: %s",
+						"Version: %s\nWritten by %s\nCheckout my GitHub: %s\nContact me: %s",
 						Config.VERSION,
-						Config.HAZELUFF_ID,
+						Config.HAZELUFF_MENTION,
 						Config.GIT_URL,
 						Config.HAZELUFF_EMAIL));
 				return;
 			}
 
-			// Hi
-			if (arguments[0].toString().equalsIgnoreCase("hi") || arguments[0].toString().equalsIgnoreCase("hello")) {
-				sendMessage(channel, "Hi There. :kissing_heart:");
-				return;
-			}
 
-			// Test
-			if (arguments[0].toString().equalsIgnoreCase("test")) {
-				sendMessage(channel, client.getOurUser().getID());
-				return;
-			}
+			sendMessage(channel, "Sorry, I don't understand that. Write `@CanucksBot help` for a list of commands.");
 
 			// ༼つ ◕\_◕ ༽つ CANUCKS TAKE MY ENERGY ༼ つ ◕_◕ ༽つ
 		}

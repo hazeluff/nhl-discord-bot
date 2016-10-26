@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.canucksbot.Config;
 import com.hazeluff.discord.canucksbot.DiscordManager;
 import com.hazeluff.discord.canucksbot.utils.HttpUtils;
-import com.hazeluff.discord.canucksbot.utils.ThreadUtils;
+import com.hazeluff.discord.canucksbot.utils.Utils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
@@ -167,7 +167,7 @@ public class NHLGameScheduler extends DiscordManager {
 							});
 
 					LOGGER.info("Checking for finished games after [" + UPDATE_RATE + "]");
-					ThreadUtils.sleep(UPDATE_RATE);
+					Utils.sleep(UPDATE_RATE);
 				}
 			}
 		}
