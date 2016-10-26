@@ -16,18 +16,24 @@ public class CanucksBot {
 
 	private final IDiscordClient client;
 	private final NHLGameScheduler nhlGameScheduler;
-
+	private final String id;
 	public CanucksBot(String botToken) {
 		LOGGER.info("Running CanucksBot v" + Config.VERSION);
 		client = getClient(botToken);
 		nhlGameScheduler = new NHLGameScheduler(client);
-
+		try {
+			id = client.getApplicationClientID();
+			LOGGER.info("CanucksBot. id [" + id + "]");
+		} catch (DiscordException e) {
+			LOGGER.error("Failed to get Application Client ID", e);
+			throw new RuntimeException(e);
+		}
 		EventDispatcher dispatcher = client.getDispatcher();
-		dispatcher.registerListener(new ReadyListener(client, nhlGameScheduler));
-		dispatcher.registerListener(new CommandListener(client, nhlGameScheduler));
+		dispatcher.registerListener(new ReadyListener(this));
+		dispatcher.registerListener(new CommandListener(this));
 	}
 
-	public static IDiscordClient getClient(String token) {
+	private static IDiscordClient getClient(String token) {
 		ClientBuilder clientBuilder = new ClientBuilder();
 		clientBuilder.withToken(token);
 		try {
@@ -36,5 +42,17 @@ public class CanucksBot {
 			LOGGER.error("Could not login.", e);
 			return null;
 		}
+	}
+
+	public IDiscordClient getClient() {
+		return client;
+	}
+
+	public NHLGameScheduler getNhlGameScheduler() {
+		return nhlGameScheduler;
+	}
+
+	public String getId() {
+		return id;
 	}
 }

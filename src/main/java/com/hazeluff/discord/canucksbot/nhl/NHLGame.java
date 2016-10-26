@@ -274,7 +274,7 @@ public class NHLGame {
 	 * updates all the update-able members in this class
 	 */
 	public void update() {
-		LOGGER.debug("Updating. [" + gamePk + "]");
+		LOGGER.trace("Updating. [" + gamePk + "]");
 		URIBuilder uriBuilder = null;
 		String strJSONSchedule = "";
 		try {
@@ -317,7 +317,7 @@ public class NHLGame {
 		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
 		for (int i = 0; i < jsonScoringPlays.length(); i++) {
 			NHLGameEvent newEvent = new NHLGameEvent(jsonScoringPlays.getJSONObject(i));
-			if (!events.stream().anyMatch(event -> event.getId() == newEvent.getId())) {
+			if (!events.stream().anyMatch(event -> event.equals(newEvent))) {
 				events.add(newEvent);
 				newEvents.add(newEvent);
 			}

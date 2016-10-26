@@ -105,6 +105,7 @@ public class NHLGameTracker extends DiscordManager {
 					do {
 						timeTillGame = DateUtils.diff(game.getDate(), new Date());
 						almostStart = timeTillGame < GAME_START_THRESHOLD;
+						LOGGER.trace(timeTillGame + " " + GAME_START_THRESHOLD);
 						if (almostStart) {
 							break;
 						}
@@ -144,7 +145,7 @@ public class NHLGameTracker extends DiscordManager {
 						if (started) {
 							break;
 						}
-						LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
+						LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE + "]");
 						ThreadUtils.sleep(ACTIVE_POLL_RATE);
 						justRestarted = false;
 					} while (!started);
@@ -160,7 +161,7 @@ public class NHLGameTracker extends DiscordManager {
 					while (game.getStatus() != NHLGameStatus.FINAL) {
 						game.update();
 						game.getNewEvents().stream().forEach(event -> {
-							int eventId = event.getIdx();
+							int eventId = event.getId();
 							String message = buildEventMessage(event);
 							if (eventMessages.containsKey(eventId)) {
 								List<IMessage> sentMessages = eventMessages.get(eventId);
@@ -171,7 +172,7 @@ public class NHLGameTracker extends DiscordManager {
 
 							}
 						});
-						LOGGER.trace("Active polling. Sleeping for [" + ACTIVE_POLL_RATE + "]");
+						LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE + "]");
 						ThreadUtils.sleep(ACTIVE_POLL_RATE);
 						justRestarted = false;
 					}

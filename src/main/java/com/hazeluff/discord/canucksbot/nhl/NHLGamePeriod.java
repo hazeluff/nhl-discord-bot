@@ -71,6 +71,37 @@ public class NHLGamePeriod {
 	}
 
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((ordinalNum == null) ? 0 : ordinalNum.hashCode());
+		result = prime * result + periodNum;
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		NHLGamePeriod other = (NHLGamePeriod) obj;
+		if (ordinalNum == null) {
+			if (other.ordinalNum != null)
+				return false;
+		} else if (!ordinalNum.equals(other.ordinalNum))
+			return false;
+		if (periodNum != other.periodNum)
+			return false;
+		if (type != other.type)
+			return false;
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		return "NHLGamePeriod [periodNum=" + periodNum + ", type=" + type + ", ordinalNum=" + ordinalNum + "]";
 	}

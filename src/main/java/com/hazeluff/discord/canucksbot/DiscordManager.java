@@ -77,7 +77,11 @@ public class DiscordManager {
 	protected void updateMessage(IMessage message, String newMessage) {
 		LOGGER.info("Updating message [" + message.getContent() + "][" + newMessage + "]");
 		try {
-			message.edit(newMessage);
+			if (!message.getContent().equals(newMessage)) {
+				message.edit(newMessage);
+			} else {
+				LOGGER.warn("No change to the message [" + message.getContent() + "]");
+			}
 		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
 			LOGGER.error("Could not edit message [" + message.getContent() + "] to [" + newMessage + "]", e);
 		}

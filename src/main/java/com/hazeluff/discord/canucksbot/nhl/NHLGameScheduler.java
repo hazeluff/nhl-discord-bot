@@ -108,10 +108,12 @@ public class NHLGameScheduler extends DiscordManager {
 					NHLTeam team = entry.getKey();
 					NHLGame lastGame = getLastGame(team);
 					entry.getValue().add(lastGame);
-					new NHLGameTracker(client, gameScheduler, lastGame);
+					NHLGameTracker newGameTracker = new NHLGameTracker(client, gameScheduler, lastGame);
+					newGameTracker.start();
+					gameTrackers.add(newGameTracker);
 					NHLGame nextGame = getNextGame(team);
 					entry.getValue().add(nextGame);
-					NHLGameTracker newGameTracker = new NHLGameTracker(client, gameScheduler, nextGame);
+					newGameTracker = new NHLGameTracker(client, gameScheduler, nextGame);
 					newGameTracker.start();
 					gameTrackers.add(newGameTracker);
 

@@ -1,10 +1,12 @@
 package com.hazeluff.discord.canucksbot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +16,11 @@ import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
 import com.hazeluff.discord.canucksbot.nhl.NHLGameStatus;
 import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.util.DiscordException;
 
 /**
  * Listens for MessageReceivedEvents and will process the messages for commands.
@@ -35,10 +35,12 @@ public class CommandListener extends DiscordManager {
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
 
 	private final NHLGameScheduler gameScheduler;
+	private final CanucksBot canucksBot;
 
-	public CommandListener(IDiscordClient client, NHLGameScheduler gameScheduler) {
-		super(client);
-		this.gameScheduler = gameScheduler;
+	public CommandListener(CanucksBot canucksBot) {
+		super(canucksBot.getClient());
+		this.gameScheduler = canucksBot.getNhlGameScheduler();
+		this.canucksBot = canucksBot;
 	}
 
 	@EventSubscriber
@@ -47,15 +49,44 @@ public class CommandListener extends DiscordManager {
 		IChannel channel = message.getChannel();
 		IGuild guild = channel.getGuild();
 		// Not String so that isBotMentioned can modify the value of the parameter
-		StringBuilder strMessage = new StringBuilder(message.getContent());
+		StringBuilder strbuilderMessage = new StringBuilder(message.getContent());
 		LOGGER.info(String.format("[%s][%s][%s][%s]",
 				guild.getName(),
 				channel.getName(),
 				message.getAuthor().getName(),
 				message.getContent()));
 		// If CanucksBot is mentioned
+		
+		String strMessage = strbuilderMessage.toString();
+		
 		if (isBotMentioned(strMessage)) {
-			String[] arguments = strMessage.toString().trim().split("\\s+");
+			// Reply to rude phrases
+			List<String> rudePhrases = Arrays.asList("fuckoff", "fuck off", "shutup", "shut up", "fuck you", "fuck u");
+			List<String> responses = Arrays.asList(
+					"Nah, you should fuck off.", 
+					"Go kill yourself.", 
+					"You can suck my dick.", 
+					"Go take it, and shove it up your butt.",
+					"Please, eat shit and die.",
+					"Get fucked.",
+					"You are cordially invited to get fucked.",
+					"Bleep Bloop. I am just a robot.",
+					"Ok. Twat.",
+					"Why you gotta be so ruuuddee :musical_note:\nhttps://goo.gl/aMwOxY");
+			
+			rudePhrases.stream().forEach(rudePhrase -> {
+				if (strMessage.toLowerCase().contains(rudePhrase)) {
+					sendMessage(channel, "<@" + message.getAuthor().getID() + ">"
+							+ responses.get(new Random().nextInt(responses.size())));
+				return;
+			}});
+				
+		}
+		
+		if (isBotCommand(strbuilderMessage)) {
+			String[] arguments = strbuilderMessage.toString().trim().split("\\s+");
+			
+			
 			// fuckmessier
 			if (arguments[0].toString().equalsIgnoreCase("fuckmessier")) {
 				sendMessage(channel, "FUCK MESSIER");
@@ -149,20 +180,23 @@ public class CommandListener extends DiscordManager {
 	 *            message to determine if CanucksBot is mentioned in
 	 * @return true, if CanucksBot is mentioned; false, otherwise.
 	 */
-	public boolean isBotMentioned(StringBuilder strMessage) {
-		String id = null;
-		try {
-			id = client.getApplicationClientID();
-		} catch (DiscordException e) {
-			LOGGER.error("Failed to get Application Client ID", e);
-			throw new RuntimeException(e);
-		}
-		String mentionedBotUser = "<@" + id + ">";
-		if (strMessage.toString().startsWith(mentionedBotUser)) {
-			strMessage.replace(0, mentionedBotUser.length(), "");
+	private boolean isBotCommand(StringBuilder strbuilderMessage) {
+		String mentionedBotUser = "<@" + canucksBot.getId() + ">";
+		if (strbuilderMessage.toString().startsWith(mentionedBotUser)) {
+			strbuilderMessage.replace(0, mentionedBotUser.length(), "");
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * 
+	 * @param message
+	 * @return
+	 */
+	private boolean isBotMentioned(String message) {
+		String mentionedBotUser = "<@" + canucksBot.getId() + ">";
+		return message.contains(message);
 	}
 
 	/**

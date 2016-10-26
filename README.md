@@ -5,24 +5,26 @@
 
 ## Add bot:
 
-Develop: https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=11280
-Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801&scope=bot&permissions=11280
+Develop: https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=93200
+Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801&scope=bot&permissions=93200
 
 ### Permissions for bot
 
-| Permission      | Hex        | Dec   |
-|-----------------|------------|-------|
-| READ_MESSAGES   | 0x00000400 | 1024  |
-| SEND_MESSAGES   | 0x00000800 | 2048  |
-| MANAGE_MESSAGES | 0x00002000 | 8192  |
-| MANAGE_CHANNELS | 0x00000010 | 16    |
-| Combined        | 0x00000C10 | 11280 |
+| Permission           | Hex        | Dec   |
+|----------------------|------------|-------|
+| MANAGE_CHANNELS      | 0x00000010 | 16    |
+| READ_MESSAGES        | 0x00000400 | 1024  |
+| SEND_MESSAGES        | 0x00000800 | 2048  |
+| MANAGE_MESSAGES      | 0x00002000 | 8192  |
+| EMBED_LINKS          | 0x00004000 | 16384 |
+| READ_MESSAGE_HISTORY | 0x00010000 | 65636 |
+| Combined             | 0x00016C10 | 93200 |
 
 ## Game Day Channel
 - [x] Maintain two game channels. Remove old channels
 - [x] Give warnings before the game starts (60/30/10 minutes before).
 - [x] Display messages for when goals are scored.
-- [ ] Special messages for when canucks score.
+- [x] Special messages for when canucks score.
 - [ ] Bot messages during gameplay to cheer on team.
 
 ## Commands
