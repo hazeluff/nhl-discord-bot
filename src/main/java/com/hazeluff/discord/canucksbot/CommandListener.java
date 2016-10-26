@@ -59,39 +59,30 @@ public class CommandListener extends DiscordManager {
 		String strMessage = strbuilderMessage.toString();
 		
 		if (isBotMentioned(strMessage)) {
-			String author = "<@" + message.getAuthor().getID() + ">";
-			
+			String response = null;
 			// Reply to rude phrases
-			BotPhrases.RUDE.stream().forEach(rudePhrase -> {
-				if (strMessage.toLowerCase().contains(rudePhrase)) {
-					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.COMEBACK));
-				return;
-			}});
+			if (BotPhrases.RUDE.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
+				response = Utils.getRandom(BotPhrases.COMEBACK);
+			}
 
 			// Hi
-			BotPhrases.HELLO.stream().forEach(phrase -> {
-				if(strMessage.toLowerCase().contains(phrase)) {
-					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.FRIENDLY));
-					return;
-				}
-			});
+			if (BotPhrases.HELLO.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
+				response = Utils.getRandom(BotPhrases.FRIENDLY);
+			}
 
 			// Sup
-			BotPhrases.WHATSUP.stream().forEach(phrase -> {
-				if (strMessage.toLowerCase().contains(phrase)) {
-					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.WHATSUP_RESPONSE));
-					return;
-				}
-			});
+			if (BotPhrases.WHATSUP.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
+				response = Utils.getRandom(BotPhrases.WHATSUP_RESPONSE);
+			}
 
 			// Sup
-			BotPhrases.LOVE.stream().forEach(phrase -> {
-				if (strMessage.toLowerCase().contains(phrase)) {
-					sendMessage(channel, author + " " + Utils.getRandom(BotPhrases.LOVE_RESPONSE));
-					return;
-				}
-			});
-				
+			if (BotPhrases.LOVE.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
+				response = Utils.getRandom(BotPhrases.LOVE_RESPONSE);
+			}
+			if (response != null) {
+				sendMessage(channel, String.format("<@%s> %s", message.getAuthor().getID(), response));
+				return;
+			}
 		}
 		
 		if (isBotCommand(strbuilderMessage)) {
@@ -148,6 +139,7 @@ public class CommandListener extends DiscordManager {
 						+ "`goals` - Displays the goals of the game. "
 						+ "You must be in a 'Game Day Channel' to use this command.\n"
 						+ "`about` - Displays information about me.\n");
+				return;
 			}
 
 			// about
