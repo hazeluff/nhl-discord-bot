@@ -86,7 +86,7 @@ public class NHLGameTracker extends DiscordManager {
 	}
 
 	public void start() {
-		if (thread != null) {
+		if (thread == null) {
 			thread = new Thread() {
 				public void run() {
 					LOGGER.info("Started thread for [" + game + "]");
