@@ -28,7 +28,7 @@ public class BotPhrases {
 			"BRB Trading Raymond, Ballard, and a 1st for Crosby.", "nm, u?");
 
 	static final Pattern LOVELY_PATTERN = Pattern
-			.compile("(\\bi\\s*(love|like)\\s*(u|you)\\b)|:kiss:|:kissing:|:heart:|<3");
+			.compile("(\\bi\\s*(love|like)\\s*(u|you)\\b)|\\bilu\\b|:kiss:|:kissing:|:heart:|<3");
 	public static final List<String> LOVELY_RESPONSE = Arrays.asList("Love you too.", "<3", ":blush:", ":wink:",
 			"I think it's better we stay friends...", ":heart_eyes:", "愛してる。",
 			"https://www.youtube.com/watch?v=25QyCxVkXwQ");
