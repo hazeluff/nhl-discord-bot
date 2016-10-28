@@ -61,24 +61,25 @@ public class CommandListener extends DiscordManager {
 		if (isBotMentioned(strMessage)) {
 			String response = null;
 			// Reply to rude phrases
-			if (BotPhrases.RUDE.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
+			if (BotPhrases.isRude(strMessage)) {
 				response = Utils.getRandom(BotPhrases.COMEBACK);
 			}
 
 			// Hi
-			if (BotPhrases.HELLO.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
+			if (BotPhrases.isFriendly(strMessage)) {
 				response = Utils.getRandom(BotPhrases.FRIENDLY);
 			}
 
 			// Sup
-			if (BotPhrases.WHATSUP.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
+			if (BotPhrases.isWhatsup(strMessage)) {
 				response = Utils.getRandom(BotPhrases.WHATSUP_RESPONSE);
 			}
 
-			// Sup
-			if (BotPhrases.LOVE.stream().anyMatch(phrase -> strMessage.toLowerCase().contains(phrase))) {
-				response = Utils.getRandom(BotPhrases.LOVE_RESPONSE);
+			// <3
+			if (BotPhrases.isLovely(strMessage)) {
+				response = Utils.getRandom(BotPhrases.LOVELY_RESPONSE);
 			}
+
 			if (response != null) {
 				sendMessage(channel, String.format("<@%s> %s", message.getAuthor().getID(), response));
 				return;
@@ -189,7 +190,7 @@ public class CommandListener extends DiscordManager {
 	 */
 	private boolean isBotMentioned(String message) {
 		String mentionedBotUser = "<@" + canucksBot.getId() + ">";
-		return message.contains(message);
+		return message.contains(mentionedBotUser);
 	}
 
 	/**

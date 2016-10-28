@@ -1,5 +1,7 @@
 package com.hazeluff.discord.canucksbot;
 
+import java.util.TimeZone;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +38,9 @@ public class CanucksBot {
 	private static IDiscordClient getClient(String token) {
 		ClientBuilder clientBuilder = new ClientBuilder();
 		clientBuilder.withToken(token);
+
+		TimeZone.setDefault(TimeZone.getTimeZone("Canada/Pacific"));
+
 		try {
 			return clientBuilder.login();
 		} catch (DiscordException e) {
