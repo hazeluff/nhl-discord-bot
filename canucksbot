@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Before doing anything, do the following things:
+# 1) Replace <BotKey> with your bot's key 
+# 2) Place in /etc/init.d to run jar as a service.
+# 3) Symlink $HOME_DIR/canucksbot to the jar
+# 4) chmod +x /etc/init.d/canucksbot
+#
+# Run like service: sudo service canucksbot start/stop/restart
+
+SERVICE_NAME=CanucksBot
+HOME_DIR=/home/canucksbot
+PATH_TO_JAR=$HOME_DIR/canucksbot
+PID_PATH_NAME=/tmp/canucksbot-pid
+BOT_KEY=<BotKey>
+case $1 in
+    start)
+        echo "Starting $SERVICE_NAME ..."
+        if [ ! -f $PID_PATH_NAME ]; then
+            cd $HOME_DIR
+            nohup java -cp $PATH_TO_JAR com.hazeluff.discord.canucksbot.BotRunner $BOT_KEY >/dev/null 2>&1 &
+                        echo $! > $PID_PATH_NAME
+            echo "$SERVICE_NAME started ..."
+        else
+            echo "$SERVICE_NAME is already running ..."
+        fi
+    ;;
+    stop)
+        if [ -f $PID_PATH_NAME ]; then
+            PID=$(cat $PID_PATH_NAME);
+            echo "$SERVICE_NAME stoping ..."
+            kill $PID;
+            echo "$SERVICE_NAME stopped ..."
+            rm $PID_PATH_NAME
+        else
+            echo "$SERVICE_NAME is not running ..."
+        fi
+    ;;
+    restart)
+        if [ -f $PID_PATH_NAME ]; then
+            PID=$(cat $PID_PATH_NAME);
+            echo "$SERVICE_NAME stopping ...";
+            kill $PID;
+            echo "$SERVICE_NAME stopped ...";
+            rm $PID_PATH_NAME
+            echo "$SERVICE_NAME starting ..."
+            CD $HOME_DIR
+            nohup java -cp $PATH_TO_JAR com.hazeluff.discord.canucksbot.BotRunner $BOT_KEY >/dev/null 2>&1 &
+                        echo $! > $PID_PATH_NAME
+            echo "$SERVICE_NAME started ..."
+        else
+            echo "$SERVICE_NAME is not running ..."
+        fi
+    ;;
+esac
