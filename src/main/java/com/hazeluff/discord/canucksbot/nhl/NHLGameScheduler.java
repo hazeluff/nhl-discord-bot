@@ -41,8 +41,7 @@ public class NHLGameScheduler extends DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLGameScheduler.class);
 
 	// Poll for if the day has rolled over every 30 minutes
-	// private static final int UPDATE_RATE = 1800000;
-	private static final int UPDATE_RATE = 10000;
+	private static final int UPDATE_RATE = 1800000;
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
 	private List<NHLGame> games;
