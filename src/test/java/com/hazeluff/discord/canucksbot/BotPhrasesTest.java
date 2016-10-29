@@ -34,6 +34,26 @@ public class BotPhrasesTest {
 	}
 
 	@Test
+	public void isRudeShouldBeCaseInsensitive() {
+		LOGGER.info("isRudeShouldBeCaseInsensitive");
+		assertTrue(BotPhrases.isRude("<@1234> FUCKOFF"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCK OFF"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCK  OFF"));
+		assertTrue(BotPhrases.isRude("<@1234> SHUTUP"));
+		assertTrue(BotPhrases.isRude("<@1234> SHUT UP"));
+		assertTrue(BotPhrases.isRude("<@1234> SHUT  UP"));
+		assertTrue(BotPhrases.isRude("<@1234> SHUTIT"));
+		assertTrue(BotPhrases.isRude("<@1234> SHUT IT"));
+		assertTrue(BotPhrases.isRude("<@1234> SHUT  IT"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCKYOU"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCK YOU"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCK  YOU"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCKU"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCK U"));
+		assertTrue(BotPhrases.isRude("<@1234> FUCK  U"));
+	}
+
+	@Test
 	public void isRudeShouldReturnFalse() {
 		LOGGER.info("isRudeShouldReturnFalse");
 		assertFalse(BotPhrases.isRude("<@1234> fuckoffx"));
@@ -67,6 +87,18 @@ public class BotPhrasesTest {
 	}
 
 	@Test
+	public void isFriendlyShouldBeCaseInsensitive() {
+		LOGGER.info("isFriendlyShouldBeCaseInsensitive");
+		assertTrue(BotPhrases.isFriendly("<@1234> HI"));
+		assertTrue(BotPhrases.isFriendly("<@1234> HI THERE"));
+		assertTrue(BotPhrases.isFriendly("<@1234> HELLO"));
+		assertTrue(BotPhrases.isFriendly("<@1234> HEY"));
+		assertTrue(BotPhrases.isFriendly("<@1234> HEYA"));
+		assertTrue(BotPhrases.isFriendly("<@1234> HIYA"));
+		assertTrue(BotPhrases.isFriendly("<@1234> YO"));
+	}
+
+	@Test
 	public void isFriendlyShouldReturnFalse() {
 		LOGGER.info("isFriendlyShouldReturnFalse");
 		assertFalse(BotPhrases.isFriendly("<@1234> hix"));
@@ -95,6 +127,21 @@ public class BotPhrasesTest {
 	}
 
 	@Test
+	public void isWhatsupShouldBeCaseInsensitive() {
+		LOGGER.info("isWhatsupShouldBeCaseInsensitive");
+		assertTrue(BotPhrases.isWhatsup("<@1234> WHAT'SUP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> WHAT'S UP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> WHAT'S  UP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> WHATSUP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> WHAT SUP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> WHAT  SUP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> WHADDUP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> WASSUP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> SUP"));
+		assertTrue(BotPhrases.isWhatsup("<@1234> HEY WHATSUP FAM"));
+	}
+
+	@Test
 	public void isWhatsupShouldReturnFalse() {
 		LOGGER.info("isWhatsupShouldReturnFalse");
 		assertFalse(BotPhrases.isWhatsup("<@1234> what'supx"));
@@ -111,6 +158,7 @@ public class BotPhrasesTest {
 
 	@Test
 	public void isLovelyShouldReturnTrue() {
+		LOGGER.info("isLovelyShouldReturnTrue");
 		assertTrue(BotPhrases.isLovely("<@1234> iloveu"));
 		assertTrue(BotPhrases.isLovely("<@1234> i loveu"));
 		assertTrue(BotPhrases.isLovely("<@1234> ilove u"));
@@ -152,11 +200,57 @@ public class BotPhrasesTest {
 		assertTrue(BotPhrases.isLovely("<@1234> :kissing: lol"));
 		assertTrue(BotPhrases.isLovely("<@1234> hahaha :heart:"));
 		assertTrue(BotPhrases.isLovely("<@1234> man, i love you"));
+	}
 
+	@Test
+	public void isLovelyShouldBeCaseInsensitive() {
+		LOGGER.info("isLovelyShouldBeCaseInsensitive");
+		assertTrue(BotPhrases.isLovely("<@1234> ILOVEU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LOVEU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILOVE U"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LOVE U"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILOVE  U"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LOVEU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LOVE  U"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILIKEU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LIKEU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILIKE U"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LIKE U"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILIKE  U"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LIKEU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LIKE  U"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILOVEYOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LOVEYOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILOVE YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LOVE YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILOVE  YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LOVEYOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LOVE  YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILIKEYOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LIKEYOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILIKE YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I LIKE YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILIKE  YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LIKEYOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> I  LIKE  YOU"));
+		assertTrue(BotPhrases.isLovely("<@1234> ILU"));
+		assertTrue(BotPhrases.isLovely("<@1234> :KISS:"));
+		assertTrue(BotPhrases.isLovely("<@1234> :KISSING:"));
+		assertTrue(BotPhrases.isLovely("<@1234> :HEART:"));
+		assertTrue(BotPhrases.isLovely("<@1234> xxx:KISS:"));
+		assertTrue(BotPhrases.isLovely("<@1234> :KISSING:xxx"));
+		assertTrue(BotPhrases.isLovely("<@1234> xXx:HEART:xXx"));
+		assertTrue(BotPhrases.isLovely("<@1234> <3"));
+		assertTrue(BotPhrases.isLovely("<@1234> <3333"));
+		assertTrue(BotPhrases.isLovely("<@1234> HEY THERE ;) :KISS:"));
+		assertTrue(BotPhrases.isLovely("<@1234> :KISSING: LoL"));
+		assertTrue(BotPhrases.isLovely("<@1234> hahaha :HEART:"));
+		assertTrue(BotPhrases.isLovely("<@1234> man, I LOVE YOU"));
 	}
 
 	@Test
 	public void isLovelyShouldReturnFalse() {
+		LOGGER.info("isLovelyShouldReturnFalse");
 		assertFalse(BotPhrases.isLovely("<@1234> iloveux"));
 		assertFalse(BotPhrases.isLovely("<@1234> ixloveu"));
 		assertFalse(BotPhrases.isLovely("<@1234> ixlove u"));

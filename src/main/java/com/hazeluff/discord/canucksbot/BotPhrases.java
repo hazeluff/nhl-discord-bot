@@ -42,7 +42,7 @@ public class BotPhrases {
 	 *         false, otherwise
 	 */
 	public static boolean isRude(String s) {
-		return isStringMatch(RUDE_PATTERN, s);
+		return isStringMatch(RUDE_PATTERN, s.toLowerCase());
 	}
 
 	/**
@@ -54,7 +54,7 @@ public class BotPhrases {
 	 *         false, otherwise
 	 */
 	public static boolean isFriendly(String s) {
-		return isStringMatch(FRIENDLY_PATTERN, s);
+		return isStringMatch(FRIENDLY_PATTERN, s.toLowerCase());
 	}
 
 	/**
@@ -66,7 +66,7 @@ public class BotPhrases {
 	 *         false, otherwise
 	 */
 	public static boolean isWhatsup(String s) {
-		return isStringMatch(WHATSUP_PATTERN, s);
+		return isStringMatch(WHATSUP_PATTERN, s.toLowerCase());
 	}
 
 	/**
@@ -78,7 +78,7 @@ public class BotPhrases {
 	 *         false, otherwise
 	 */
 	public static boolean isLovely(String s) {
-		return isStringMatch(LOVELY_PATTERN, s);
+		return isStringMatch(LOVELY_PATTERN, s.toLowerCase());
 	}
 
 	/**
