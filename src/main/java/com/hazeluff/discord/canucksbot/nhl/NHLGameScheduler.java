@@ -2,6 +2,7 @@ package com.hazeluff.discord.canucksbot.nhl;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,12 +41,13 @@ public class NHLGameScheduler extends DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLGameScheduler.class);
 
 	// Poll for if the day has rolled over every 30 minutes
-	private static final int UPDATE_RATE = 1800000;
+	// private static final int UPDATE_RATE = 1800000;
+	private static final int UPDATE_RATE = 10000;
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
 	private List<NHLGame> games;
 	private List<NHLGameTracker> gameTrackers = new ArrayList<>();
-	private Map<NHLTeam, Set<IGuild>> teamSubscriptions = new HashMap<>();
+	private Map<NHLTeam, List<IGuild>> teamSubscriptions = new HashMap<>();
 	private Map<NHLTeam, List<NHLGame>> teamLatestGames = new HashMap<>();
 
 	public NHLGameScheduler(IDiscordClient client) {
@@ -54,7 +56,7 @@ public class NHLGameScheduler extends DiscordManager {
 		this.client = client;
 		// Init variables
 		for (NHLTeam team : NHLTeam.values()) {
-			teamSubscriptions.put(team, new HashSet<IGuild>());
+			teamSubscriptions.put(team, new ArrayList<IGuild>());
 		}
 		teamLatestGames.put(NHLTeam.VANCOUVER_CANUCKS, new ArrayList<NHLGame>());
 		
@@ -94,34 +96,26 @@ public class NHLGameScheduler extends DiscordManager {
 	 */
 	public void start() {
 		class NHLGameSchedulerThread extends Thread {
-
-			NHLGameScheduler gameScheduler;
-
-			public NHLGameSchedulerThread(NHLGameScheduler gameScheduler) {
-				this.gameScheduler = gameScheduler;
-			}
-
 			public void run() {
 				LOGGER.info("Started polling thread");
 				// Init NHLGameTrackers
 				for (Entry<NHLTeam, List<NHLGame>> entry : teamLatestGames.entrySet()) {
 					NHLTeam team = entry.getKey();
-					NHLGame lastGame = getLastGame(team);
-					entry.getValue().add(lastGame);
-					NHLGameTracker newGameTracker = new NHLGameTracker(client, gameScheduler, lastGame);
-					newGameTracker.start();
-					gameTrackers.add(newGameTracker);
-					NHLGame nextGame = getNextGame(team);
-					entry.getValue().add(nextGame);
-					newGameTracker = new NHLGameTracker(client, gameScheduler, nextGame);
-					newGameTracker.start();
-					gameTrackers.add(newGameTracker);
+					List<NHLGame> latestGames = entry.getValue();
+					for(NHLGame game : Arrays.asList(getLastGame(team), getNextGame(team))) {
+						latestGames.add(game);
+						NHLGameTracker newGameTracker = getGameTracker(game);
+						if (!game.isEnded()) {
+							newGameTracker.start();
+							gameTrackers.add(newGameTracker);
+						}
+					}
 
 					// Remove old channels in Discord
 					for (IGuild guild : teamSubscriptions.get(team)) {
 						for (IChannel channel : guild.getChannels()) {
 							if (games.stream()
-									.filter(game -> game.containsTeam(team) && game != lastGame && game != nextGame)
+									.filter(game -> game.containsTeam(team) && !latestGames.contains(game))
 									.anyMatch(game -> channel.getName().equalsIgnoreCase(game.getChannelName()))) {
 								deleteChannel(channel);
 							}
@@ -131,47 +125,72 @@ public class NHLGameScheduler extends DiscordManager {
 
 				// Maintain them
 				while (true) {
-					LOGGER.info("Checking for finished games.");
-					gameTrackers.stream()
-							// Filter for all ended game trackers
-							.filter(gameTracker -> gameTracker.isEnded()).forEach(gameTracker -> {
-								// Update game lists for teams involved
-								for (NHLTeam team : gameTracker.getGame().getTeams()) {
-									if (team == NHLTeam.VANCOUVER_CANUCKS) {
-										List<NHLGame> latestGames = teamLatestGames.get(team);
-										// Add the next game to the list of latest games
-										NHLGame nextGame = getNextGame(team);
-										latestGames.add(nextGame);
+					// Remove all finished games
+					removeFinishedTrackers();
 
-										// Create a NHLGameTracker if one does not already exist
-										NHLGameTracker existingGameTracker = getExistingGameTracker(nextGame);
-										if (existingGameTracker == null) {
-											NHLGameTracker newGameTracker = new NHLGameTracker(client, gameScheduler,
-													nextGame);
-											newGameTracker.start();
-											gameTrackers.add(newGameTracker);
-										}
-
-										// Remove channel of oldest game from Discord
-										for (IGuild guild : teamSubscriptions.get(team)) {
-											for (IChannel channel : guild.getChannels()) {
-												if (channel.getName().equals(latestGames.get(0).getChannelName())) {
-													deleteChannel(channel);
-												}
-											}
-										}
-										// Remove the oldest game in the list of latest games
-										latestGames.remove(0);
-									}
-								}
-							});
+					// Remove the old game in the list of latest games
+					removeOldGames();
 
 					LOGGER.info("Checking for finished games after [" + UPDATE_RATE + "]");
 					Utils.sleep(UPDATE_RATE);
 				}
 			}
 		}
-		new NHLGameSchedulerThread(this).start();
+		new NHLGameSchedulerThread().start();
+	}
+
+	private void removeFinishedTrackers() {
+		LOGGER.info("Finding NHLGameTrackers of ended games...");
+		List<NHLGameTracker> newGameTrackers = new ArrayList<>();
+		gameTrackers.removeIf(gameTracker -> {
+			if (gameTracker.isFinished()) {
+				// If game is finished, update latest games for each team involved in the game of the
+				// finished tracker
+				NHLGame finishedGame = gameTracker.getGame();
+				LOGGER.info("Game is finished: " + finishedGame);
+				for (NHLTeam team : finishedGame.getTeams()) {
+					if (team == NHLTeam.VANCOUVER_CANUCKS) {
+						List<NHLGame> latestGames = teamLatestGames.get(team);
+						// Add the next game to the list of latest games
+						NHLGame nextGame = getNextGame(team);
+						latestGames.add(nextGame);
+
+						// Create a NHLGameTracker if one does not already exist and start it.
+						NHLGameTracker newGameTracker = getGameTracker(nextGame);
+						if (!nextGame.isEnded()) {
+							newGameTracker.start();
+							newGameTrackers.add(newGameTracker);
+						}
+					}
+				}
+
+				return true;
+			} else {
+				return false;
+			}
+		});
+		gameTrackers.addAll(newGameTrackers);
+	}
+
+	private void removeOldGames() {
+		LOGGER.info("Finding out-of-date games to remove...");
+		for (Entry<NHLTeam, List<NHLGame>> entry : teamLatestGames.entrySet()) {
+			NHLTeam team = entry.getKey();
+			List<NHLGame> latestGames = entry.getValue();
+			while (latestGames.size() > 2) {
+				// Remove the oldest game
+				NHLGame oldestGame = latestGames.get(0);
+				LOGGER.info("Removing oldest game [" + oldestGame + "]for team [" + team + "]");
+				for (IGuild guild : teamSubscriptions.get(team)) {
+					for (IChannel channel : guild.getChannels()) {
+						if (channel.getName().equalsIgnoreCase(oldestGame.getChannelName())) {
+							deleteChannel(channel);
+						}
+					}
+				}
+				latestGames.remove(0);
+			}
+		}
 	}
 
 	/**
@@ -295,13 +314,18 @@ public class NHLGameScheduler extends DiscordManager {
 	 *            game to find NHLGameTracker for
 	 * @return NHLGameTracker for game if already exists <br>
 	 *         null, if none already exists
+	 * 
 	 */
-	public NHLGameTracker getExistingGameTracker(NHLGame game) {
+	public NHLGameTracker getGameTracker(NHLGame game) {
 		for (NHLGameTracker gameTracker : gameTrackers) {
 			if (gameTracker != null && gameTracker.getGame().equals(game)) {
+				// NHLGameTracker already exists
+				LOGGER.debug("NHLGameTracker exists: " + game.getGamePk());
+
 				return gameTracker;
 			}
 		}
-		return null;
+		LOGGER.debug("NHLGameTracker does not exist: " + game);
+		return new NHLGameTracker(client, this, game);
 	}
 }

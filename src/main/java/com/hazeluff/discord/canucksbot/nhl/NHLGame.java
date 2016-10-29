@@ -390,4 +390,14 @@ public class NHLGame {
 		response.append("\n```");
 		return response.toString();
 	}
+
+	/**
+	 * Determines if game is ended.
+	 * 
+	 * @return true, if game has ended<br>
+	 *         false, otherwise
+	 */
+	public boolean isEnded() {
+		return status == NHLGameStatus.FINAL;
+	}
 }

@@ -49,7 +49,7 @@ public class NHLGameTracker extends DiscordManager {
 	// Time before game to poll faster
 	private static final long GAME_START_THRESHOLD = 300000l;
 
-	private boolean ended = false;
+	private boolean finished = false;
 	List<IChannel> channels = new ArrayList<IChannel>();
 	// Map<NHLGameEvent.idx, List<IMessage>>
 	Map<Integer, List<IMessage>> eventMessages = new HashMap<Integer, List<IMessage>>();
@@ -197,7 +197,7 @@ public class NHLGameTracker extends DiscordManager {
 
 						}
 					}
-					ended = true;
+					finished = true;
 				}
 			};
 			thread.start();
@@ -242,13 +242,13 @@ public class NHLGameTracker extends DiscordManager {
 	}
 
 	/**
-	 * Determines if game is finished.
+	 * Determines if this tracker is finished.
 	 * 
-	 * @return true, if game has ended<br>
+	 * @return true, if this tracker is finished<br>
 	 *         false, otherwise
 	 */
-	public boolean isEnded() {
-		return ended;
+	public boolean isFinished() {
+		return finished;
 	}
 
 	/**
