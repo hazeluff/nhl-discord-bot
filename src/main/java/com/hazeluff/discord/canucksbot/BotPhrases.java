@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class BotPhrases {
-	protected static final Pattern RUDE_PATTERN = Pattern
+	static final Pattern RUDE_PATTERN = Pattern
 			.compile("\\b((fuck\\s*off)|(shut\\s*(up|it))|(fuck\\s*(you|u)))\\b");
 
 	public static final List<String> COMEBACK = Arrays.asList(

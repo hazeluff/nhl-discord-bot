@@ -57,26 +57,25 @@ public class CommandListener extends DiscordManager {
 		// If CanucksBot is mentioned
 		
 		String strMessage = strbuilderMessage.toString();
-		
 		if (isBotMentioned(strMessage)) {
 			String response = null;
 			// Reply to rude phrases
-			if (BotPhrases.isRude(strMessage)) {
+			if (response == null && BotPhrases.isRude(strMessage)) {
 				response = Utils.getRandom(BotPhrases.COMEBACK);
 			}
 
 			// Hi
-			if (BotPhrases.isFriendly(strMessage)) {
+			if (response == null && BotPhrases.isFriendly(strMessage)) {
 				response = Utils.getRandom(BotPhrases.FRIENDLY);
 			}
 
 			// Sup
-			if (BotPhrases.isWhatsup(strMessage)) {
+			if (response == null && BotPhrases.isWhatsup(strMessage)) {
 				response = Utils.getRandom(BotPhrases.WHATSUP_RESPONSE);
 			}
 
 			// <3
-			if (BotPhrases.isLovely(strMessage)) {
+			if (response == null && BotPhrases.isLovely(strMessage)) {
 				response = Utils.getRandom(BotPhrases.LOVELY_RESPONSE);
 			}
 
@@ -174,7 +173,7 @@ public class CommandListener extends DiscordManager {
 	 *            message to determine if CanucksBot is mentioned in
 	 * @return true, if CanucksBot is mentioned; false, otherwise.
 	 */
-	private boolean isBotCommand(StringBuilder strbuilderMessage) {
+	boolean isBotCommand(StringBuilder strbuilderMessage) {
 		String mentionedBotUser = "<@" + canucksBot.getId() + ">";
 		if (strbuilderMessage.toString().startsWith(mentionedBotUser)) {
 			strbuilderMessage.replace(0, mentionedBotUser.length(), "");
@@ -188,7 +187,7 @@ public class CommandListener extends DiscordManager {
 	 * @param message
 	 * @return
 	 */
-	private boolean isBotMentioned(String message) {
+	boolean isBotMentioned(String message) {
 		String mentionedBotUser = "<@" + canucksBot.getId() + ">";
 		return message.contains(mentionedBotUser);
 	}
