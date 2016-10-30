@@ -3,7 +3,7 @@ package com.hazeluff.discord.canucksbot.nhl;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NHLGamePeriod {
+public class GamePeriod {
 	private final int periodNum;
 	private final Type type;
 	private final String ordinalNum;
@@ -39,7 +39,7 @@ public class NHLGamePeriod {
 		}
 	}
 
-	public NHLGamePeriod(int periodNum, Type type, String ordinalNum) {
+	public GamePeriod(int periodNum, Type type, String ordinalNum) {
 		this.periodNum = periodNum;
 		this.type = type;
 		this.ordinalNum = ordinalNum;
@@ -88,7 +88,7 @@ public class NHLGamePeriod {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		NHLGamePeriod other = (NHLGamePeriod) obj;
+		GamePeriod other = (GamePeriod) obj;
 		if (ordinalNum == null) {
 			if (other.ordinalNum != null)
 				return false;

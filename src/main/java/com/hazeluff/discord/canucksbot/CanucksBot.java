@@ -5,7 +5,7 @@ import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
+import com.hazeluff.discord.canucksbot.nhl.GameScheduler;
 
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
@@ -17,12 +17,12 @@ public class CanucksBot {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CanucksBot.class);
 
 	private final IDiscordClient client;
-	private final NHLGameScheduler nhlGameScheduler;
+	private final GameScheduler nhlGameScheduler;
 	private final String id;
 	public CanucksBot(String botToken) {
 		LOGGER.info("Running CanucksBot v" + Config.VERSION);
 		client = getClient(botToken);
-		nhlGameScheduler = new NHLGameScheduler(client);
+		nhlGameScheduler = new GameScheduler(client);
 		try {
 			id = client.getApplicationClientID();
 			LOGGER.info("CanucksBot. id [" + id + "]");
@@ -53,7 +53,7 @@ public class CanucksBot {
 		return client;
 	}
 
-	public NHLGameScheduler getNhlGameScheduler() {
+	public GameScheduler getGameScheduler() {
 		return nhlGameScheduler;
 	}
 

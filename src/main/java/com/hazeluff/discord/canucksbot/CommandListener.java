@@ -9,10 +9,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucksbot.nhl.NHLGame;
-import com.hazeluff.discord.canucksbot.nhl.NHLGameScheduler;
-import com.hazeluff.discord.canucksbot.nhl.NHLGameStatus;
-import com.hazeluff.discord.canucksbot.nhl.NHLTeam;
+import com.hazeluff.discord.canucksbot.nhl.Game;
+import com.hazeluff.discord.canucksbot.nhl.GameScheduler;
+import com.hazeluff.discord.canucksbot.nhl.GameStatus;
+import com.hazeluff.discord.canucksbot.nhl.Team;
 import com.hazeluff.discord.canucksbot.utils.Utils;
 
 import sx.blah.discord.api.events.EventSubscriber;
@@ -33,12 +33,12 @@ public class CommandListener extends DiscordManager {
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
 
-	private final NHLGameScheduler gameScheduler;
+	private final GameScheduler gameScheduler;
 	private final CanucksBot canucksBot;
 
 	public CommandListener(CanucksBot canucksBot) {
 		super(canucksBot.getClient());
-		this.gameScheduler = canucksBot.getNhlGameScheduler();
+		this.gameScheduler = canucksBot.getGameScheduler();
 		this.canucksBot = canucksBot;
 	}
 
@@ -96,17 +96,17 @@ public class CommandListener extends DiscordManager {
 			
 			// nextgame
 			if (arguments[0].toString().equalsIgnoreCase("nextgame")) {
-				NHLGame nextGame = gameScheduler.getNextGame(NHLTeam.VANCOUVER_CANUCKS);
+				Game nextGame = gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS);
 				sendMessage(channel, "The next game is:\n" + nextGame.getDetailsMessage());
 				return;
 			}
 
 			// score
 			if (arguments[0].toString().equalsIgnoreCase("score")) {
-				NHLGame game = gameScheduler.getGameByChannelName(channel.getName());
+				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
 					sendMessage(channel, "Please run this command in a channel specific for games.");
-				} else if (game.getStatus() == NHLGameStatus.PREVIEW) {
+				} else if (game.getStatus() == GameStatus.PREVIEW) {
 					game.update();
 					sendMessage(channel, "The game hasn't started yet. **0** - **0**");
 				} else {
@@ -118,15 +118,17 @@ public class CommandListener extends DiscordManager {
 			
 			// goals
 			if (arguments[0].toString().equalsIgnoreCase("goals")) {
-				NHLGame game = gameScheduler.getGameByChannelName(channel.getName());
+				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
 					sendMessage(channel, "Please run this command in a channel specific for games.");
-				} else if (game.getStatus() == NHLGameStatus.PREVIEW) {
+				} else if (game.getStatus() == GameStatus.PREVIEW) {
 					game.update();
 					sendMessage(channel, "The game hasn't started yet.");
 				} else {
 					game.update();
-					sendMessage(channel, game.getGoalsMessage());
+					sendMessage(channel, String.format("%s\n%s", 
+							game.getScoreMessage(),
+							game.getGoalsMessage()));
 				}
 				return;
 			}

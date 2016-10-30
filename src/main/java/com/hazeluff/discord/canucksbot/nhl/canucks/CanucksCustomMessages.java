@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.hazeluff.discord.canucksbot.nhl.NHLPlayer;
+import com.hazeluff.discord.canucksbot.nhl.Player;
 
 public class CanucksCustomMessages {
 
@@ -34,7 +34,7 @@ public class CanucksCustomMessages {
 
 	}
 
-	public static String getMessage(List<NHLPlayer> players) {
+	public static String getMessage(List<Player> players) {
 		if (players.stream().allMatch(player -> {
 			int id = player.getId();
 			return id == 8467876 || id == 8467875 || id == 8470626;

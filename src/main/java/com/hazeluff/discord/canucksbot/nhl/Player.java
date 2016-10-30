@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
-public class NHLPlayer {
+public class Player {
 	private final int id;
 	private final String fullName;
 	private final EventRole role;
@@ -37,7 +37,7 @@ public class NHLPlayer {
 		}
 	}
 
-	public NHLPlayer(JSONObject jsonPlayer) {
+	public Player(JSONObject jsonPlayer) {
 		this.id = jsonPlayer.getJSONObject("player").getInt("id");
 		this.fullName = jsonPlayer.getJSONObject("player").getString("fullName");
 		this.role = EventRole.parse(jsonPlayer.getString("playerType"));
@@ -73,7 +73,7 @@ public class NHLPlayer {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		NHLPlayer other = (NHLPlayer) obj;
+		Player other = (Player) obj;
 		if (fullName == null) {
 			if (other.fullName != null)
 				return false;

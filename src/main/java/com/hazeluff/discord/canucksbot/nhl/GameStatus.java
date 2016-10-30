@@ -3,7 +3,7 @@ package com.hazeluff.discord.canucksbot.nhl;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum NHLGameStatus {
+public enum GameStatus {
 	PREVIEW(new int[] { 1 }, "Pre-game"), 
 	STARTED(new int[] { 2, 4 }, "Started"), // I have no idea what these codes translate to
 	LIVE(new int[] { 3 }, "LIVE"),
@@ -12,17 +12,17 @@ public enum NHLGameStatus {
 	private final int[] ids;
 	private final String value;
 
-	private static final Map<Integer, NHLGameStatus> VALUES_MAP = new HashMap<>();
+	private static final Map<Integer, GameStatus> VALUES_MAP = new HashMap<>();
 
 	static {
-		for (NHLGameStatus d : NHLGameStatus.values()) {
+		for (GameStatus d : GameStatus.values()) {
 			for (int id : d.ids) {
 				VALUES_MAP.put(id, d);				
 			}
 		}
 	}
 
-	private NHLGameStatus(int[] ids, String value) {
+	private GameStatus(int[] ids, String value) {
 		this.ids = ids;
 		this.value = value;
 	}
@@ -31,8 +31,8 @@ public enum NHLGameStatus {
 		return value;
 	}
 
-	public static NHLGameStatus parse(int id) {
-		NHLGameStatus result = VALUES_MAP.get(id);
+	public static GameStatus parse(int id) {
+		GameStatus result = VALUES_MAP.get(id);
 		if (result == null) {
 			throw new IllegalArgumentException("No value exists for: " + id);
 		}

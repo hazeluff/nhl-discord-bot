@@ -39,7 +39,7 @@ public class DiscordManager {
 	 *            message to send
 	 * @return IMessage of sent message
 	 */
-	protected IMessage sendMessage(IChannel channel, String message) {
+	public IMessage sendMessage(IChannel channel, String message) {
 		LOGGER.info("Sending message [" + channel.getName() + "][" + message + "]");
 		try {
 			return new MessageBuilder(client).withChannel(channel).withContent(message).send();
@@ -58,10 +58,13 @@ public class DiscordManager {
 	 *            message to send
 	 * @return List<IMessage> of sent messages
 	 */
-	protected List<IMessage> sendMessage(List<IChannel> channels, String message) {
+	public List<IMessage> sendMessage(List<IChannel> channels, String message) {
 		List<IMessage> messages = new ArrayList<>();
 		for (IChannel channel : channels) {
-			messages.add(sendMessage(channel, message));
+			IMessage newMessage = sendMessage(channel, message);
+			if (newMessage != null) {
+				messages.add(newMessage);
+			}
 		}
 		return messages;
 	}
@@ -74,7 +77,7 @@ public class DiscordManager {
 	 * @param newMessage
 	 *            new message
 	 */
-	protected void updateMessage(IMessage message, String newMessage) {
+	public void updateMessage(IMessage message, String newMessage) {
 		LOGGER.info("Updating message [" + message.getContent() + "][" + newMessage + "]");
 		try {
 			if (!message.getContent().equals(newMessage)) {
@@ -95,7 +98,7 @@ public class DiscordManager {
 	 * @param newMessage
 	 *            new message
 	 */
-	protected void updateMessage(List<IMessage> messages, String newMessage) {
+	public void updateMessage(List<IMessage> messages, String newMessage) {
 		for (IMessage message : messages) {
 			updateMessage(message, newMessage);
 		}
@@ -108,7 +111,7 @@ public class DiscordManager {
 	 *            channel to get messages from
 	 * @return List<IMessage> of messages in the channel
 	 */
-	protected List<IMessage> getPinnedMessages(IChannel channel) {
+	public List<IMessage> getPinnedMessages(IChannel channel) {
 		LOGGER.info("Getting pinned messages in channel [" + channel.getName() + "]");
 		try {
 			return channel.getPinnedMessages();
@@ -125,7 +128,7 @@ public class DiscordManager {
 	 * @param channel
 	 *            channel to delete
 	 */
-	protected void deleteChannel(IChannel channel) {
+	public void deleteChannel(IChannel channel) {
 		LOGGER.info("Deleting channel [" + channel.getName() + "]");
 		try {
 			channel.delete();

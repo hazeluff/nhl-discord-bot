@@ -21,26 +21,26 @@ import com.hazeluff.discord.canucksbot.utils.DateUtils;
 import com.hazeluff.discord.canucksbot.utils.HttpUtils;
 
 
-public class NHLGame {
-	private static final Logger LOGGER = LoggerFactory.getLogger(NHLGame.class);
+public class Game {
+	private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
 
 	private final Date date;
 	private final int gamePk;
-	private final NHLTeam awayTeam;
-	private final NHLTeam homeTeam;
+	private final Team awayTeam;
+	private final Team homeTeam;
 	private int awayScore;
 	private int homeScore;
-	private NHLGameStatus status;
-	private List<NHLGameEvent> events = new ArrayList<>();
-	private List<NHLGameEvent> newEvents = new ArrayList<>();
-	private List<NHLGameEvent> updatedEvents = new ArrayList<>();
+	private GameStatus status;
+	private List<GameEvent> events = new ArrayList<>();
+	private List<GameEvent> newEvents = new ArrayList<>();
+	private List<GameEvent> updatedEvents = new ArrayList<>();
 
-	public NHLGame (JSONObject jsonGame) {
+	public Game (JSONObject jsonGame) {
 		date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
 		gamePk = jsonGame.getInt("gamePk");
-		awayTeam = NHLTeam
+		awayTeam = Team
 				.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
-		homeTeam = NHLTeam
+		homeTeam = Team
 				.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
 		updateInfo(jsonGame);
 
@@ -68,8 +68,8 @@ public class NHLGame {
 	public String getNiceDate() {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(date);
-		SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE dd'XX' MMM yyyy");
-		return dateFormat.format(date).replaceAll("XX", getDayOfMonthSuffix(cal.get(Calendar.DAY_OF_MONTH)));
+		SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE d/MMM/yyyy");
+		return dateFormat.format(date);
 	}
 
 	/**
@@ -78,7 +78,7 @@ public class NHLGame {
 	 * @return the time in the format "HH:mm aaa"
 	 */
 	public String getTime() {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm aaa");
+		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm Z");
 		return dateFormat.format(date);
 	}
 
@@ -102,11 +102,11 @@ public class NHLGame {
 		return gamePk;
 	}
 
-	public NHLTeam getAwayTeam() {
+	public Team getAwayTeam() {
 		return awayTeam;
 	}
 
-	public NHLTeam getHomeTeam() {
+	public Team getHomeTeam() {
 		return homeTeam;
 	}
 
@@ -115,7 +115,7 @@ public class NHLGame {
 	 * 
 	 * @return list containing both home and away teams
 	 */
-	public List<NHLTeam> getTeams() {
+	public List<Team> getTeams() {
 		return Arrays.asList(homeTeam, awayTeam);
 	}
 
@@ -126,11 +126,11 @@ public class NHLGame {
 	 * @return true, if team is a participant<br>
 	 *         false, otherwise
 	 */
-	public boolean isContain(NHLTeam team) {
+	public boolean isContain(Team team) {
 		return homeTeam == team || awayTeam == team;
 	}
 
-	public boolean containsTeam(NHLTeam team) {
+	public boolean containsTeam(Team team) {
 		return awayTeam == team || homeTeam == team;
 	}
 
@@ -166,7 +166,7 @@ public class NHLGame {
 	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
 	 */
 	public String getDetailsMessage() {
-		String message = String.format("**%s** vs **%s** at %s on %s",
+		String message = String.format("**%s** vs **%s** at **%s** on **%s**",
 				homeTeam.getFullName(),
 				awayTeam.getFullName(),
 				getTime(),
@@ -187,21 +187,21 @@ public class NHLGame {
 		return message.toString();
 	}
 
-	public NHLGameStatus getStatus() {
+	public GameStatus getStatus() {
 		return status;
 	}
 
-	public List<NHLGameEvent> getEvents() {
+	public List<GameEvent> getEvents() {
 		return events;
 	}
 
-	public List<NHLGameEvent> getNewEvents() {
-		List<NHLGameEvent> value = new ArrayList<>(newEvents);
+	public List<GameEvent> getNewEvents() {
+		List<GameEvent> value = new ArrayList<>(newEvents);
 		return value;
 	}
 
-	public List<NHLGameEvent> getUpdatedEvents() {
-		List<NHLGameEvent> value = new ArrayList<>(updatedEvents);
+	public List<GameEvent> getUpdatedEvents() {
+		List<GameEvent> value = new ArrayList<>(updatedEvents);
 		return value;
 	}
 
@@ -233,7 +233,7 @@ public class NHLGame {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		NHLGame other = (NHLGame) obj;
+		Game other = (Game) obj;
 		if (awayScore != other.awayScore)
 			return false;
 		if (awayTeam != other.awayTeam)
@@ -254,13 +254,13 @@ public class NHLGame {
 		return true;
 	}
 
-	public boolean equals(NHLGame other) {
+	public boolean equals(Game other) {
 		return gamePk == other.gamePk;
 	}
 
-	public static Comparator<NHLGame> getDateComparator() {
-		return new Comparator<NHLGame>() {
-			public int compare(NHLGame g1, NHLGame g2) {
+	public static Comparator<Game> getDateComparator() {
+		return new Comparator<Game>() {
+			public int compare(Game g1, Game g2) {
 				return (g1.date.compareTo(g2.date));
 			}
 		};
@@ -306,7 +306,7 @@ public class NHLGame {
 	private void updateInfo(JSONObject jsonGame) {
 		awayScore = jsonGame.getJSONObject("teams").getJSONObject("away").getInt("score");
 		homeScore = jsonGame.getJSONObject("teams").getJSONObject("home").getInt("score");
-		status = NHLGameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode")));
+		status = GameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode")));
 	}
 
 	/**
@@ -317,7 +317,7 @@ public class NHLGame {
 		updatedEvents.clear();
 		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
 		for (int i = 0; i < jsonScoringPlays.length(); i++) {
-			NHLGameEvent newEvent = new NHLGameEvent(jsonScoringPlays.getJSONObject(i));
+			GameEvent newEvent = new GameEvent(jsonScoringPlays.getJSONObject(i));
 			if (!events.stream().anyMatch(event -> event.equals(newEvent))) {
 				if (events.removeIf(event -> event.getId() == newEvent.getId())) {
 					events.add(newEvent);
@@ -334,9 +334,9 @@ public class NHLGame {
 	}
 
 	public String getGoalsMessage() {
-		List<NHLGameEvent> goals = events;
+		List<GameEvent> goals = events;
 		StringBuilder response = new StringBuilder();
-		response.append(getScoreMessage()).append("\n```");
+		response.append("```");
 		for (int i = 1; i <= 3; i++) {
 			switch (i) {
 			case 1:
@@ -350,11 +350,11 @@ public class NHLGame {
 				break;
 			}
 			int period = i;
-			Predicate<NHLGameEvent> isPeriod = gameEvent -> gameEvent.getPeriod().getPeriodNum() == period;
+			Predicate<GameEvent> isPeriod = gameEvent -> gameEvent.getPeriod().getPeriodNum() == period;
 			if (goals.stream().anyMatch(isPeriod)) {
-				for (NHLGameEvent gameEvent : goals.stream().filter(isPeriod)
+				for (GameEvent gameEvent : goals.stream().filter(isPeriod)
 						.collect(Collectors.toList())) {
-					List<NHLPlayer> players = gameEvent.getPlayers();
+					List<Player> players = gameEvent.getPlayers();
 					response.append(String.format("\n%s - %s %-18s", 
 							gameEvent.getPeriodTime(),
 							gameEvent.getTeam().getCode(),
@@ -372,12 +372,12 @@ public class NHLGame {
 				response.append("\nNone");
 			}
 		}
-		Predicate<NHLGameEvent> isOtherPeriod = gameEvent -> gameEvent.getPeriod().getPeriodNum() > 3;
+		Predicate<GameEvent> isOtherPeriod = gameEvent -> gameEvent.getPeriod().getPeriodNum() > 3;
 		if (goals.stream().anyMatch(isOtherPeriod)) {
-			NHLGameEvent gameEvent = goals.stream().filter(isOtherPeriod).findFirst().get();
-			NHLGamePeriod period = gameEvent.getPeriod();
+			GameEvent gameEvent = goals.stream().filter(isOtherPeriod).findFirst().get();
+			GamePeriod period = gameEvent.getPeriod();
 			response.append("\n\n").append(period.getDisplayValue()).append(":");
-			List<NHLPlayer> players = gameEvent.getPlayers();
+			List<Player> players = gameEvent.getPlayers();
 			response.append(
 					String.format("\n%s - %s %-18s", 
 							gameEvent.getPeriodTime(), 
@@ -403,6 +403,6 @@ public class NHLGame {
 	 *         false, otherwise
 	 */
 	public boolean isEnded() {
-		return status == NHLGameStatus.FINAL;
+		return status == GameStatus.FINAL;
 	}
 }

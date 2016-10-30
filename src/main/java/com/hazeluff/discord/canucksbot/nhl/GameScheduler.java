@@ -37,32 +37,32 @@ import sx.blah.discord.handle.obj.IGuild;
  * @author hazeluff
  *
  */
-public class NHLGameScheduler extends DiscordManager {
-	private static final Logger LOGGER = LoggerFactory.getLogger(NHLGameScheduler.class);
+public class GameScheduler extends DiscordManager {
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 
 	// Poll for if the day has rolled over every 30 minutes
 	private static final int UPDATE_RATE = 1800000;
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
-	private List<NHLGame> games;
-	private List<NHLGameTracker> gameTrackers = new ArrayList<>();
-	private Map<NHLTeam, List<IGuild>> teamSubscriptions = new HashMap<>();
-	private Map<NHLTeam, List<NHLGame>> teamLatestGames = new HashMap<>();
+	private List<Game> games;
+	private List<GameTracker> gameTrackers = new ArrayList<>();
+	private Map<Team, List<IGuild>> teamSubscriptions = new HashMap<>();
+	private Map<Team, List<Game>> teamLatestGames = new HashMap<>();
 
-	public NHLGameScheduler(IDiscordClient client) {
+	public GameScheduler(IDiscordClient client) {
 		super(client);
 		LOGGER.info("Initializing");
 		this.client = client;
 		// Init variables
-		for (NHLTeam team : NHLTeam.values()) {
+		for (Team team : Team.values()) {
 			teamSubscriptions.put(team, new ArrayList<IGuild>());
 		}
-		teamLatestGames.put(NHLTeam.VANCOUVER_CANUCKS, new ArrayList<NHLGame>());
+		teamLatestGames.put(Team.VANCOUVER_CANUCKS, new ArrayList<Game>());
 		
 		// Retrieve schedule/game information from NHL API
-		Set<NHLGame> setGames = new HashSet<>();
-		for (NHLTeam team : NHLTeam.values()) {
-			if(team == NHLTeam.VANCOUVER_CANUCKS) { // Skip other teams until implementing full NHL version
+		Set<Game> setGames = new HashSet<>();
+		for (Team team : Team.values()) {
+			if(team == Team.VANCOUVER_CANUCKS) { // Skip other teams until implementing full NHL version
 				LOGGER.info("Retrieving games of [" + team + "]");
 				URIBuilder uriBuilder = null;
 				String strJSONSchedule = "";
@@ -79,13 +79,13 @@ public class NHLGameScheduler extends DiscordManager {
 				JSONArray jsonDates = jsonSchedule.getJSONArray("dates");
 				for (int i = 0; i < jsonDates.length(); i++) {
 					JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
-					setGames.add(new NHLGame(jsonGame));
+					setGames.add(new Game(jsonGame));
 				}
 				
 			}
 		}
 		games = new ArrayList<>(setGames);
-		Collections.sort(games, NHLGame.getDateComparator());
+		Collections.sort(games, Game.getDateComparator());
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");
 		LOGGER.info("Finished Initialization.");
 	}
@@ -98,12 +98,12 @@ public class NHLGameScheduler extends DiscordManager {
 			public void run() {
 				LOGGER.info("Started polling thread");
 				// Init NHLGameTrackers
-				for (Entry<NHLTeam, List<NHLGame>> entry : teamLatestGames.entrySet()) {
-					NHLTeam team = entry.getKey();
-					List<NHLGame> latestGames = entry.getValue();
-					for(NHLGame game : Arrays.asList(getLastGame(team), getNextGame(team))) {
+				for (Entry<Team, List<Game>> entry : teamLatestGames.entrySet()) {
+					Team team = entry.getKey();
+					List<Game> latestGames = entry.getValue();
+					for(Game game : Arrays.asList(getLastGame(team), getNextGame(team))) {
 						latestGames.add(game);
-						NHLGameTracker newGameTracker = getGameTracker(game);
+						GameTracker newGameTracker = getGameTracker(game);
 						if (!game.isEnded()) {
 							newGameTracker.start();
 							gameTrackers.add(newGameTracker);
@@ -140,22 +140,22 @@ public class NHLGameScheduler extends DiscordManager {
 
 	private void removeFinishedTrackers() {
 		LOGGER.info("Finding NHLGameTrackers of ended games...");
-		List<NHLGameTracker> newGameTrackers = new ArrayList<>();
+		List<GameTracker> newGameTrackers = new ArrayList<>();
 		gameTrackers.removeIf(gameTracker -> {
 			if (gameTracker.isFinished()) {
 				// If game is finished, update latest games for each team involved in the game of the
 				// finished tracker
-				NHLGame finishedGame = gameTracker.getGame();
+				Game finishedGame = gameTracker.getGame();
 				LOGGER.info("Game is finished: " + finishedGame);
-				for (NHLTeam team : finishedGame.getTeams()) {
-					if (team == NHLTeam.VANCOUVER_CANUCKS) {
-						List<NHLGame> latestGames = teamLatestGames.get(team);
+				for (Team team : finishedGame.getTeams()) {
+					if (team == Team.VANCOUVER_CANUCKS) {
+						List<Game> latestGames = teamLatestGames.get(team);
 						// Add the next game to the list of latest games
-						NHLGame nextGame = getNextGame(team);
+						Game nextGame = getNextGame(team);
 						latestGames.add(nextGame);
 
 						// Create a NHLGameTracker if one does not already exist and start it.
-						NHLGameTracker newGameTracker = getGameTracker(nextGame);
+						GameTracker newGameTracker = getGameTracker(nextGame);
 						if (!nextGame.isEnded()) {
 							newGameTracker.start();
 							newGameTrackers.add(newGameTracker);
@@ -173,12 +173,12 @@ public class NHLGameScheduler extends DiscordManager {
 
 	private void removeOldGames() {
 		LOGGER.info("Finding out-of-date games to remove...");
-		for (Entry<NHLTeam, List<NHLGame>> entry : teamLatestGames.entrySet()) {
-			NHLTeam team = entry.getKey();
-			List<NHLGame> latestGames = entry.getValue();
+		for (Entry<Team, List<Game>> entry : teamLatestGames.entrySet()) {
+			Team team = entry.getKey();
+			List<Game> latestGames = entry.getValue();
 			while (latestGames.size() > 2) {
 				// Remove the oldest game
-				NHLGame oldestGame = latestGames.get(0);
+				Game oldestGame = latestGames.get(0);
 				LOGGER.info("Removing oldest game [" + oldestGame + "]for team [" + team + "]");
 				for (IGuild guild : teamSubscriptions.get(team)) {
 					for (IChannel channel : guild.getChannels()) {
@@ -201,9 +201,9 @@ public class NHLGameScheduler extends DiscordManager {
 	 *            index index of how many games in the future to get (0 for first game)
 	 * @return NHLGame of game in the future for the provided team
 	 */
-	public NHLGame getFutureGame(NHLTeam team, int futureIndex) {
+	public Game getFutureGame(Team team, int futureIndex) {
 		Date currentDate = new Date();
-		List<NHLGame> futureGames = games.stream().filter(game -> game.containsTeam(team))
+		List<Game> futureGames = games.stream().filter(game -> game.containsTeam(team))
 				.filter(game -> game.getDate().compareTo(currentDate) >= 0).collect(Collectors.toList());
 		if (futureIndex >= futureGames.size()) {
 			futureIndex = futureGames.size() - 1;
@@ -216,14 +216,14 @@ public class NHLGameScheduler extends DiscordManager {
 	 * Gets the next game for the provided team.
 	 * </p>
 	 * <p>
-	 * See {@link #getFutureGame(NHLTeam, int)}
+	 * See {@link #getFutureGame(Team, int)}
 	 * </p>
 	 * 
 	 * @param team
 	 *            team to get next game for
 	 * @return NHLGame of next game for the provided team
 	 */
-	public NHLGame getNextGame(NHLTeam team) {
+	public Game getNextGame(Team team) {
 		return getFutureGame(team, 0);
 	}
 
@@ -236,9 +236,9 @@ public class NHLGameScheduler extends DiscordManager {
 	 *            index index of how many games after to get (0 for first games)
 	 * @return NHLGame of next game for the provided team
 	 */
-	public NHLGame getPreviousGame(NHLTeam team, int beforeIndex) {
+	public Game getPreviousGame(Team team, int beforeIndex) {
 		Date currentDate = new Date();
-		List<NHLGame> previousGames = games.stream().filter(game -> game.containsTeam(team))
+		List<Game> previousGames = games.stream().filter(game -> game.containsTeam(team))
 				.filter(game -> game.getDate().compareTo(currentDate) < 0).collect(Collectors.toList());
 		if (beforeIndex >= previousGames.size()) {
 			beforeIndex = previousGames.size() - 1;
@@ -251,14 +251,14 @@ public class NHLGameScheduler extends DiscordManager {
 	 * Gets the last game for the provided team.
 	 * </p>
 	 * <p>
-	 * See {@link #getPreviousGame(NHLTeam, int)}
+	 * See {@link #getPreviousGame(Team, int)}
 	 * </p>
 	 * 
 	 * @param team
 	 *            team to get last game for
 	 * @return NHLGame of last game for the provided team
 	 */
-	public NHLGame getLastGame(NHLTeam team) {
+	public Game getLastGame(Team team) {
 		return getPreviousGame(team, 0);
 	}
 
@@ -273,7 +273,7 @@ public class NHLGameScheduler extends DiscordManager {
 	 *            the channel to subscribe to the game
 	 * @throws NHLGameSchedulerException
 	 */
-	public void subscribe(NHLTeam team, IGuild guild) {
+	public void subscribe(Team team, IGuild guild) {
 		teamSubscriptions.get(team).add(guild);
 	}
 
@@ -283,7 +283,7 @@ public class NHLGameScheduler extends DiscordManager {
 	 * @param team
 	 * @return list of guilds the subscribed to the given team
 	 */
-	public List<IGuild> getSubscribedGuilds(NHLTeam team) {
+	public List<IGuild> getSubscribedGuilds(Team team) {
 		return new ArrayList<>(teamSubscriptions.get(team));
 	}
 
@@ -297,7 +297,7 @@ public class NHLGameScheduler extends DiscordManager {
 	 *         null if game cannot be found; null if class is not initialized
 	 * @throws NHLGameSchedulerException
 	 */
-	public NHLGame getGameByChannelName(String channelName) {
+	public Game getGameByChannelName(String channelName) {
 		try {
 			return games.stream().filter(game -> game.getChannelName().equalsIgnoreCase(channelName)).findAny().get();
 		} catch (NoSuchElementException e) {
@@ -315,8 +315,8 @@ public class NHLGameScheduler extends DiscordManager {
 	 *         null, if none already exists
 	 * 
 	 */
-	public NHLGameTracker getGameTracker(NHLGame game) {
-		for (NHLGameTracker gameTracker : gameTrackers) {
+	public GameTracker getGameTracker(Game game) {
+		for (GameTracker gameTracker : gameTrackers) {
 			if (gameTracker != null && gameTracker.getGame().equals(game)) {
 				// NHLGameTracker already exists
 				LOGGER.debug("NHLGameTracker exists: " + game.getGamePk());
@@ -325,6 +325,6 @@ public class NHLGameScheduler extends DiscordManager {
 			}
 		}
 		LOGGER.debug("NHLGameTracker does not exist: " + game);
-		return new NHLGameTracker(client, this, game);
+		return new GameTracker(client, this, game);
 	}
 }

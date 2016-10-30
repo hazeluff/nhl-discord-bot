@@ -9,36 +9,36 @@ import org.json.JSONObject;
 
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
 
-public class NHLGameEvent {
+public class GameEvent {
 	private final int id;
 	private int idx;
 	private Date date;
-	private final NHLGameEventType type;
-	private final NHLTeam team;
+	private final GameEventType type;
+	private final Team team;
 	private final String periodTime;
-	private final NHLGamePeriod period;
-	private final List<NHLPlayer> players = new ArrayList<>();
-	private final NHLGameEventStrength strength;
+	private final GamePeriod period;
+	private final List<Player> players = new ArrayList<>();
+	private final GameEventStrength strength;
 
-	public NHLGameEvent(JSONObject jsonScoringPlays) {
+	public GameEvent(JSONObject jsonScoringPlays) {
 		JSONObject jsonAbout = jsonScoringPlays.getJSONObject("about");
 		id = jsonAbout.getInt("eventId");
 		idx = jsonAbout.getInt("eventIdx");
 		date = DateUtils.parseNHLDate(jsonAbout.getString("dateTime"));
-		period = new NHLGamePeriod(
+		period = new GamePeriod(
 				jsonAbout.getInt("period"), 
-				NHLGamePeriod.Type.parse(jsonAbout.getString("periodType")),
+				GamePeriod.Type.parse(jsonAbout.getString("periodType")),
 				jsonAbout.getString("ordinalNum"));
 		periodTime = jsonAbout.getString("periodTime");
-		team = NHLTeam.parse(jsonScoringPlays.getJSONObject("team").getInt("id"));
+		team = Team.parse(jsonScoringPlays.getJSONObject("team").getInt("id"));
 
 		JSONObject jsonResult = jsonScoringPlays.getJSONObject("result");
-		strength = NHLGameEventStrength.parse(jsonResult.getJSONObject("strength").getString("code"));
-		type = NHLGameEventType.parse(jsonResult.getString("eventTypeId"));
+		strength = GameEventStrength.parse(jsonResult.getJSONObject("strength").getString("code"));
+		type = GameEventType.parse(jsonResult.getString("eventTypeId"));
 
 		JSONArray jsonPlayers = jsonScoringPlays.getJSONArray("players");
 		for (int i = 0; i < jsonPlayers.length(); i++) {
-			players.add(new NHLPlayer(jsonPlayers.getJSONObject(i)));
+			players.add(new Player(jsonPlayers.getJSONObject(i)));
 		}
 	}
 
@@ -46,11 +46,11 @@ public class NHLGameEvent {
 		return id;
 	}
 
-	public NHLGameEventType getType() {
+	public GameEventType getType() {
 		return type;
 	}
 
-	public NHLTeam getTeam() {
+	public Team getTeam() {
 		return team;
 	}
 
@@ -58,15 +58,15 @@ public class NHLGameEvent {
 		return periodTime;
 	}
 
-	public NHLGamePeriod getPeriod() {
+	public GamePeriod getPeriod() {
 		return period;
 	}
 
-	public List<NHLPlayer> getPlayers() {
+	public List<Player> getPlayers() {
 		return players;
 	}
 
-	public NHLGameEventStrength getStrength() {
+	public GameEventStrength getStrength() {
 		return strength;
 	}
 
@@ -102,7 +102,7 @@ public class NHLGameEvent {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		NHLGameEvent other = (NHLGameEvent) obj;
+		GameEvent other = (GameEvent) obj;
 		if (date == null) {
 			if (other.date != null)
 				return false;
