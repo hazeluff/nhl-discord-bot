@@ -229,8 +229,8 @@ public class NHLGameTracker extends DiscordManager {
 			message.append(
 					String.format("%s goal by **%s**!", event.getTeam().getLocation(), players.get(0).getFullName()));
 		} else {
-			message.append(String.format("%s %s goal by **%s**!", strength.getValue().toLowerCase(),
-					event.getTeam().getLocation(), players.get(0).getFullName()));
+			message.append(String.format("%s %s goal by **%s**!", event.getTeam().getLocation(),
+					strength.getValue().toLowerCase(), players.get(0).getFullName()));
 		}
 		if (players.size() > 1) {
 			message.append(String.format(" Assists: %s", players.get(1).getFullName()));

@@ -154,8 +154,8 @@ public class CommandListener extends DiscordManager {
 			}
 
 
-			sendMessage(channel, "Sorry, I don't understand that. Write `@CanucksBot help` for a list of commands.");
-
+			sendMessage(channel, "Sorry, I don't understand that. Send `@CanucksBot help` for a list of commands.");
+			return;
 			// ༼つ ◕\_◕ ༽つ CANUCKS TAKE MY ENERGY ༼ つ ◕_◕ ༽つ
 		}
 

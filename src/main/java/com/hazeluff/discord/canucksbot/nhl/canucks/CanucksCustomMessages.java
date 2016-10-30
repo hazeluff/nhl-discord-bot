@@ -52,6 +52,8 @@ public class CanucksCustomMessages {
 				return "Sedinery! **Daniel** from **Henrik**! (Goal)";
 			}
 		}
+
+		// add assists to custom goal messages
 		return aliases.get(players.get(0).getId());
 	}
 
