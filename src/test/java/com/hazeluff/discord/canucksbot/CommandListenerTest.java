@@ -301,20 +301,45 @@ public class CommandListenerTest {
 
 	@Test
 	@PrepareForTest(CommandListener.class)
-	public void onReceivedMessageEventShouldSendMessageWhenCommandIsAbout() {
-		LOGGER.info("onReceivedMessageEventShouldSendMessageWhenCommandIsAbout");
+	public void onReceivedMessageEventShouldSendMessageWhenCommandIsUnknown() {
+		LOGGER.info("onReceivedMessageEventShouldSendMessageWhenCommandIsUnknown");
 		doReturn(false).when(spyCommandListener).isBotMentioned(anyString());
 		doReturn(true).when(spyCommandListener).isBotCommand(any(StringBuilder.class));
-		when(mockMessage.getContent()).thenReturn(" about");
+		when(mockMessage.getContent()).thenReturn(" hakdgflj");
 
 		spyCommandListener.onReceivedMessageEvent(mockEvent);
 
 		verify(spyCommandListener).sendMessage(eq(mockChannel), captorResponse.capture());
-		assertTrue(captorResponse.getValue().contains(Config.VERSION));
-		assertTrue(captorResponse.getValue().contains(Config.HAZELUFF_MENTION));
-		assertTrue(captorResponse.getValue().contains(Config.GIT_URL));
-		assertTrue(captorResponse.getValue().contains(Config.HAZELUFF_EMAIL));
+		assertTrue(captorResponse.getValue().contains("`@CanucksBot help`"));
 		verify(spyCommandListener, never()).shouldFuckMessier(any(IChannel.class), anyString());
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void onReceivedMessageEventShouldSendMessageWhenShouldFuckMessierReturnsTrue() {
+		LOGGER.info("onReceivedMessageEventShouldSendMessageWhenShouldFuckMessierReturnsTrue");
+		doReturn(false).when(spyCommandListener).isBotMentioned(anyString());
+		doReturn(false).when(spyCommandListener).isBotCommand(any(StringBuilder.class));
+		doReturn(true).when(spyCommandListener).shouldFuckMessier(any(IChannel.class), anyString());
+		when(mockMessage.getContent()).thenReturn(" ");
+
+		spyCommandListener.onReceivedMessageEvent(mockEvent);
+
+		verify(spyCommandListener).sendMessage(mockChannel, "FUCK MESSIER");
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void onReceivedMessageEventShouldNotSendMessageWhenShouldFuckMessierReturnsFalse() {
+		LOGGER.info("onReceivedMessageEventShouldSendMessageWhenShouldFuckMessierReturnsTrue");
+		doReturn(false).when(spyCommandListener).isBotMentioned(anyString());
+		doReturn(false).when(spyCommandListener).isBotCommand(any(StringBuilder.class));
+		doReturn(false).when(spyCommandListener).shouldFuckMessier(any(IChannel.class), anyString());
+		when(mockMessage.getContent()).thenReturn(" ");
+
+		spyCommandListener.onReceivedMessageEvent(mockEvent);
+
+		verify(spyCommandListener, never()).sendMessage(any(IChannel.class), anyString());
 	}
 
 	// isBotCommand
