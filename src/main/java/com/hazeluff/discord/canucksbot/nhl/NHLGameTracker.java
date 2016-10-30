@@ -169,7 +169,6 @@ public class NHLGameTracker extends DiscordManager {
 							} else {
 								List<IMessage> sentMessages = sendMessage(channels, message);
 								eventMessages.put(eventId, sentMessages);
-
 							}
 						});
 						LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE + "]");
@@ -182,7 +181,7 @@ public class NHLGameTracker extends DiscordManager {
 					if (!justRestarted) {
 						sendMessage(channels, "Game has ended. Thanks for joining!");
 						sendMessage(channels, "Final Score: " + game.getScoreMessage());
-						sendMessage(channels, "Goals Scored: " + game.getScoreMessage());
+						sendMessage(channels, "Goals Scored: " + game.getGoalsMessage());
 						sendMessage(channels, "The next game is: "
 								+ nhlGameScheduler.getNextGame(NHLTeam.VANCOUVER_CANUCKS).getDetailsMessage());
 						for (IChannel channel : channels) {
@@ -190,7 +189,7 @@ public class NHLGameTracker extends DiscordManager {
 								if (message.getAuthor().getID().equals(client.getOurUser().getID())) {
 									StringBuilder strMessage = new StringBuilder();
 									strMessage.append(game.getDetailsMessage()).append("\n");
-									strMessage.append(game.getScoreMessage()).append("\n");
+									strMessage.append(game.getGoalsMessage()).append("\n");
 									updateMessage(message, strMessage.toString());
 								}
 							}
@@ -221,7 +220,7 @@ public class NHLGameTracker extends DiscordManager {
 		// Custom goal message
 		String customMessage = CanucksCustomMessages.getMessage(event.getPlayers());
 		if (event.getId() % 4 == 0 && customMessage != null) {
-			return customMessage;
+			message.append(customMessage).append("\n");
 		}
 
 		// Regular message

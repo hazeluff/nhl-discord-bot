@@ -25,7 +25,7 @@ public class BotPhrases {
 	static final Pattern WHATSUP_PATTERN = Pattern.compile("\\b((what(')?s\\s*up)|whaddup|wassup|sup)\\b");
 	public static final List<String> WHATSUP_RESPONSE = Arrays.asList("Nothing Much. You?", "Bot stuff. You?",
 			"Chillin. Want to join?", "Listening to some music.\nhttps://www.youtube.com/watch?v=cU8HrO7XuiE",
-			"BRB Trading Raymond, Ballard, and a 1st for Crosby.", "nm, u?");
+			"BRB Trading Raymond, Ballard, and a 2nd for Crosby.", "nm, u?");
 
 	static final Pattern LOVELY_PATTERN = Pattern
 			.compile("(\\bi\\s*(love|like)\\s*(u|you)\\b)|\\bilu\\b|:kiss:|:kissing:|:heart:|<3");
