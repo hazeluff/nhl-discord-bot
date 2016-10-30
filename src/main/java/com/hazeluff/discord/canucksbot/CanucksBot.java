@@ -17,12 +17,12 @@ public class CanucksBot {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CanucksBot.class);
 
 	private final IDiscordClient client;
-	private final GameScheduler nhlGameScheduler;
+	private final GameScheduler gameScheduler;
 	private final String id;
 	public CanucksBot(String botToken) {
 		LOGGER.info("Running CanucksBot v" + Config.VERSION);
 		client = getClient(botToken);
-		nhlGameScheduler = new GameScheduler(client);
+		gameScheduler = new GameScheduler(client);
 		try {
 			id = client.getApplicationClientID();
 			LOGGER.info("CanucksBot. id [" + id + "]");
@@ -54,7 +54,7 @@ public class CanucksBot {
 	}
 
 	public GameScheduler getGameScheduler() {
-		return nhlGameScheduler;
+		return gameScheduler;
 	}
 
 	public String getId() {
