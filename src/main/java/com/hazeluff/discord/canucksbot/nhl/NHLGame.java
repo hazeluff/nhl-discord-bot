@@ -33,6 +33,7 @@ public class NHLGame {
 	private NHLGameStatus status;
 	private List<NHLGameEvent> events = new ArrayList<>();
 	private List<NHLGameEvent> newEvents = new ArrayList<>();
+	private List<NHLGameEvent> updatedEvents = new ArrayList<>();
 
 	public NHLGame (JSONObject jsonGame) {
 		date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
@@ -196,12 +197,12 @@ public class NHLGame {
 
 	public List<NHLGameEvent> getNewEvents() {
 		List<NHLGameEvent> value = new ArrayList<>(newEvents);
-		newEvents.clear();
 		return value;
 	}
 
-	public void clearNewEvents() {
-		newEvents.clear();
+	public List<NHLGameEvent> getUpdatedEvents() {
+		List<NHLGameEvent> value = new ArrayList<>(updatedEvents);
+		return value;
 	}
 
 	@Override
@@ -290,7 +291,7 @@ public class NHLGame {
 				.getJSONObject(0);
 
 		updateInfo(jsonGame);
-		updatePlays(jsonGame);
+		updateEvents(jsonGame);
 	}
 
 	/**
@@ -309,21 +310,25 @@ public class NHLGame {
 	}
 
 	/**
-	 * Updates about specific plays in the game
+	 * Updates about events in the game
 	 */
-
-	private void updatePlays(JSONObject jsonGame) {
-		boolean displayLog = !newEvents.isEmpty();
+	private void updateEvents(JSONObject jsonGame) {
+		newEvents.clear();
+		updatedEvents.clear();
 		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
 		for (int i = 0; i < jsonScoringPlays.length(); i++) {
 			NHLGameEvent newEvent = new NHLGameEvent(jsonScoringPlays.getJSONObject(i));
 			if (!events.stream().anyMatch(event -> event.equals(newEvent))) {
-				events.add(newEvent);
-				newEvents.add(newEvent);
+				if (events.removeIf(event -> event.getId() == newEvent.getId())) {
+					events.add(newEvent);
+					updatedEvents.add(newEvent);
+				} else {
+					newEvents.add(newEvent);
+				}
 			}
 		}
-		displayLog ^= !newEvents.isEmpty();
-		if (displayLog) {
+
+		if (!newEvents.isEmpty()) {
 			newEvents.stream().forEach(event -> LOGGER.info("New event: " + event));
 		}
 	}

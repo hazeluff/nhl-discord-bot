@@ -140,7 +140,6 @@ public class NHLGameTracker extends DiscordManager {
 					boolean started = false;
 					do {
 						game.update();
-						game.clearNewEvents();
 						started = game.getStatus() != NHLGameStatus.PREVIEW;
 						if (started) {
 							break;
@@ -160,15 +159,20 @@ public class NHLGameTracker extends DiscordManager {
 
 					while (game.getStatus() != NHLGameStatus.FINAL) {
 						game.update();
+						// Create new messages for new events.
 						game.getNewEvents().stream().forEach(event -> {
+							int eventId = event.getId();
+							String message = buildEventMessage(event);
+							List<IMessage> sentMessages = sendMessage(channels, message);
+							eventMessages.put(eventId, sentMessages);
+						});
+						// Update existing messages
+						game.getUpdatedEvents().stream().forEach(event -> {
 							int eventId = event.getId();
 							String message = buildEventMessage(event);
 							if (eventMessages.containsKey(eventId)) {
 								List<IMessage> sentMessages = eventMessages.get(eventId);
 								updateMessage(sentMessages, message);
-							} else {
-								List<IMessage> sentMessages = sendMessage(channels, message);
-								eventMessages.put(eventId, sentMessages);
 							}
 						});
 						LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE + "]");
