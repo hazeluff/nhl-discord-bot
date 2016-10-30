@@ -220,7 +220,7 @@ public class NHLGameTracker extends DiscordManager {
 		
 		// Custom goal message
 		String customMessage = CanucksCustomMessages.getMessage(event.getPlayers());
-		if (event.getId() % 1 == 0 && customMessage != null) {
+		if (event.getId() % 4 == 0 && customMessage != null) {
 			return customMessage;
 		}
 
