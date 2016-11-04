@@ -1,12 +1,13 @@
 package com.hazeluff.discord.canucksbot.nhl;
 
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -24,16 +25,30 @@ import com.hazeluff.discord.canucksbot.utils.HttpUtils;
 public class Game {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
 
-	private final Date date;
+	private final LocalDateTime date;
 	private final int gamePk;
 	private final Team awayTeam;
 	private final Team homeTeam;
 	private int awayScore;
 	private int homeScore;
 	private GameStatus status;
-	private List<GameEvent> events = new ArrayList<>();
-	private List<GameEvent> newEvents = new ArrayList<>();
-	private List<GameEvent> updatedEvents = new ArrayList<>();
+	private final List<GameEvent> events = new ArrayList<>();
+	private final List<GameEvent> newEvents = new ArrayList<>();
+	private final List<GameEvent> updatedEvents = new ArrayList<>();
+
+	Game(LocalDateTime date, int gamePk, Team awayTeam, Team homeTeam, int awayScore, int homeScore,
+			GameStatus status, List<GameEvent> events, List<GameEvent> newEvents, List<GameEvent> updatedEvents) {
+		this.date = date;
+		this.gamePk = gamePk;
+		this.awayTeam = awayTeam;
+		this.homeTeam = homeTeam;
+		this.awayScore = awayScore;
+		this.homeScore = homeScore;
+		this.status = status;
+		this.events.addAll(events);
+		this.newEvents.addAll(newEvents);
+		this.updatedEvents.addAll(updatedEvents);
+	}
 
 	public Game (JSONObject jsonGame) {
 		date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
@@ -43,59 +58,49 @@ public class Game {
 		homeTeam = Team
 				.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
 		updateInfo(jsonGame);
-
+		updateEvents(jsonGame);
+		newEvents.clear();
+		updatedEvents.clear();
 	}
 
-	public Date getDate() {
+	public LocalDateTime getDate() {
 		return date;
 	}
 
 	/**
 	 * Gets the date in the format "YY-MM-DD"
 	 * 
+	 * @param zone
+	 *            time zone to convert the time to
 	 * @return the date in the format "YY-MM-DD"
 	 */
-	public String getShortDate() {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yy-MM-dd");
-		return dateFormat.format(date);
+	public String getShortDate(ZoneId zone) {
+		return ZonedDateTime.of(date, ZoneId.of("UTC")).withZoneSameInstant(zone)
+				.format(DateTimeFormatter.ofPattern("yy-MM-dd"));
 	}
 
 	/**
 	 * Gets the date in the format "EEEE dd MMM yyyy"
 	 * 
+	 * @param zone
+	 *            time zone to convert the time to
 	 * @return the date in the format "EEEE dd MMM yyyy"
 	 */
-	public String getNiceDate() {
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(date);
-		SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE d/MMM/yyyy");
-		return dateFormat.format(date);
+	public String getNiceDate(ZoneId zone) {
+		return ZonedDateTime.of(date, ZoneId.of("UTC")).withZoneSameInstant(zone)
+				.format(DateTimeFormatter.ofPattern("EEEE d/MMM/yyyy"));
 	}
 
 	/**
 	 * Gets the time in the format "HH:mm aaa"
 	 * 
+	 * @param zone
+	 *            time zone to convert the time to
 	 * @return the time in the format "HH:mm aaa"
 	 */
-	public String getTime() {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm Z");
-		return dateFormat.format(date);
-	}
-
-	String getDayOfMonthSuffix(final int n) {
-		if (n >= 11 && n <= 13) {
-			return "th";
-		}
-		switch (n % 10) {
-		case 1:
-			return "st";
-		case 2:
-			return "nd";
-		case 3:
-			return "rd";
-		default:
-			return "th";
-		}
+	public String getTime(ZoneId zone) {
+		return ZonedDateTime.of(date, ZoneId.of("UTC")).withZoneSameInstant(zone)
+				.format(DateTimeFormatter.ofPattern("H:mm z"));
 	}
 
 	public int getGamePk() {
@@ -154,7 +159,7 @@ public class Game {
 		String channelName = String.format("%.3s_vs_%.3s_%s",
 				homeTeam.getCode(),
 				awayTeam.getCode(),
-				getShortDate());
+				getShortDate(ZoneId.of("Canada/Pacific")));
 		return channelName.toString();
 	}
 
@@ -169,8 +174,8 @@ public class Game {
 		String message = String.format("**%s** vs **%s** at **%s** on **%s**",
 				homeTeam.getFullName(),
 				awayTeam.getFullName(),
-				getTime(),
-				getNiceDate());
+				getTime(ZoneId.of("Canada/Pacific")),
+				getNiceDate(ZoneId.of("Canada/Pacific")));
 		return message.toString();
 	}
 
@@ -182,9 +187,8 @@ public class Game {
 	 *         Away Team"
 	 */
 	public String getScoreMessage() {
-		StringBuilder message = new StringBuilder(homeTeam.getName()).append(" **").append(homeScore)
-				.append("** - **").append(awayScore).append("** ").append(awayTeam.getName());
-		return message.toString();
+		return String.format("%s **%s** - **%s** %s", homeTeam.getName(), homeScore, awayScore,
+				awayTeam.getName());
 	}
 
 	public GameStatus getStatus() {
@@ -192,7 +196,8 @@ public class Game {
 	}
 
 	public List<GameEvent> getEvents() {
-		return events;
+		List<GameEvent> value = new ArrayList<>(events);
+		return value;
 	}
 
 	public List<GameEvent> getNewEvents() {
@@ -261,13 +266,13 @@ public class Game {
 	public static Comparator<Game> getDateComparator() {
 		return new Comparator<Game>() {
 			public int compare(Game g1, Game g2) {
-				return (g1.date.compareTo(g2.date));
+				return (g1.getDate().compareTo(g2.getDate()));
 			}
 		};
 	}
 
-	public boolean isOnDate(Date date) {
-		return DateUtils.compareNoTime(this.date, date) == 0;
+	public boolean isOnDate(LocalDateTime date) {
+		return this.getDate().toLocalDate().equals(date.toLocalDate());
 	}
 
 	/**
@@ -283,15 +288,15 @@ public class Game {
 			uriBuilder.addParameter("gamePk", Integer.toString(gamePk));
 			uriBuilder.addParameter("expand", "schedule.scoringplays");
 			strJSONSchedule = HttpUtils.get(uriBuilder.build());
+			JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
+			JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
+					.getJSONObject(0);
+
+			updateInfo(jsonGame);
+			updateEvents(jsonGame);
 		} catch (URISyntaxException e) {
 			LOGGER.error("Error building URI", e);
 		}
-		JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
-		JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
-				.getJSONObject(0);
-
-		updateInfo(jsonGame);
-		updateEvents(jsonGame);
 	}
 
 	/**
@@ -303,7 +308,7 @@ public class Game {
 	 * 
 	 * @param jsonGame
 	 */
-	private void updateInfo(JSONObject jsonGame) {
+	void updateInfo(JSONObject jsonGame) {
 		awayScore = jsonGame.getJSONObject("teams").getJSONObject("away").getInt("score");
 		homeScore = jsonGame.getJSONObject("teams").getJSONObject("home").getInt("score");
 		status = GameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode")));
@@ -312,7 +317,7 @@ public class Game {
 	/**
 	 * Updates about events in the game
 	 */
-	private void updateEvents(JSONObject jsonGame) {
+	void updateEvents(JSONObject jsonGame) {
 		newEvents.clear();
 		updatedEvents.clear();
 		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
@@ -320,11 +325,11 @@ public class Game {
 			GameEvent newEvent = new GameEvent(jsonScoringPlays.getJSONObject(i));
 			if (!events.stream().anyMatch(event -> event.equals(newEvent))) {
 				if (events.removeIf(event -> event.getId() == newEvent.getId())) {
-					events.add(newEvent);
 					updatedEvents.add(newEvent);
 				} else {
 					newEvents.add(newEvent);
 				}
+				events.add(newEvent);
 			}
 		}
 
@@ -336,7 +341,7 @@ public class Game {
 	public String getGoalsMessage() {
 		List<GameEvent> goals = events;
 		StringBuilder response = new StringBuilder();
-		response.append("```");
+		response.append("```\n");
 		for (int i = 1; i <= 3; i++) {
 			switch (i) {
 			case 1:
@@ -354,19 +359,7 @@ public class Game {
 			if (goals.stream().anyMatch(isPeriod)) {
 				for (GameEvent gameEvent : goals.stream().filter(isPeriod)
 						.collect(Collectors.toList())) {
-					List<Player> players = gameEvent.getPlayers();
-					response.append(String.format("\n%s - %s %-18s", 
-							gameEvent.getPeriodTime(),
-							gameEvent.getTeam().getCode(),
-							players.get(0).getFullName()));
-					if (players.size() > 1) {
-						response.append("  Assists: ");
-						response.append(players.get(1).getFullName());
-					}
-					if (players.size() > 2) {
-						response.append(", ");
-						response.append(players.get(2).getFullName());
-					}
+					response.append("\n").append(gameEvent.getDetails());
 				}
 			} else {
 				response.append("\nNone");
@@ -377,20 +370,7 @@ public class Game {
 			GameEvent gameEvent = goals.stream().filter(isOtherPeriod).findFirst().get();
 			GamePeriod period = gameEvent.getPeriod();
 			response.append("\n\n").append(period.getDisplayValue()).append(":");
-			List<Player> players = gameEvent.getPlayers();
-			response.append(
-					String.format("\n%s - %s %-18s", 
-							gameEvent.getPeriodTime(), 
-							gameEvent.getTeam().getCode(),
-							players.get(0).getFullName()));
-			if (players.size() > 1) {
-				response.append("  Assists: ");
-				response.append(players.get(1).getFullName());
-			}
-			if (players.size() > 2) {
-				response.append(", ");
-				response.append(players.get(2).getFullName());
-			}
+			response.append("\n").append(gameEvent.getDetails());
 		}
 		response.append("\n```");
 		return response.toString();

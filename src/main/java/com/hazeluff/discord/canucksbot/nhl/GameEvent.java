@@ -1,7 +1,7 @@
 package com.hazeluff.discord.canucksbot.nhl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -12,7 +12,7 @@ import com.hazeluff.discord.canucksbot.utils.DateUtils;
 public class GameEvent {
 	private final int id;
 	private int idx;
-	private Date date;
+	private LocalDateTime date;
 	private final GameEventType type;
 	private final Team team;
 	private final String periodTime;
@@ -20,8 +20,8 @@ public class GameEvent {
 	private final List<Player> players = new ArrayList<>();
 	private final GameEventStrength strength;
 
-	public GameEvent(JSONObject jsonScoringPlays) {
-		JSONObject jsonAbout = jsonScoringPlays.getJSONObject("about");
+	public GameEvent(JSONObject jsonScoringPlay) {
+		JSONObject jsonAbout = jsonScoringPlay.getJSONObject("about");
 		id = jsonAbout.getInt("eventId");
 		idx = jsonAbout.getInt("eventIdx");
 		date = DateUtils.parseNHLDate(jsonAbout.getString("dateTime"));
@@ -30,16 +30,29 @@ public class GameEvent {
 				GamePeriod.Type.parse(jsonAbout.getString("periodType")),
 				jsonAbout.getString("ordinalNum"));
 		periodTime = jsonAbout.getString("periodTime");
-		team = Team.parse(jsonScoringPlays.getJSONObject("team").getInt("id"));
+		team = Team.parse(jsonScoringPlay.getJSONObject("team").getInt("id"));
 
-		JSONObject jsonResult = jsonScoringPlays.getJSONObject("result");
+		JSONObject jsonResult = jsonScoringPlay.getJSONObject("result");
 		strength = GameEventStrength.parse(jsonResult.getJSONObject("strength").getString("code"));
 		type = GameEventType.parse(jsonResult.getString("eventTypeId"));
 
-		JSONArray jsonPlayers = jsonScoringPlays.getJSONArray("players");
+		JSONArray jsonPlayers = jsonScoringPlay.getJSONArray("players");
 		for (int i = 0; i < jsonPlayers.length(); i++) {
 			players.add(new Player(jsonPlayers.getJSONObject(i)));
 		}
+	}
+
+	GameEvent(int id, int idx, LocalDateTime date, GameEventType type, Team team, String periodTime, GamePeriod period,
+			List<Player> players, GameEventStrength strength) {
+		this.id = id;
+		this.idx = idx;
+		this.date = date;
+		this.type = type;
+		this.team = team;
+		this.periodTime = periodTime;
+		this.period = period;
+		this.players.addAll(players);
+		this.strength = strength;
 	}
 
 	public int getId() {
@@ -70,12 +83,31 @@ public class GameEvent {
 		return strength;
 	}
 
-	public Date getDate() {
+	public LocalDateTime getDate() {
 		return date;
 	}
 
 	public int getIdx() {
 		return idx;
+	}
+
+	/**
+	 * Builds the details to be displayed.
+	 * 
+	 * @return details as formatted string
+	 */
+	public String getDetails() {
+		StringBuilder details = new StringBuilder();
+		details.append(String.format("\n%s - %s %-18s", periodTime, team.getCode(), players.get(0).getFullName()));
+		if (players.size() > 1) {
+			details.append("  Assists: ");
+			details.append(players.get(1).getFullName());
+		}
+		if (players.size() > 2) {
+			details.append(", ");
+			details.append(players.get(2).getFullName());
+		}
+		return details.toString();
 	}
 
 	@Override

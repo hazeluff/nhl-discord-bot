@@ -1,7 +1,5 @@
 package com.hazeluff.discord.canucksbot;
 
-import java.util.TimeZone;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +21,7 @@ public class CanucksBot {
 		LOGGER.info("Running CanucksBot v" + Config.VERSION);
 		client = getClient(botToken);
 		gameScheduler = new GameScheduler(client);
+
 		try {
 			id = client.getApplicationClientID();
 			LOGGER.info("CanucksBot. id [" + id + "]");
@@ -35,11 +34,9 @@ public class CanucksBot {
 		dispatcher.registerListener(new CommandListener(this));
 	}
 
-	private static IDiscordClient getClient(String token) {
+	static IDiscordClient getClient(String token) {
 		ClientBuilder clientBuilder = new ClientBuilder();
 		clientBuilder.withToken(token);
-
-		TimeZone.setDefault(TimeZone.getTimeZone("Canada/Pacific"));
 
 		try {
 			return clientBuilder.login();
@@ -59,5 +56,14 @@ public class CanucksBot {
 
 	public String getId() {
 		return id;
+	}
+
+	/**
+	 * Gets the id of the bot, in the format displayed in a message.
+	 * 
+	 * @return
+	 */
+	public String getMentionId() {
+		return "<@" + id + ">";
 	}
 }

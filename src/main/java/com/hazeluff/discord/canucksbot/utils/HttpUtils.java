@@ -22,14 +22,16 @@ public class HttpUtils {
 		HttpGet request = new HttpGet(uri);
 		HttpResponse response = null;
 		int retries = Config.HTTP_REQUEST_RETRIES;
+		int httpStatusCode = -1;
 		do {
 			try {
 				response = client.execute(request);
+				httpStatusCode = response == null ? -1 : response.getStatusLine().getStatusCode();
 			} catch (IOException e) {
 				LOGGER.error("Failed to request page [" + uri.toString() + "]", e);
 			}
-		} while ((response == null || response.getStatusLine().getStatusCode() != 200) && retries > 0);
-		if (retries <= 0) {	
+		} while ((response == null || httpStatusCode != 200) && retries-- > 0);
+		if ((response == null || httpStatusCode != 200) && retries <= 0) {
 			String message = "Failed to get page after (" + Config.HTTP_REQUEST_RETRIES + ") retries.";
 			LOGGER.error(message);
 			throw new RuntimeException(message);
@@ -48,6 +50,5 @@ public class HttpUtils {
 			LOGGER.error("Error reading response");
 			throw new RuntimeException(e);
 		}
-
 	}
 }

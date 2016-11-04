@@ -1,10 +1,10 @@
 package com.hazeluff.discord.canucksbot.nhl;
 
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -71,6 +71,7 @@ public class GameScheduler extends DiscordManager {
 					uriBuilder.addParameter("startDate", "2016-08-01");
 					uriBuilder.addParameter("endDate", "2017-08-01");
 					uriBuilder.addParameter("teamId", String.valueOf(team.getId()));
+					uriBuilder.addParameter("expand", "schedule.scoringplays");
 					strJSONSchedule = HttpUtils.get(uriBuilder.build());
 				} catch (URISyntaxException e) {
 					LOGGER.error("Error building URI", e);
@@ -202,9 +203,9 @@ public class GameScheduler extends DiscordManager {
 	 * @return NHLGame of game in the future for the provided team
 	 */
 	public Game getFutureGame(Team team, int futureIndex) {
-		Date currentDate = new Date();
+		LocalDate currentDate = LocalDate.now();
 		List<Game> futureGames = games.stream().filter(game -> game.containsTeam(team))
-				.filter(game -> game.getDate().compareTo(currentDate) >= 0).collect(Collectors.toList());
+				.filter(game -> game.getDate().toLocalDate().compareTo(currentDate) >= 0).collect(Collectors.toList());
 		if (futureIndex >= futureGames.size()) {
 			futureIndex = futureGames.size() - 1;
 		}
@@ -237,9 +238,9 @@ public class GameScheduler extends DiscordManager {
 	 * @return NHLGame of next game for the provided team
 	 */
 	public Game getPreviousGame(Team team, int beforeIndex) {
-		Date currentDate = new Date();
+		LocalDate currentDate = LocalDate.now();
 		List<Game> previousGames = games.stream().filter(game -> game.containsTeam(team))
-				.filter(game -> game.getDate().compareTo(currentDate) < 0).collect(Collectors.toList());
+				.filter(game -> game.getDate().toLocalDate().compareTo(currentDate) < 0).collect(Collectors.toList());
 		if (beforeIndex >= previousGames.size()) {
 			beforeIndex = previousGames.size() - 1;
 		}

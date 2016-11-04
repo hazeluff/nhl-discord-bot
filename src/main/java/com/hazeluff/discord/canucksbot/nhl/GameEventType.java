@@ -22,6 +22,10 @@ public enum GameEventType {
 		this.value = value;
 	}
 
+	public String getId() {
+		return id;
+	}
+
 	public String getValue() {
 		return value;
 	}

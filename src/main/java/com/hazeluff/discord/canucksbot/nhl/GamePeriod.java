@@ -26,6 +26,10 @@ public class GamePeriod {
 			this.value = value;
 		}
 
+		public String getId() {
+			return id;
+		}
+
 		public String getValue() {
 			return value;
 		}
@@ -62,7 +66,7 @@ public class GamePeriod {
 		case REGULAR:
 			return String.format("%s Period", ordinalNum);
 		case OVERTIME:
-			return String.format("%s Overtime", ordinalNum, type.value);
+			return String.format("%s Overtime", ordinalNum);
 		case SHOOTOUT:
 			return "Shootout";
 		default:

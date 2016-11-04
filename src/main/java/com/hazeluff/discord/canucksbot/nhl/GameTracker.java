@@ -1,7 +1,8 @@
 package com.hazeluff.discord.canucksbot.nhl;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -13,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.DiscordManager;
 import com.hazeluff.discord.canucksbot.nhl.canucks.CanucksCustomMessages;
-import com.hazeluff.discord.canucksbot.utils.DateUtils;
 import com.hazeluff.discord.canucksbot.utils.Utils;
 
 import sx.blah.discord.api.IDiscordClient;
@@ -45,12 +45,12 @@ public class GameTracker extends DiscordManager {
 	Map<Long, String> gameReminders = new HashMap<>();
 
 	// Poll for if game is close to starting every minute
-	private static final long IDLE_POLL_RATE = 60000l;
+	private static final long IDLE_POLL_RATE_MS = 60000l;
 	// Poll for game events every 5 seconds if game is close to
 	// starting/started.
-	private static final long ACTIVE_POLL_RATE = 5000l;
+	private static final long ACTIVE_POLL_RATE_MS = 5000l;
 	// Time before game to poll faster
-	private static final long GAME_START_THRESHOLD = 300000l;
+	private static final long GAME_START_THRESHOLD_MS = 300000l;
 
 	private boolean finished = false;
 	List<IChannel> channels = new ArrayList<IChannel>();
@@ -132,10 +132,9 @@ public class GameTracker extends DiscordManager {
 	void sendReminders() {
 		boolean almostStart;
 		do {
-			long timeTillGame = Long.MAX_VALUE;
-			timeTillGame = DateUtils.diff(game.getDate(), new Date());
-			almostStart = timeTillGame < GAME_START_THRESHOLD;
-			LOGGER.trace(timeTillGame + " " + GAME_START_THRESHOLD);
+			long timeTillGameMs = Long.MAX_VALUE;
+			timeTillGameMs = Duration.between(LocalDateTime.now(), game.getDate()).getSeconds() * 1000;
+			almostStart = timeTillGameMs < GAME_START_THRESHOLD_MS;
 			if (!almostStart) {
 				// Check to see if message should be sent.
 				long lowestThreshold = Long.MAX_VALUE;
@@ -144,7 +143,7 @@ public class GameTracker extends DiscordManager {
 				while (it.hasNext()) {
 					Entry<Long, String> entry = it.next();
 					long threshold = entry.getKey();
-					if (threshold > timeTillGame) {
+					if (threshold > timeTillGameMs) {
 						if (lowestThreshold > threshold) {
 							lowestThreshold = threshold;
 							message = entry.getValue();
@@ -159,8 +158,8 @@ public class GameTracker extends DiscordManager {
 				message = null;
 
 				// Sleep (wait for
-				LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE + "]");
-				Utils.sleep(IDLE_POLL_RATE);
+				LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE_MS + "]");
+				Utils.sleep(IDLE_POLL_RATE_MS);
 			}
 		} while (!almostStart);
 	}
@@ -171,8 +170,8 @@ public class GameTracker extends DiscordManager {
 			game.update();
 			started = game.getStatus() != GameStatus.PREVIEW;
 			if (!started) {
-				LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE + "]");
-				Utils.sleep(ACTIVE_POLL_RATE);
+				LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
+				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}
 		} while (!started);
 	}
@@ -197,8 +196,8 @@ public class GameTracker extends DiscordManager {
 				}
 			});
 			if (game.getStatus() != GameStatus.FINAL) {
-				LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE + "]");
-				Utils.sleep(ACTIVE_POLL_RATE);
+				LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
+				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}
 		}
 	}

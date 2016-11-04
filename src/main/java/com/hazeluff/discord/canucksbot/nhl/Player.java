@@ -28,6 +28,10 @@ public class Player {
 			this.value = value;
 		}
 
+		public String toString() {
+			return value;
+		}
+
 		public static EventRole parse(String value) {
 			EventRole result = VALUES_MAP.get(value);
 			if (result == null) {
@@ -41,6 +45,19 @@ public class Player {
 		this.id = jsonPlayer.getJSONObject("player").getInt("id");
 		this.fullName = jsonPlayer.getJSONObject("player").getString("fullName");
 		this.role = EventRole.parse(jsonPlayer.getString("playerType"));
+	}
+
+	/**
+	 * For testing only.
+	 * 
+	 * @param id
+	 * @param fullName
+	 * @param role
+	 */
+	Player(int id, String fullName, EventRole role) {
+		this.id = id;
+		this.fullName = fullName;
+		this.role = role;
 	}
 
 	public int getId() {
