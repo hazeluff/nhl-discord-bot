@@ -7,9 +7,9 @@
     </appender>
     
     <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>logs/canucksbot.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-      <fileNamePattern>logs/canucksbot-%d{yyyy-MM-dd}.%i.txt</fileNamePattern>
+      <file>logs/canucksbot.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>logs/canucksbot-%d{yy-MM-dd}.%i.log</fileNamePattern>
         <maxFileSize>200MB</maxFileSize>    
         <maxHistory>30</maxHistory>
       </rollingPolicy>
@@ -18,10 +18,28 @@
       </encoder>
     </appender>
     
-    <logger name="com.hazeluff.discord.canucksbot" level="DEBUG"/>
+    <appender name="ErrorFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>logs/canucksbot.err</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>logs/canucksbot-%d{yy-MM-dd}.%i.err</fileNamePattern>
+        <maxFileSize>200MB</maxFileSize>    
+        <maxHistory>30</maxHistory>
+      </rollingPolicy>
+      <encoder>
+        <pattern>%d{HH:mm:ss.SSS} [%-21thread] [%-5level] [%-30logger{1}] - %msg%n</pattern>
+      </encoder>
+    </appender>    
     
-    <root level="INFO">
+    <logger name="com.hazeluff.discord.canucksbot" level="debug" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="File"/>
-    </root>      
+    </logger>
+    
+    <root level="ERROR">
+      <appender-ref ref="Console"/>
+      <appender-ref ref="File"/>
+      <appender-ref ref="ErrorFile"/>
+    </root>
+    
+    
 </configuration>
