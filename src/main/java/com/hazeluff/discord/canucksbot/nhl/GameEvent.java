@@ -7,6 +7,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.hazeluff.discord.canucksbot.nhl.Player.EventRole;
 import com.hazeluff.discord.canucksbot.utils.DateUtils;
 
 public class GameEvent {
@@ -40,6 +41,8 @@ public class GameEvent {
 		for (int i = 0; i < jsonPlayers.length(); i++) {
 			players.add(new Player(jsonPlayers.getJSONObject(i)));
 		}
+		
+		players.removeIf(player -> player.getRole() == EventRole.GOALIE);
 	}
 
 	GameEvent(int id, int idx, LocalDateTime date, GameEventType type, Team team, String periodTime, GamePeriod period,
@@ -98,7 +101,7 @@ public class GameEvent {
 	 */
 	public String getDetails() {
 		StringBuilder details = new StringBuilder();
-		details.append(String.format("\n%s - %s %-18s", periodTime, team.getCode(), players.get(0).getFullName()));
+		details.append(String.format("%s - %s %-18s", periodTime, team.getCode(), players.get(0).getFullName()));
 		if (players.size() > 1) {
 			details.append("  Assists: ");
 			details.append(players.get(1).getFullName());

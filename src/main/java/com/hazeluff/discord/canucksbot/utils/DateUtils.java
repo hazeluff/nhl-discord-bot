@@ -1,5 +1,6 @@
 package com.hazeluff.discord.canucksbot.utils;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -18,5 +19,16 @@ public class DateUtils {
 			LOGGER.error("Could not parse date [" + date + "]", e);
 			return null;
 		}
+	}
+
+	/**
+	 * Finds the difference (in ms) between two LocalDateTime. Returns date2 - date1.
+	 * 
+	 * @param date1
+	 * @param date2
+	 * @return time difference in ms
+	 */
+	public static long diffMs(LocalDateTime date1, LocalDateTime date2) {
+		return Duration.between(date1, date2).getSeconds() * 1000;
 	}
 }

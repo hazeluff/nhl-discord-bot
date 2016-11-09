@@ -12,7 +12,7 @@ public class Player {
 
 	// role the player had in an event
 	public enum EventRole {
-		SCORER("Scorer"), ASSIST("Assist");
+		SCORER("Scorer"), ASSIST("Assist"), GOALIE("Goalie");
 
 		private final String value;
 

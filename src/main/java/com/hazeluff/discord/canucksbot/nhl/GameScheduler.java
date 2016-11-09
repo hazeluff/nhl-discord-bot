@@ -25,7 +25,6 @@ import com.hazeluff.discord.canucksbot.DiscordManager;
 import com.hazeluff.discord.canucksbot.utils.HttpUtils;
 import com.hazeluff.discord.canucksbot.utils.Utils;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 
@@ -37,8 +36,10 @@ import sx.blah.discord.handle.obj.IGuild;
  * @author hazeluff
  *
  */
-public class GameScheduler extends DiscordManager {
+public class GameScheduler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
+
+	private final DiscordManager discordManager;
 
 	// Poll for if the day has rolled over every 30 minutes
 	private static final int UPDATE_RATE = 1800000;
@@ -49,10 +50,9 @@ public class GameScheduler extends DiscordManager {
 	private Map<Team, List<IGuild>> teamSubscriptions = new HashMap<>();
 	private Map<Team, List<Game>> teamLatestGames = new HashMap<>();
 
-	public GameScheduler(IDiscordClient client) {
-		super(client);
+	public GameScheduler(DiscordManager discordManager) {
 		LOGGER.info("Initializing");
-		this.client = client;
+		this.discordManager = discordManager;
 		// Init variables
 		for (Team team : Team.values()) {
 			teamSubscriptions.put(team, new ArrayList<IGuild>());
@@ -117,7 +117,7 @@ public class GameScheduler extends DiscordManager {
 							if (games.stream()
 									.filter(game -> game.containsTeam(team) && !latestGames.contains(game))
 									.anyMatch(game -> channel.getName().equalsIgnoreCase(game.getChannelName()))) {
-								deleteChannel(channel);
+								discordManager.deleteChannel(channel);
 							}
 						}
 					}
@@ -184,7 +184,7 @@ public class GameScheduler extends DiscordManager {
 				for (IGuild guild : teamSubscriptions.get(team)) {
 					for (IChannel channel : guild.getChannels()) {
 						if (channel.getName().equalsIgnoreCase(oldestGame.getChannelName())) {
-							deleteChannel(channel);
+							discordManager.deleteChannel(channel);
 						}
 					}
 				}
@@ -205,7 +205,7 @@ public class GameScheduler extends DiscordManager {
 	public Game getFutureGame(Team team, int futureIndex) {
 		LocalDate currentDate = LocalDate.now();
 		List<Game> futureGames = games.stream().filter(game -> game.containsTeam(team))
-				.filter(game -> game.getDate().toLocalDate().compareTo(currentDate) >= 0).collect(Collectors.toList());
+				.filter(game -> game.getStatus() == GameStatus.PREVIEW).collect(Collectors.toList());
 		if (futureIndex >= futureGames.size()) {
 			futureIndex = futureGames.size() - 1;
 		}
@@ -240,7 +240,7 @@ public class GameScheduler extends DiscordManager {
 	public Game getPreviousGame(Team team, int beforeIndex) {
 		LocalDate currentDate = LocalDate.now();
 		List<Game> previousGames = games.stream().filter(game -> game.containsTeam(team))
-				.filter(game -> game.getDate().toLocalDate().compareTo(currentDate) < 0).collect(Collectors.toList());
+				.filter(game -> game.getStatus() == GameStatus.FINAL).collect(Collectors.toList());
 		if (beforeIndex >= previousGames.size()) {
 			beforeIndex = previousGames.size() - 1;
 		}
@@ -326,6 +326,6 @@ public class GameScheduler extends DiscordManager {
 			}
 		}
 		LOGGER.debug("NHLGameTracker does not exist: " + game);
-		return new GameTracker(client, this, game);
+		return new GameTracker(discordManager, this, game);
 	}
 }

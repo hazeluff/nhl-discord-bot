@@ -1,6 +1,5 @@
 package com.hazeluff.discord.canucksbot.nhl;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,9 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucksbot.DiscordManager;
 import com.hazeluff.discord.canucksbot.nhl.canucks.CanucksCustomMessages;
+import com.hazeluff.discord.canucksbot.utils.DateUtils;
 import com.hazeluff.discord.canucksbot.utils.Utils;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -38,40 +37,38 @@ import sx.blah.discord.handle.obj.IMessage;
  * @author hazeluff
  *
  */
-public class GameTracker extends DiscordManager {
+public class GameTracker extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameTracker.class);
 
 	// <threshold,message>
-	Map<Long, String> gameReminders = new HashMap<>();
+	@SuppressWarnings("serial")
+	private static final Map<Long, String> gameReminders = new HashMap<Long, String>() {{
+		put(3600000l, "60 minutes till puck drop.");
+		put(1800000l, "30 minutes till puck drop.");
+		put(600000l, "10 minutes till puck drop.");
+	}};
 
 	// Poll for if game is close to starting every minute
-	private static final long IDLE_POLL_RATE_MS = 60000l;
+	static final long IDLE_POLL_RATE_MS = 60000l;
 	// Poll for game events every 5 seconds if game is close to
 	// starting/started.
-	private static final long ACTIVE_POLL_RATE_MS = 5000l;
+	static final long ACTIVE_POLL_RATE_MS = 5000l;
 	// Time before game to poll faster
-	private static final long GAME_START_THRESHOLD_MS = 300000l;
+	static final long CLOSE_TO_START_THRESHOLD_MS = 300000l;
 
-	private boolean finished = false;
-	List<IChannel> channels = new ArrayList<IChannel>();
-	// Map<NHLGameEvent.idx, List<IMessage>>
-	Map<Integer, List<IMessage>> eventMessages = new HashMap<Integer, List<IMessage>>();
-	
+	private final DiscordManager discordManager;
 	private final Game game;
-
 	private final GameScheduler gameScheduler;
 
-	private Thread thread;
+	private final List<IChannel> channels = new ArrayList<IChannel>();
+	// Map<NHLGameEvent.idx, List<IMessage>>
+	private final Map<Integer, List<IMessage>> eventMessages = new HashMap<>();
+	private boolean finished = false;
 
-	public GameTracker(IDiscordClient client, GameScheduler nhlGameScheduler, Game game) {
-		super(client);
+	public GameTracker(DiscordManager discordManager, GameScheduler nhlGameScheduler, Game game) {
+		this.discordManager = discordManager;
 		this.game = game;
 		this.gameScheduler = nhlGameScheduler;
-
-		gameReminders.put(3600000l, "60 minutes till puck drop.");
-		gameReminders.put(1800000l, "30 minutes till puck drop.");
-		gameReminders.put(600000l, "10 minutes till puck drop.");
-		gameReminders.put(300000l, "5 minutes till puck drop.");
 
 		List<IGuild> subscribedGuilds = new ArrayList<>();
 		subscribedGuilds.addAll(nhlGameScheduler.getSubscribedGuilds(game.getHomeTeam()));
@@ -81,10 +78,10 @@ public class GameTracker extends DiscordManager {
 		for (IGuild guild : subscribedGuilds) {
 			if (!guild.getChannels().stream().anyMatch(c -> c.getName().equalsIgnoreCase(channelName))) {
 				LOGGER.info("Creating Channel [" + channelName + "] in [" + guild.getName() + "]");
-				IChannel channel = createChannel(guild, channelName);
-				changeTopic(channel, "Go Canucks Go!");
-				IMessage message = sendMessage(channel, game.getDetailsMessage());
-				pinMessage(channel, message);
+				IChannel channel = discordManager.createChannel(guild, channelName);
+				discordManager.changeTopic(channel, "Go Canucks Go!");
+				IMessage message = discordManager.sendMessage(channel, game.getDetailsMessage());
+				discordManager.pinMessage(channel, message);
 				channels.add(channel);
 			} else {
 				LOGGER.warn("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
@@ -94,48 +91,41 @@ public class GameTracker extends DiscordManager {
 		}
 	}
 
-	public void start() {
-		if (thread == null) {
-			thread = new Thread() {
-				public void run() {
-					LOGGER.info("Started thread for [" + game + "]");
-					if (game.getStatus() != GameStatus.FINAL) {
-						// Wait until close to start of game
-						LOGGER.info("Idling until near game start.");
-						sendReminders();
+	public void run() {
+		LOGGER.info("Started thread for [" + game + "]");
+		if (game.getStatus() != GameStatus.FINAL) {
+			// Wait until close to start of game
+			LOGGER.info("Idling until near game start.");
+			sendReminders();
 
-						// Game is close to starting. Poll at higher rate than previously
-						LOGGER.info("Game is about to start. Polling more actively.");
-						waitForStart();
+			// Game is close to starting. Poll at higher rate than previously
+			LOGGER.info("Game is about to start. Polling more actively.");
+			waitForStart();
 
-						// Game has started
-						LOGGER.info("Game is about to start!");
-						sendMessage(channels, "Game is about to start. GO CANUCKS GO!");
+			// Game has started
+			LOGGER.info("Game is about to start!");
+			discordManager.sendMessage(channels, "Game is about to start. GO CANUCKS GO!");
 
-						sendEventMessages();
+			sendEventMessages();
 
-						// Game is over
-						sendEndOfGameMessage();
-					} else {
-						LOGGER.info("Game is already finished");
-					}
-
-					finished = true;
-				}
-			};
-			thread.start();
+			// Game is over
+			sendEndOfGameMessage();
+			updatePinnedMessages();
 		} else {
-			LOGGER.warn("Thread already started.");
+			LOGGER.info("Game is already finished");
 		}
+
+		finished = true;
 	}
 
 	void sendReminders() {
-		boolean almostStart;
+		boolean firstPass = true;
+		boolean closeToStart;
 		do {
 			long timeTillGameMs = Long.MAX_VALUE;
-			timeTillGameMs = Duration.between(LocalDateTime.now(), game.getDate()).getSeconds() * 1000;
-			almostStart = timeTillGameMs < GAME_START_THRESHOLD_MS;
-			if (!almostStart) {
+			timeTillGameMs = DateUtils.diffMs(LocalDateTime.now(), game.getDate());
+			closeToStart = timeTillGameMs < CLOSE_TO_START_THRESHOLD_MS;
+			if (!closeToStart) {
 				// Check to see if message should be sent.
 				long lowestThreshold = Long.MAX_VALUE;
 				String message = null;
@@ -151,17 +141,17 @@ public class GameTracker extends DiscordManager {
 						it.remove();
 					}
 				}
-				if (message != null) {
-					sendMessage(channels, message);
+				if (message != null && !firstPass) {
+					discordManager.sendMessage(channels, message);
 				}
 				lowestThreshold = Long.MAX_VALUE;
 				message = null;
-
+				firstPass = false;
 				// Sleep (wait for
 				LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE_MS + "]");
 				Utils.sleep(IDLE_POLL_RATE_MS);
 			}
-		} while (!almostStart);
+		} while (!closeToStart);
 	}
 
 	void waitForStart() {
@@ -183,7 +173,7 @@ public class GameTracker extends DiscordManager {
 			game.getNewEvents().stream().forEach(event -> {
 				int eventId = event.getId();
 				String message = buildEventMessage(event);
-				List<IMessage> sentMessages = sendMessage(channels, message);
+				List<IMessage> sentMessages = discordManager.sendMessage(channels, message);
 				eventMessages.put(eventId, sentMessages);
 			});
 			// Update existing messages
@@ -192,7 +182,7 @@ public class GameTracker extends DiscordManager {
 				String message = buildEventMessage(event);
 				if (eventMessages.containsKey(eventId)) {
 					List<IMessage> sentMessages = eventMessages.get(eventId);
-					updateMessage(sentMessages, message);
+					discordManager.updateMessage(sentMessages, message);
 				}
 			});
 			if (game.getStatus() != GameStatus.FINAL) {
@@ -204,21 +194,23 @@ public class GameTracker extends DiscordManager {
 
 	void sendEndOfGameMessage() {
 		LOGGER.info("Game is over.");
-		sendMessage(channels, "Game has ended. Thanks for joining!");
-		sendMessage(channels, "Final Score: " + game.getScoreMessage());
-		sendMessage(channels, "Goals Scored:\n" + game.getGoalsMessage());
-		sendMessage(channels,
-				"The next game is: " + gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS).getDetailsMessage());
+		String summary = "Game has ended. Thanks for joining!\n" +
+				"Final Score: " + game.getScoreMessage() + "\n" +
+				"Goals Scored:\n" + game.getGoalsMessage() + "\n" + 
+				"The next game is: " + gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS).getDetailsMessage();
+		discordManager.sendMessage(channels, summary);
+	}
+
+	void updatePinnedMessages() {
 		for (IChannel channel : channels) {
-			for (IMessage message : getPinnedMessages(channel)) {
-				if (message.getAuthor().getID().equals(client.getOurUser().getID())) {
+			for (IMessage message : discordManager.getPinnedMessages(channel)) {
+				if (discordManager.isAuthorOfMessage(message)) {
 					StringBuilder strMessage = new StringBuilder();
 					strMessage.append(game.getDetailsMessage()).append("\n");
 					strMessage.append(game.getGoalsMessage()).append("\n");
-					updateMessage(message, strMessage.toString());
+					discordManager.updateMessage(message, strMessage.toString());
 				}
 			}
-
 		}
 	}
 
@@ -274,5 +266,9 @@ public class GameTracker extends DiscordManager {
 	 */
 	public Game getGame() {
 		return game;
+	}
+
+	List<IChannel> getChannels() {
+		return new ArrayList<IChannel>(channels);
 	}
 }

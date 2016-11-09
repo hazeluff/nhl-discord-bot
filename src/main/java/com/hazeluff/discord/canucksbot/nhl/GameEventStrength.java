@@ -23,6 +23,11 @@ public enum GameEventStrength {
 		this.value = value;
 	}
 
+	/**
+	 * Gets the Id ("code" in NHL api)
+	 * 
+	 * @return
+	 */
 	public String getId() {
 		return id;
 	}
@@ -31,6 +36,12 @@ public enum GameEventStrength {
 		return value;
 	}
 
+	/**
+	 * Parses the id ("code" in NHL api) of the event strength.
+	 * 
+	 * @param id
+	 * @return
+	 */
 	public static GameEventStrength parse(String id) {
 		GameEventStrength result = VALUES_MAP.get(id);
 		if (result == null) {

@@ -16,15 +16,12 @@ import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
 /**
- * Class to extend from. Provides methods that interface with Discord. The methods provide error handling.
- * 
- * @author hazeluff
- *
+ * Provides methods that interface with Discord. The methods provide error handling.
  */
 public class DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DiscordManager.class);
 
-	protected IDiscordClient client;
+	public IDiscordClient client;
 
 	public DiscordManager(IDiscordClient client) {
 		this.client = client;
@@ -146,7 +143,7 @@ public class DiscordManager {
 	 *            name of channel to create
 	 * @return IChannel that was created
 	 */
-	protected IChannel createChannel(IGuild guild, String channelName) {
+	public IChannel createChannel(IGuild guild, String channelName) {
 		LOGGER.info("Creating channel [" + channelName + "] in [" + guild.getName() + "]");
 		try {
 			return guild.createChannel(channelName);
@@ -164,7 +161,7 @@ public class DiscordManager {
 	 * @param topic
 	 *            topic to change to
 	 */
-	protected void changeTopic(IChannel channel, String topic) {
+	public void changeTopic(IChannel channel, String topic) {
 		LOGGER.info("Changing topic in [" + channel.getName() + "] to [" + topic + "]");
 		try {
 			channel.changeTopic(topic);
@@ -181,7 +178,7 @@ public class DiscordManager {
 	 * @param message
 	 *            existing message in Discord
 	 */
-	protected void pinMessage(IChannel channel, IMessage message) {
+	public void pinMessage(IChannel channel, IMessage message) {
 		LOGGER.info("Pinning message [" + message.getContent() + "] to [" + channel.getName() + "]");
 		try {
 			channel.pin(message);
@@ -189,5 +186,17 @@ public class DiscordManager {
 			LOGGER.error("Could not pin message  [" + message.getContent() + "] to channel [" + channel.getName() + "]",
 					e);
 		}
+	}
+
+	/**
+	 * Determines if the user of the IDiscordClient is the author of the specified message.
+	 * 
+	 * @param message
+	 *            message to determine if client's user is the author of
+	 * @return true, if message is authored by client's user.<br>
+	 *         false, otherwise.
+	 */
+	public boolean isAuthorOfMessage(IMessage message) {
+		return message.getAuthor().getID().equals(client.getOurUser().getID());
 	}
 }

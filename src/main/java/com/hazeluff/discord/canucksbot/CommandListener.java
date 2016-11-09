@@ -1,7 +1,6 @@
 package com.hazeluff.discord.canucksbot;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,16 +26,19 @@ import sx.blah.discord.handle.obj.IMessage;
  * @author hazeluff
  *
  */
-public class CommandListener extends DiscordManager {
+public class CommandListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListener.class);
+
+	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
 
+	private final DiscordManager discordManager;
 	private final GameScheduler gameScheduler;
 	private final CanucksBot canucksBot;
 
 	public CommandListener(CanucksBot canucksBot) {
-		super(canucksBot.getClient());
+		discordManager = canucksBot.getDiscordManager();
 		this.gameScheduler = canucksBot.getGameScheduler();
 		this.canucksBot = canucksBot;
 	}
@@ -60,7 +62,7 @@ public class CommandListener extends DiscordManager {
 		}
 		
 		if (isBotCommand(message)) {
-			sendMessage(message.getChannel(), 
+			discordManager.sendMessage(message.getChannel(),
 					"Sorry, I don't understand that. Send `@CanucksBot help` for a list of commands.");
 			return;
 		}
@@ -88,38 +90,39 @@ public class CommandListener extends DiscordManager {
 
 			if (arguments[0].equalsIgnoreCase("fuckmessier")) {
 				// fuckmessier
-				sendMessage(channel, "FUCK MESSIER");
+				discordManager.sendMessage(channel, "FUCK MESSIER");
 				return true;
 			} else if (arguments[0].equalsIgnoreCase("nextgame")) {
 				// nextgame
 				Game nextGame = gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS);
-				sendMessage(channel, "The next game is:\n" + nextGame.getDetailsMessage());
+				discordManager.sendMessage(channel, "The next game is:\n" + nextGame.getDetailsMessage());
 				return true;
 			} else if (arguments[0].equalsIgnoreCase("score")) {
 				// score
 				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
-					sendMessage(channel, "Please run this command in a channel specific for games.");
+					discordManager.sendMessage(channel, "Please run this command in a channel specific for games.");
 				} else if (game.getStatus() == GameStatus.PREVIEW) {
-					sendMessage(channel, "The game hasn't started yet. **0** - **0**");
+					discordManager.sendMessage(channel, "The game hasn't started yet. **0** - **0**");
 				} else {
-					sendMessage(channel, game.getScoreMessage());
+					discordManager.sendMessage(channel, game.getScoreMessage());
 				}
 				return true;
 			} else if (arguments[0].equalsIgnoreCase("goals")) {
 				// goals
 				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
-					sendMessage(channel, "Please run this command in a channel specific for games.");
+					discordManager.sendMessage(channel, "Please run this command in a channel specific for games.");
 				} else if (game.getStatus() == GameStatus.PREVIEW) {
-					sendMessage(channel, "The game hasn't started yet.");
+					discordManager.sendMessage(channel, "The game hasn't started yet.");
 				} else {
-					sendMessage(channel, String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
+					discordManager.sendMessage(channel,
+							String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
 				}
 				return true;
 			} else if (arguments[0].equalsIgnoreCase("help")) {
 				// help
-				sendMessage(channel,
+				discordManager.sendMessage(channel,
 						"Here are a list of commands:\n" + "`nextgame` - Displays information of the next game.\n"
 								+ "`score` - Displays the score of the game. "
 								+ "You must be in a 'Game Day Channel' to use this command.\n"
@@ -129,7 +132,8 @@ public class CommandListener extends DiscordManager {
 				return true;
 			} else if (arguments[0].equalsIgnoreCase("about")) {
 				// about
-				sendMessage(channel, String.format("Version: %s\nWritten by %s\nCheckout my GitHub: %s\nContact me: %s",
+				discordManager.sendMessage(channel,
+						String.format("Version: %s\nWritten by %s\nCheckout my GitHub: %s\nContact me: %s",
 						Config.VERSION, Config.HAZELUFF_MENTION, Config.GIT_URL, Config.HAZELUFF_EMAIL));
 				return true;
 			}
@@ -173,7 +177,8 @@ public class CommandListener extends DiscordManager {
 			}
 
 			if (response != null) {
-				sendMessage(message.getChannel(), String.format("<@%s> %s", message.getAuthor().getID(), response));
+				discordManager.sendMessage(message.getChannel(),
+						String.format("<@%s> %s", message.getAuthor().getID(), response));
 				return true;
 			}
 		}		
@@ -220,12 +225,12 @@ public class CommandListener extends DiscordManager {
 		}
 		List<Long> counter = messierCounter.get(channel);
 		if (messageLowerCase.contains("messier")) {
-			long currentTime = (new Date()).getTime();
+			long currentTime = Utils.getCurrentTime();
 			counter.add(currentTime);
-			counter.removeIf(time -> currentTime - time > 60000);
+			counter.removeIf(time -> currentTime - time > FUCK_MESSIER_COUNT_LIFESPAN);
 			if (counter.size() >= 5) {
 				counter.clear();
-				sendMessage(channel, "FUCK MESSIER");
+				discordManager.sendMessage(channel, "FUCK MESSIER");
 				return true;
 			}
 		}
