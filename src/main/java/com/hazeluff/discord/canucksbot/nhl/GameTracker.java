@@ -63,6 +63,7 @@ public class GameTracker extends Thread {
 	private final List<IChannel> channels = new ArrayList<IChannel>();
 	// Map<NHLGameEvent.idx, List<IMessage>>
 	private final Map<Integer, List<IMessage>> eventMessages = new HashMap<>();
+	private boolean started = false;
 	private boolean finished = false;
 
 	public GameTracker(DiscordManager discordManager, GameScheduler nhlGameScheduler, Game game) {
@@ -91,6 +92,17 @@ public class GameTracker extends Thread {
 		}
 	}
 
+	@Override
+	public void start() {
+		if (!started) {
+			started = true;
+			run();
+		} else {
+			LOGGER.warn("Thread already started.");
+		}
+	}
+
+	@Override
 	public void run() {
 		LOGGER.info("Started thread for [" + game + "]");
 		if (game.getStatus() != GameStatus.FINAL) {
@@ -221,7 +233,7 @@ public class GameTracker extends Thread {
 	 *            event to build message from
 	 * @return message to send
 	 */
-	private String buildEventMessage(GameEvent event) {
+	String buildEventMessage(GameEvent event) {
 		GameEventStrength strength = event.getStrength();
 		List<Player> players = event.getPlayers();
 		StringBuilder message = new StringBuilder();
