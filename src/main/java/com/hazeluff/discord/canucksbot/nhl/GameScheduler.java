@@ -87,9 +87,10 @@ public class GameScheduler extends Thread {
 				try {
 					uriBuilder = new URIBuilder(Config.NHL_API_URL + "/schedule");
 					uriBuilder.addParameter("startDate", "2016-08-01");
-					uriBuilder.addParameter("endDate", "2017-08-01");
+					uriBuilder.addParameter("endDate", "2017-06-15");
 					uriBuilder.addParameter("teamId", String.valueOf(team.getId()));
 					uriBuilder.addParameter("expand", "schedule.scoringplays");
+					System.out.println(uriBuilder.build());
 					strJSONSchedule = HttpUtils.get(uriBuilder.build());
 				} catch (URISyntaxException e) {
 					LOGGER.error("Error building URI", e);
@@ -150,6 +151,7 @@ public class GameScheduler extends Thread {
 	 *            list to add games to
 	 */
 	void initTeamLatestGamesLists() {
+		LOGGER.info("Initializing games for teams.");
 		for (Entry<Team, List<Game>> entry : teamLatestGames.entrySet()) {
 			Team team = entry.getKey();
 			List<Game> list = entry.getValue();
@@ -170,6 +172,7 @@ public class GameScheduler extends Thread {
 	 *            list of games to start trackers for.
 	 */
 	void startTrackers() {
+		LOGGER.info("Starting trackers.");
 		for (List<Game> latestGames : teamLatestGames.values()) {
 			for (Game game : latestGames) {
 				if (!game.isEnded()) {
@@ -193,6 +196,7 @@ public class GameScheduler extends Thread {
 	 *            games where the channels should not be deleted for
 	 */
 	void cleanupOldChannels() {
+		LOGGER.info("Cleaning up old channels.");
 		for (Entry<Team, List<Game>> entry : teamLatestGames.entrySet()) {
 			Team team = entry.getKey();
 			List<Game> latestGames = entry.getValue();
