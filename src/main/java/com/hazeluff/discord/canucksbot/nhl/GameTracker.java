@@ -96,10 +96,14 @@ public class GameTracker extends Thread {
 	public void start() {
 		if (!started) {
 			started = true;
-			run();
+			superStart();
 		} else {
 			LOGGER.warn("Thread already started.");
 		}
+	}
+
+	void superStart() {
+		super.start();
 	}
 
 	@Override

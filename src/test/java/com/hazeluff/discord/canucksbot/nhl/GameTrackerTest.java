@@ -455,21 +455,21 @@ public class GameTrackerTest {
 	@Test
 	public void startShouldInvokeRun() {
 		LOGGER.info("startShouldInvokeRun");
-		doNothing().when(spyGameTracker).run();
+		doNothing().when(spyGameTracker).superStart();
 
 		spyGameTracker.start();
 
-		verify(spyGameTracker).run();
+		verify(spyGameTracker).superStart();
 	}
 
 	@Test
 	public void startShouldInvokeRunOnce() {
 		LOGGER.info("startShouldInvokeRunOnce");
-		doNothing().when(spyGameTracker).run();
+		doNothing().when(spyGameTracker).superStart();
 
 		spyGameTracker.start();
 		spyGameTracker.start();
 
-		verify(spyGameTracker, times(1)).run();
+		verify(spyGameTracker, times(1)).superStart();
 	}
 }
