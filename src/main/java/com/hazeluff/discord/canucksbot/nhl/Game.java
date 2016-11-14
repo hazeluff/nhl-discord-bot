@@ -327,9 +327,10 @@ public class Game {
 		updatedEvents.clear();
 		removedEvents.clear();
 		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
-		List<GameEvent> actualEvents = jsonScoringPlays.toList().stream()
-				.map(jsonEvent -> new GameEvent(new JSONObject(jsonEvent)))
-				.collect(Collectors.toList());
+		List<GameEvent> actualEvents = new ArrayList<>();
+		for(int i=0; i<jsonScoringPlays.length(); i++){
+			actualEvents.add(new GameEvent(jsonScoringPlays.getJSONObject(i)));
+		}
 		actualEvents.forEach(actualEvent -> {
 			if (!events.stream().anyMatch(event -> event.equals(actualEvent))) {
 				if (events.removeIf(event -> event.getId() == actualEvent.getId())) {

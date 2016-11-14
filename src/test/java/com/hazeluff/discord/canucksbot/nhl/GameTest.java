@@ -23,7 +23,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -351,10 +350,9 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		Object mockObject = mock(Object.class);
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject));
 		JSONObject mockJsonEvent = mock(JSONObject.class);
-		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
+		when(mockJsonScoringEvents.length()).thenReturn(1);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
 
@@ -374,13 +372,11 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		Object mockObject = mock(Object.class);
-		Object mockObject2 = mock(Object.class);
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject, mockObject2));
 		JSONObject mockJsonEvent = mock(JSONObject.class);
 		JSONObject mockJsonEvent2 = mock(JSONObject.class);
-		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
-		whenNew(JSONObject.class).withArguments(mockObject2).thenReturn(mockJsonEvent2);
+		when(mockJsonScoringEvents.length()).thenReturn(2);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent);
+		when(mockJsonScoringEvents.getJSONObject(1)).thenReturn(mockJsonEvent2);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		GameEvent mockGameEvent2 = mock(GameEvent.class);
 		when(mockGameEvent.getId()).thenReturn(1);
@@ -406,10 +402,9 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		Object mockObject = mock(Object.class);
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject));
 		JSONObject mockJsonEvent = mock(JSONObject.class);
-		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
+		when(mockJsonScoringEvents.length()).thenReturn(1);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		when(mockGameEvent.getId()).thenReturn(1);
 		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
@@ -431,13 +426,11 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		Object mockObject = mock(Object.class);
-		Object mockObject2 = mock(Object.class);
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject, mockObject2));
 		JSONObject mockJsonEvent = mock(JSONObject.class);
 		JSONObject mockJsonEvent2 = mock(JSONObject.class);
-		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
-		whenNew(JSONObject.class).withArguments(mockObject2).thenReturn(mockJsonEvent2);
+		when(mockJsonScoringEvents.length()).thenReturn(2);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent);
+		when(mockJsonScoringEvents.getJSONObject(1)).thenReturn(mockJsonEvent2);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		GameEvent mockGameEvent2 = mock(GameEvent.class);
 		when(mockGameEvent.getId()).thenReturn(1);
@@ -463,16 +456,13 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		Object mockObject = mock(Object.class);
-		Object mockObject2 = mock(Object.class);
-		Object mockObject3 = mock(Object.class);
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject, mockObject2, mockObject3));
 		JSONObject mockJsonEvent = mock(JSONObject.class);
 		JSONObject mockJsonEvent2 = mock(JSONObject.class);
 		JSONObject mockJsonEvent3 = mock(JSONObject.class);
-		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
-		whenNew(JSONObject.class).withArguments(mockObject2).thenReturn(mockJsonEvent2);
-		whenNew(JSONObject.class).withArguments(mockObject3).thenReturn(mockJsonEvent3);
+		when(mockJsonScoringEvents.length()).thenReturn(3);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent);
+		when(mockJsonScoringEvents.getJSONObject(1)).thenReturn(mockJsonEvent2);
+		when(mockJsonScoringEvents.getJSONObject(2)).thenReturn(mockJsonEvent3);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		GameEvent mockGameEvent2 = mock(GameEvent.class);
 		GameEvent mockGameEvent3 = mock(GameEvent.class);
@@ -495,7 +485,9 @@ public class GameTest {
 		assertEquals(1, game.getUpdatedEvents().size());
 		assertEquals(mockGameEvent2, game.getUpdatedEvents().get(0));
 
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject2, mockObject3));
+		when(mockJsonScoringEvents.length()).thenReturn(2);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent2);
+		when(mockJsonScoringEvents.getJSONObject(1)).thenReturn(mockJsonEvent3);
 
 		game.updateEvents(mockJsonGame);
 		assertEquals(2, game.getEvents().size());
@@ -512,16 +504,15 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		Object mockObject = mock(Object.class);
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject));
 		JSONObject mockJsonEvent = mock(JSONObject.class);
-		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
+		when(mockJsonScoringEvents.length()).thenReturn(1);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
 
 		game.updateEvents(mockJsonGame);
 
-		when(mockJsonScoringEvents.toList()).thenReturn(Collections.emptyList());
+		when(mockJsonScoringEvents.length()).thenReturn(0);
 
 		game.updateEvents(mockJsonGame);
 
@@ -538,13 +529,13 @@ public class GameTest {
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
 		JSONObject mockJsonEvent = mock(JSONObject.class);
-		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockJsonEvent));
-		GameEvent mockGameEvent = mock(GameEvent.class);
+		when(mockJsonScoringEvents.length()).thenReturn(1);
+		when(mockJsonScoringEvents.getJSONObject(0)).thenReturn(mockJsonEvent);
 		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
 
 		game.updateEvents(mockJsonGame);
 
-		when(mockJsonScoringEvents.toList()).thenReturn(Collections.emptyList());
+		when(mockJsonScoringEvents.length()).thenReturn(0);
 
 		game.updateEvents(mockJsonGame);
 
