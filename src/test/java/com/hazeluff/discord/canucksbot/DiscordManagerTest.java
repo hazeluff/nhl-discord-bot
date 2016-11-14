@@ -168,27 +168,27 @@ public class DiscordManagerTest {
 	}
 
 	@Test
-	public void updateMessageShouldThrowExceptionWhenIMessageEditThrowsMissingPermissionsException()
+	public void updateMessageShouldDoNothingWhenIMessageEditThrowsMissingPermissionsException()
 			throws MissingPermissionsException, RateLimitException, DiscordException {
-		LOGGER.info("updateMessageShouldThrowExceptionWhenIMessageEditThrowsMissingPermissionsException");
+		LOGGER.info("updateMessageShouldDoNothingWhenIMessageEditThrowsMissingPermissionsException");
 		doThrow(MissingPermissionsException.class).when(mockMessage).edit(NEW_MESSAGE);
 
 		discordManager.updateMessage(mockMessage, NEW_MESSAGE);
 	}
 
 	@Test
-	public void updateMessageShouldThrowExceptionWhenIMessageEditThrowsRateLimitException()
+	public void updateMessageShouldDoNothingWhenIMessageEditThrowsRateLimitException()
 			throws MissingPermissionsException, RateLimitException, DiscordException {
-		LOGGER.info("updateMessageShouldThrowExceptionWhenIMessageEditThrowsRateLimitException");
+		LOGGER.info("updateMessageShouldDoNothingWhenIMessageEditThrowsRateLimitException");
 		doThrow(RateLimitException.class).when(mockMessage).edit(NEW_MESSAGE);
 
 		discordManager.updateMessage(mockMessage, NEW_MESSAGE);
 	}
 
 	@Test
-	public void updateMessageShouldThrowExceptionWhenIMessageEditThrowsDiscordException()
+	public void updateMessageShouldDoNothingWhenIMessageEditThrowsDiscordException()
 			throws MissingPermissionsException, RateLimitException, DiscordException {
-		LOGGER.info("updateMessageShouldThrowExceptionWhenIMessageEditThrowsDiscordException");
+		LOGGER.info("updateMessageShouldDoNothingWhenIMessageEditThrowsDiscordException");
 		doThrow(DiscordException.class).when(mockMessage).edit(NEW_MESSAGE);
 
 		discordManager.updateMessage(mockMessage, NEW_MESSAGE);
@@ -204,6 +204,53 @@ public class DiscordManagerTest {
 
 		verify(spyDiscordManager).sendMessage(mockChannel, NEW_MESSAGE);
 		verify(spyDiscordManager).sendMessage(mockChannel2, NEW_MESSAGE);
+	}
+
+	@Test
+	public void deleteMessageShouldInvokeMessageDelete()
+			throws MissingPermissionsException, RateLimitException, DiscordException {
+		LOGGER.info("deleteMessageShouldInvokeMessageDelete");
+		discordManager.deleteMessage(mockMessage);
+
+		verify(mockMessage).delete();
+	}
+
+	@Test
+	public void deleteMessageShouldDoNothingWhenMissingPermissionExceptionIsThrown()
+			throws MissingPermissionsException, RateLimitException, DiscordException {
+		LOGGER.info("deleteMessageShouldDoNothingWhenMissingPermissionExceptionIsThrown");
+		doThrow(MissingPermissionsException.class).when(mockMessage).delete();
+
+		discordManager.deleteMessage(mockMessage);
+	}
+
+	@Test
+	public void deleteMessageShouldDoNothingWhenRateLimitExceptionExceptionIsThrown()
+			throws MissingPermissionsException, RateLimitException, DiscordException {
+		LOGGER.info("deleteMessageShouldDoNothingWhenRateLimitExceptionExceptionIsThrown");
+		doThrow(RateLimitException.class).when(mockMessage).delete();
+
+		discordManager.deleteMessage(mockMessage);
+	}
+
+	@Test
+	public void deleteMessageShouldDoNothingWhenDiscordExceptionIsThrown()
+			throws MissingPermissionsException, RateLimitException, DiscordException {
+		LOGGER.info("deleteMessageShouldDoNothingWhenDiscordExceptionIsThrown");
+		doThrow(DiscordException.class).when(mockMessage).delete();
+
+		discordManager.deleteMessage(mockMessage);
+	}
+
+	@Test
+	public void deleteMessageShouldDeleteAllMessages() {
+		LOGGER.info("deleteMessageShouldDeleteAllMessages");
+		doNothing().when(spyDiscordManager).deleteMessage(any(IMessage.class));
+
+		spyDiscordManager.deleteMessage(Arrays.asList(mockMessage, mockMessage2));
+
+		verify(spyDiscordManager).deleteMessage(mockMessage);
+		verify(spyDiscordManager).deleteMessage(mockMessage2);
 	}
 
 	@Test

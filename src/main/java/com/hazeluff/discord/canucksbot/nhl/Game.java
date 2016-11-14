@@ -35,9 +35,11 @@ public class Game {
 	private final List<GameEvent> events = new ArrayList<>();
 	private final List<GameEvent> newEvents = new ArrayList<>();
 	private final List<GameEvent> updatedEvents = new ArrayList<>();
+	private final List<GameEvent> removedEvents = new ArrayList<>();
 
 	Game(LocalDateTime date, int gamePk, Team awayTeam, Team homeTeam, int awayScore, int homeScore,
-			GameStatus status, List<GameEvent> events, List<GameEvent> newEvents, List<GameEvent> updatedEvents) {
+			GameStatus status, List<GameEvent> events, List<GameEvent> newEvents, List<GameEvent> updatedEvents,
+			List<GameEvent> removedEvents) {
 		this.date = date;
 		this.gamePk = gamePk;
 		this.awayTeam = awayTeam;
@@ -48,6 +50,7 @@ public class Game {
 		this.events.addAll(events);
 		this.newEvents.addAll(newEvents);
 		this.updatedEvents.addAll(updatedEvents);
+		this.removedEvents.addAll(removedEvents);
 	}
 
 	public Game (JSONObject jsonGame) {
@@ -201,13 +204,15 @@ public class Game {
 	}
 
 	public List<GameEvent> getNewEvents() {
-		List<GameEvent> value = new ArrayList<>(newEvents);
-		return value;
+		return new ArrayList<>(newEvents);
 	}
 
 	public List<GameEvent> getUpdatedEvents() {
-		List<GameEvent> value = new ArrayList<>(updatedEvents);
-		return value;
+		return new ArrayList<>(updatedEvents);
+	}
+
+	List<GameEvent> getRemovedEvents() {
+		return new ArrayList<>(removedEvents);
 	}
 
 	@Override
@@ -320,22 +325,35 @@ public class Game {
 	void updateEvents(JSONObject jsonGame) {
 		newEvents.clear();
 		updatedEvents.clear();
+		removedEvents.clear();
 		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
-		for (int i = 0; i < jsonScoringPlays.length(); i++) {
-			GameEvent newEvent = new GameEvent(jsonScoringPlays.getJSONObject(i));
-			if (!events.stream().anyMatch(event -> event.equals(newEvent))) {
-				if (events.removeIf(event -> event.getId() == newEvent.getId())) {
-					updatedEvents.add(newEvent);
+		List<GameEvent> actualEvents = jsonScoringPlays.toList().stream()
+				.map(jsonEvent -> new GameEvent(new JSONObject(jsonEvent)))
+				.collect(Collectors.toList());
+		actualEvents.forEach(actualEvent -> {
+			if (!events.stream().anyMatch(event -> event.equals(actualEvent))) {
+				if (events.removeIf(event -> event.getId() == actualEvent.getId())) {
+					// Updated events
+					LOGGER.debug("Updated event: [" + actualEvent + "]");
+					updatedEvents.add(actualEvent);
 				} else {
-					newEvents.add(newEvent);
+					// New events
+					LOGGER.debug("New event: [" + actualEvent + "]");
+					newEvents.add(actualEvent);
 				}
-				events.add(newEvent);
+				events.add(actualEvent);
 			}
-		}
+		});
 
-		if (!newEvents.isEmpty()) {
-			newEvents.stream().forEach(event -> LOGGER.info("New event: " + event));
-		}
+		// Deleted events
+		events.removeIf(event -> {
+			if (!actualEvents.contains(event)) {
+				LOGGER.debug("Removed event: [" + event + "]");
+				removedEvents.add(event);
+				return true;
+			}
+			return false;
+		});
 	}
 
 	public String getGoalsMessage() {

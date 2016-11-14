@@ -55,6 +55,8 @@ public class GameTracker extends Thread {
 	static final long ACTIVE_POLL_RATE_MS = 5000l;
 	// Time before game to poll faster
 	static final long CLOSE_TO_START_THRESHOLD_MS = 300000l;
+	// Time after game is final to continue updates
+	static final long POST_GAME_UPDATE_DURATION = 300000l;
 
 	private final DiscordManager discordManager;
 	private final Game game;
@@ -63,6 +65,7 @@ public class GameTracker extends Thread {
 	private final List<IChannel> channels = new ArrayList<IChannel>();
 	// Map<NHLGameEvent.idx, List<IMessage>>
 	private final Map<Integer, List<IMessage>> eventMessages = new HashMap<>();
+	private List<IMessage> endOfGameMessages;
 	private boolean started = false;
 	private boolean finished = false;
 
@@ -122,11 +125,13 @@ public class GameTracker extends Thread {
 			LOGGER.info("Game is about to start!");
 			discordManager.sendMessage(channels, "Game is about to start. GO CANUCKS GO!");
 
-			sendEventMessages();
+			updateChannel();
 
 			// Game is over
 			sendEndOfGameMessage();
 			updatePinnedMessages();
+
+			updateChannelPostGame();
 		} else {
 			LOGGER.info("Game is already finished");
 		}
@@ -134,6 +139,9 @@ public class GameTracker extends Thread {
 		finished = true;
 	}
 
+	/**
+	 * Sends reminders of time till the game starts.
+	 */
 	void sendReminders() {
 		boolean firstPass = true;
 		boolean closeToStart;
@@ -170,6 +178,9 @@ public class GameTracker extends Thread {
 		} while (!closeToStart);
 	}
 
+	/**
+	 * Polls at higher polling rate before game starts.
+	 */
 	void waitForStart() {
 		boolean started = false;
 		do {
@@ -182,25 +193,13 @@ public class GameTracker extends Thread {
 		} while (!started);
 	}
 
-	void sendEventMessages() {
+	/**
+	 * Updates the Channel with Messages of events until the game is finished.
+	 */
+	void updateChannel() {
 		while (game.getStatus() != GameStatus.FINAL) {
-			game.update();
-			// Create new messages for new events.
-			game.getNewEvents().stream().forEach(event -> {
-				int eventId = event.getId();
-				String message = buildEventMessage(event);
-				List<IMessage> sentMessages = discordManager.sendMessage(channels, message);
-				eventMessages.put(eventId, sentMessages);
-			});
-			// Update existing messages
-			game.getUpdatedEvents().stream().forEach(event -> {
-				int eventId = event.getId();
-				String message = buildEventMessage(event);
-				if (eventMessages.containsKey(eventId)) {
-					List<IMessage> sentMessages = eventMessages.get(eventId);
-					discordManager.updateMessage(sentMessages, message);
-				}
-			});
+			updateMessages();
+
 			if (game.getStatus() != GameStatus.FINAL) {
 				LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
 				Utils.sleep(ACTIVE_POLL_RATE_MS);
@@ -208,16 +207,53 @@ public class GameTracker extends Thread {
 		}
 	}
 
-	void sendEndOfGameMessage() {
-		LOGGER.info("Game is over.");
-		String summary = "Game has ended. Thanks for joining!\n" +
-				"Final Score: " + game.getScoreMessage() + "\n" +
-				"Goals Scored:\n" + game.getGoalsMessage() + "\n" + 
-				"The next game is: " + gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS).getDetailsMessage();
-		discordManager.sendMessage(channels, summary);
+	/**
+	 * Updates/Posts/Removes Messages from the Channels based on the state of the Game's GameEvents.
+	 */
+	void updateMessages() {
+		game.update();
+		// Create new messages for new events.
+		game.getNewEvents().stream().forEach(event -> {
+			int eventId = event.getId();
+			String message = buildEventMessage(event);
+			List<IMessage> sentMessages = discordManager.sendMessage(channels, message);
+			eventMessages.put(eventId, sentMessages);
+		});
+		// Update existing messages
+		game.getUpdatedEvents().stream().forEach(event -> {
+			int eventId = event.getId();
+			String message = buildEventMessage(event);
+			if (eventMessages.containsKey(eventId)) {
+				List<IMessage> sentMessages = eventMessages.get(eventId);
+				discordManager.updateMessage(sentMessages, message);
+			}
+		});
+		// Delete messages of removed events
+		game.getRemovedEvents().stream().forEach(event -> {
+			int eventId = event.getId();
+			discordManager.deleteMessage(eventMessages.get(eventId));
+			eventMessages.remove(eventId);
+		});
 	}
 
+	/**
+	 * Send a message to channel at the end of a game to sumarize the game.
+	 */
+	void sendEndOfGameMessage() {
+		LOGGER.debug("Sending end of game message.");
+		endOfGameMessages = discordManager.sendMessage(channels, getEndOfGameMessage());
+	}
+
+	void updateEndOfGameMessage() {
+		LOGGER.debug("Updating end of game message.");
+		discordManager.updateMessage(endOfGameMessages, getEndOfGameMessage());
+	}
+
+	/**
+	 * Update the pinned message of the channel to include details of the game.
+	 */
 	void updatePinnedMessages() {
+		LOGGER.debug("Updating pinned messages.");
 		for (IChannel channel : channels) {
 			for (IMessage message : discordManager.getPinnedMessages(channel)) {
 				if (discordManager.isAuthorOfMessage(message)) {
@@ -227,6 +263,27 @@ public class GameTracker extends Thread {
 					discordManager.updateMessage(message, strMessage.toString());
 				}
 			}
+		}
+	}
+
+	String getEndOfGameMessage() {
+		return "Game has ended. Thanks for joining!\n" +
+				"Final Score: " + game.getScoreMessage() + "\n" +
+				"Goals Scored:\n" + game.getGoalsMessage() + "\n" + 
+				"The next game is: " + gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS).getDetailsMessage();
+	}
+
+	/**
+	 * Update the Channel/Messages for a duration after the end of the game.
+	 */
+	void updateChannelPostGame() {
+		int iterations = 0;
+		while (iterations * ACTIVE_POLL_RATE_MS < POST_GAME_UPDATE_DURATION) {
+			iterations++;
+			updateMessages();
+			updateEndOfGameMessage();
+			updatePinnedMessages();
+			Utils.sleep(ACTIVE_POLL_RATE_MS);
 		}
 	}
 

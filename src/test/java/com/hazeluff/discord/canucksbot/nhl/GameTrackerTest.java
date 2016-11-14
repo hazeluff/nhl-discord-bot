@@ -16,6 +16,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
@@ -177,8 +178,8 @@ public class GameTrackerTest {
 	}
 
 	@Test
-	public void runShouldDoNothingWhenStatusIsNotFinal() throws Exception {
-		LOGGER.info("runShouldDoNothingWhenStatusIsNotFinal");
+	public void runShouldDoNothingWhenStatusIsFinal() throws Exception {
+		LOGGER.info("runShouldDoNothingWhenStatusIsFinal");
 		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
 		
 		assertFalse(spyGameTracker.isFinished());
@@ -187,8 +188,11 @@ public class GameTrackerTest {
 
 		verify(spyGameTracker, never()).sendReminders();
 		verify(spyGameTracker, never()).waitForStart();
-		verify(spyGameTracker, never()).sendEventMessages();
+		verify(spyGameTracker, never()).updateChannel();
 		verify(spyGameTracker, never()).sendEndOfGameMessage();
+		verify(spyGameTracker, never()).updatePinnedMessages();
+		verify(spyGameTracker, never()).updateChannelPostGame();
+		verifyNoMoreInteractions(mockDiscordManager);
 	}
 
 	@Test
@@ -197,9 +201,10 @@ public class GameTrackerTest {
 		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
 		doNothing().when(spyGameTracker).sendReminders();
 		doNothing().when(spyGameTracker).waitForStart();
-		doNothing().when(spyGameTracker).sendEventMessages();
+		doNothing().when(spyGameTracker).updateChannel();
 		doNothing().when(spyGameTracker).sendEndOfGameMessage();
 		doNothing().when(spyGameTracker).updatePinnedMessages();
+		doNothing().when(spyGameTracker).updateChannelPostGame();
 
 		assertFalse(spyGameTracker.isFinished());
 		spyGameTracker.run();
@@ -210,9 +215,10 @@ public class GameTrackerTest {
 		inOrder.verify(spyGameTracker).waitForStart();
 		inOrder.verify(mockDiscordManager).sendMessage(spyGameTracker.getChannels(),
 				"Game is about to start. GO CANUCKS GO!");
-		inOrder.verify(spyGameTracker).sendEventMessages();
+		inOrder.verify(spyGameTracker).updateChannel();
 		inOrder.verify(spyGameTracker).sendEndOfGameMessage();
 		inOrder.verify(spyGameTracker).updatePinnedMessages();
+		inOrder.verify(spyGameTracker).updateChannelPostGame();
 	}
 
 	@Test
@@ -290,8 +296,8 @@ public class GameTrackerTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	@PrepareForTest(Utils.class)
-	public void sendEventMessagesShouldInvokeClasses() {
-		LOGGER.info("sendEventMessagesShouldInvokeClasses");
+	public void updateChannelShouldShouldInvokeClasses() {
+		LOGGER.info("updateChannelShouldInvokeClasses");
 		mockStatic(Utils.class);
 		GameEvent mockEvent = mock(GameEvent.class);
 		when(mockEvent.getId()).thenReturn(100);
@@ -306,7 +312,7 @@ public class GameTrackerTest {
 		List<IMessage> sentMessages = new ArrayList<>();
 		when(mockDiscordManager.sendMessage(any(List.class), anyString())).thenReturn(sentMessages);
 
-		spyGameTracker.sendEventMessages();
+		spyGameTracker.updateChannel();
 
 		InOrder inOrder = inOrder(mockGame, mockDiscordManager);
 		inOrder.verify(mockGame).update();
@@ -322,11 +328,11 @@ public class GameTrackerTest {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void sendEventMessagesShouldNotInvokeClassesIfGameIsFinal() {
-		LOGGER.info("sendEventMessagesShouldNotInvokeClassesIfGameIsFinal");
+	public void updateChannelShouldNotInvokeClassesIfGameIsFinal() {
+		LOGGER.info("updateChannelShouldNotInvokeClassesIfGameIsFinal");
 		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
 
-		gameTracker.sendEventMessages();
+		gameTracker.updateChannel();
 
 		verify(mockGame, never()).update();
 		verify(mockDiscordManager, never()).sendMessage(any(List.class), anyString());
@@ -471,5 +477,54 @@ public class GameTrackerTest {
 		spyGameTracker.start();
 
 		verify(spyGameTracker, times(1)).superStart();
+	}
+
+	@Test
+	public void sendEndOfGameMessageShouldSendMessage() {
+		LOGGER.info("sendEndOfGameMessageShouldSendMessage");
+		String endOfGameMessage = "EndOfGameMessage";
+		doReturn(endOfGameMessage).when(spyGameTracker).getEndOfGameMessage();
+
+		spyGameTracker.sendEndOfGameMessage();
+
+		verify(mockDiscordManager).sendMessage(spyGameTracker.getChannels(), endOfGameMessage);
+	}
+
+	@Test
+	public void updateEndOfgameMessageShouldUpdateMessages() {
+		LOGGER.info("updateEndOfgameMessageShouldUpdateMessages");
+		String endOfGameMessage = "EndOfGameMessage";
+		doReturn(endOfGameMessage).when(spyGameTracker).getEndOfGameMessage();
+		List<IMessage> sentMessages = Arrays.asList(mockMessage);
+		when(mockDiscordManager.sendMessage(spyGameTracker.getChannels(), endOfGameMessage)).thenReturn(sentMessages);
+
+		spyGameTracker.sendEndOfGameMessage();
+
+		String newEndOfGameMessage = "New" + endOfGameMessage;
+		doReturn(newEndOfGameMessage).when(spyGameTracker).getEndOfGameMessage();
+		spyGameTracker.updateEndOfGameMessage();
+
+		verify(mockDiscordManager).updateMessage(sentMessages, newEndOfGameMessage);
+	}
+
+	@Test
+	@PrepareForTest(Utils.class)
+	public void updateChannelPostGameShouldInvokeUpdatesUntilDurationOver() {
+		LOGGER.info("updateChannelPostGameShouldInvokeUpdatesUntilDurationOver");
+		doNothing().when(spyGameTracker).updateMessages();
+		doNothing().when(spyGameTracker).updateEndOfGameMessage();
+		doNothing().when(spyGameTracker).updatePinnedMessages();
+		mockStatic(Utils.class);
+		
+		spyGameTracker.updateChannelPostGame();
+		
+		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.ACTIVE_POLL_RATE_MS);
+		assertTrue(iterations > 0);
+		
+		verify(spyGameTracker, times(iterations)).updateMessages();
+		verify(spyGameTracker, times(iterations)).updateEndOfGameMessage();
+		verify(spyGameTracker, times(iterations)).updatePinnedMessages();
+		verifyStatic(times(iterations));
+		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
 	}
 }

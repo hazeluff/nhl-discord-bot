@@ -23,6 +23,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -58,6 +59,7 @@ public class GameTest {
 	private static final List<GameEvent> EVENTS = new ArrayList<>();
 	private static final List<GameEvent> NEW_EVENTS = new ArrayList<>();
 	private static final List<GameEvent> UPDATED_EVENTS = new ArrayList<>();
+	private static final List<GameEvent> REMOVED_EVENTS = new ArrayList<>();
 
 	@Mock
 	GameEvent mockGameEvent;
@@ -70,17 +72,18 @@ public class GameTest {
 		EVENTS.clear();
 		NEW_EVENTS.clear();
 		UPDATED_EVENTS.clear();
+		REMOVED_EVENTS.clear();
 		mockStatic(DateUtils.class);
 		when(DateUtils.parseNHLDate(anyString())).thenReturn(DATE);
 
 		game = new Game(DATE, GAME_PK, AWAY_TEAM, HOME_TEAM, AWAY_SCORE, HOME_SCORE, STATUS, EVENTS, NEW_EVENTS,
-				UPDATED_EVENTS);
+				UPDATED_EVENTS, REMOVED_EVENTS);
 		spyGame = spy(game);
 	}
 
 	private Game newGame() {
 		return new Game(DATE, GAME_PK, AWAY_TEAM, HOME_TEAM, AWAY_SCORE, HOME_SCORE, STATUS, EVENTS, NEW_EVENTS,
-				UPDATED_EVENTS);
+				UPDATED_EVENTS, REMOVED_EVENTS);
 	}
 
 	@Test
@@ -198,7 +201,7 @@ public class GameTest {
 		assertNotEquals(EVENTS, result);
 
 		List<GameEvent> newResult = game.getEvents();
-		assertTrue(game.getEvents().isEmpty());
+		assertTrue(newResult.isEmpty());
 		assertNotEquals(result, newResult);
 	}
 
@@ -210,7 +213,19 @@ public class GameTest {
 		assertNotEquals(NEW_EVENTS, result);
 
 		List<GameEvent> newResult = game.getNewEvents();
-		assertTrue(game.getNewEvents().isEmpty());
+		assertTrue(newResult.isEmpty());
+		assertNotEquals(result, newResult);
+	}
+
+	@Test
+	public void removedEventsShouldBeCopyOfList() {
+		LOGGER.info("removedEventsShouldBeCopyOfList");
+		List<GameEvent> result = game.getRemovedEvents();
+		result.add(mockGameEvent);
+		assertNotEquals(NEW_EVENTS, result);
+
+		List<GameEvent> newResult = game.getRemovedEvents();
+		assertTrue(newResult.isEmpty());
 		assertNotEquals(result, newResult);
 	}
 
@@ -256,7 +271,7 @@ public class GameTest {
 		LocalDateTime date2 = LocalDateTime.ofEpochSecond(1483185600l, 0, ZoneOffset.UTC); // date1 + 12hr
 		LocalDateTime date3 = LocalDateTime.ofEpochSecond(1483228800l, 0, ZoneOffset.UTC); // date1 + 1day
 		Game game1 = new Game(date1, GAME_PK, AWAY_TEAM, HOME_TEAM, AWAY_SCORE, HOME_SCORE, STATUS, EVENTS, NEW_EVENTS,
-				UPDATED_EVENTS);
+				UPDATED_EVENTS, REMOVED_EVENTS);
 
 		assertTrue(game1.isOnDate(date1));
 		assertTrue(game1.isOnDate(date2));
@@ -336,9 +351,12 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		when(mockJsonScoringEvents.length()).thenReturn(1);
+		Object mockObject = mock(Object.class);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject));
+		JSONObject mockJsonEvent = mock(JSONObject.class);
+		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
 		GameEvent mockGameEvent = mock(GameEvent.class);
-		whenNew(GameEvent.class).withAnyArguments().thenReturn(mockGameEvent);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
 
 		game.updateEvents(mockJsonGame);
 
@@ -356,12 +374,19 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		when(mockJsonScoringEvents.length()).thenReturn(2);
+		Object mockObject = mock(Object.class);
+		Object mockObject2 = mock(Object.class);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject, mockObject2));
+		JSONObject mockJsonEvent = mock(JSONObject.class);
+		JSONObject mockJsonEvent2 = mock(JSONObject.class);
+		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
+		whenNew(JSONObject.class).withArguments(mockObject2).thenReturn(mockJsonEvent2);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		GameEvent mockGameEvent2 = mock(GameEvent.class);
 		when(mockGameEvent.getId()).thenReturn(1);
 		when(mockGameEvent2.getId()).thenReturn(2);
-		whenNew(GameEvent.class).withAnyArguments().thenReturn(mockGameEvent, mockGameEvent2);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent2).thenReturn(mockGameEvent2);
 		EVENTS.add(mockGameEvent);
 		game = newGame();
 
@@ -381,10 +406,13 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		when(mockJsonScoringEvents.length()).thenReturn(2);
+		Object mockObject = mock(Object.class);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject));
+		JSONObject mockJsonEvent = mock(JSONObject.class);
+		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		when(mockGameEvent.getId()).thenReturn(1);
-		whenNew(GameEvent.class).withAnyArguments().thenReturn(mockGameEvent, mockGameEvent);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
 		EVENTS.add(mockGameEvent);
 		game = newGame();
 
@@ -403,12 +431,19 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		when(mockJsonScoringEvents.length()).thenReturn(2);
+		Object mockObject = mock(Object.class);
+		Object mockObject2 = mock(Object.class);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject, mockObject2));
+		JSONObject mockJsonEvent = mock(JSONObject.class);
+		JSONObject mockJsonEvent2 = mock(JSONObject.class);
+		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
+		whenNew(JSONObject.class).withArguments(mockObject2).thenReturn(mockJsonEvent2);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		GameEvent mockGameEvent2 = mock(GameEvent.class);
 		when(mockGameEvent.getId()).thenReturn(1);
 		when(mockGameEvent2.getId()).thenReturn(1);
-		whenNew(GameEvent.class).withAnyArguments().thenReturn(mockGameEvent, mockGameEvent2);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent2).thenReturn(mockGameEvent2);
 		EVENTS.add(mockGameEvent);
 		game = newGame();
 
@@ -428,14 +463,25 @@ public class GameTest {
 		JSONObject mockJsonGame = mock(JSONObject.class);
 		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
 		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
-		when(mockJsonScoringEvents.length()).thenReturn(3);
+		Object mockObject = mock(Object.class);
+		Object mockObject2 = mock(Object.class);
+		Object mockObject3 = mock(Object.class);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject, mockObject2, mockObject3));
+		JSONObject mockJsonEvent = mock(JSONObject.class);
+		JSONObject mockJsonEvent2 = mock(JSONObject.class);
+		JSONObject mockJsonEvent3 = mock(JSONObject.class);
+		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
+		whenNew(JSONObject.class).withArguments(mockObject2).thenReturn(mockJsonEvent2);
+		whenNew(JSONObject.class).withArguments(mockObject3).thenReturn(mockJsonEvent3);
 		GameEvent mockGameEvent = mock(GameEvent.class);
 		GameEvent mockGameEvent2 = mock(GameEvent.class);
 		GameEvent mockGameEvent3 = mock(GameEvent.class);
 		when(mockGameEvent.getId()).thenReturn(1);
 		when(mockGameEvent2.getId()).thenReturn(1);
 		when(mockGameEvent3.getId()).thenReturn(2);
-		whenNew(GameEvent.class).withAnyArguments().thenReturn(mockGameEvent, mockGameEvent2, mockGameEvent3);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent2).thenReturn(mockGameEvent2);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent3).thenReturn(mockGameEvent3);
 		EVENTS.add(mockGameEvent);
 		game = newGame();
 
@@ -449,7 +495,7 @@ public class GameTest {
 		assertEquals(1, game.getUpdatedEvents().size());
 		assertEquals(mockGameEvent2, game.getUpdatedEvents().get(0));
 
-		when(mockJsonScoringEvents.length()).thenReturn(0);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject2, mockObject3));
 
 		game.updateEvents(mockJsonGame);
 		assertEquals(2, game.getEvents().size());
@@ -457,6 +503,56 @@ public class GameTest {
 		assertEquals(mockGameEvent3, game.getEvents().get(1));
 		assertTrue(game.getNewEvents().isEmpty());
 		assertTrue(game.getUpdatedEvents().isEmpty());
+	}
+
+	@Test
+	@PrepareForTest({ Game.class, DateUtils.class })
+	public void updateEventsShouldRemoveEventsThatAreRemoved() throws Exception {
+		LOGGER.info("updateEventsShouldRemoveEventsThatAreRemoved");
+		JSONObject mockJsonGame = mock(JSONObject.class);
+		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
+		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
+		Object mockObject = mock(Object.class);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockObject));
+		JSONObject mockJsonEvent = mock(JSONObject.class);
+		whenNew(JSONObject.class).withArguments(mockObject).thenReturn(mockJsonEvent);
+		GameEvent mockGameEvent = mock(GameEvent.class);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
+
+		game.updateEvents(mockJsonGame);
+
+		when(mockJsonScoringEvents.toList()).thenReturn(Collections.emptyList());
+
+		game.updateEvents(mockJsonGame);
+
+		assertTrue(game.getEvents().isEmpty());
+		assertEquals(1, game.getRemovedEvents().size());
+		assertEquals(mockGameEvent, game.getRemovedEvents().get(0));
+	}
+
+	@Test
+	@PrepareForTest({ Game.class, DateUtils.class })
+	public void updateEventsShouldClearRemovedEvents() throws Exception {
+		LOGGER.info("updateEventsShouldClearRemovedEvents");
+		JSONObject mockJsonGame = mock(JSONObject.class);
+		JSONArray mockJsonScoringEvents = mock(JSONArray.class);
+		when(mockJsonGame.getJSONArray("scoringPlays")).thenReturn(mockJsonScoringEvents);
+		JSONObject mockJsonEvent = mock(JSONObject.class);
+		when(mockJsonScoringEvents.toList()).thenReturn(Arrays.asList(mockJsonEvent));
+		GameEvent mockGameEvent = mock(GameEvent.class);
+		whenNew(GameEvent.class).withArguments(mockJsonEvent).thenReturn(mockGameEvent);
+
+		game.updateEvents(mockJsonGame);
+
+		when(mockJsonScoringEvents.toList()).thenReturn(Collections.emptyList());
+
+		game.updateEvents(mockJsonGame);
+
+		assertEquals(1, game.getRemovedEvents().size());
+
+		game.updateEvents(mockJsonGame);
+
+		assertTrue(game.getRemovedEvents().isEmpty());
 	}
 
 	@Test
@@ -551,7 +647,7 @@ public class GameTest {
 	public void isEndedShouldReturnBoolean() {
 		for (GameStatus gs : GameStatus.values()) {
 			game = new Game(DATE, GAME_PK, AWAY_TEAM, HOME_TEAM, AWAY_SCORE, HOME_SCORE, gs, EVENTS, NEW_EVENTS,
-					UPDATED_EVENTS);
+					UPDATED_EVENTS, REMOVED_EVENTS);
 			if (gs == GameStatus.FINAL) {
 				assertTrue(game.isEnded());
 			} else {

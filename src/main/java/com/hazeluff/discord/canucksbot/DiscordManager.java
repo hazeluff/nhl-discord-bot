@@ -102,6 +102,30 @@ public class DiscordManager {
 	}
 
 	/**
+	 * Deletes the specified message in Discord
+	 * 
+	 * @param message
+	 *            message to delete in Discord
+	 */
+	public void deleteMessage(IMessage message) {
+		try {
+			message.delete();
+		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
+			LOGGER.error("Could not delete message [" + message.getContent() + "]", e);
+		}
+	}
+
+	/**
+	 * Deletes the specified list of messages in Discord
+	 * 
+	 * @param messages
+	 *            messages to delete in Discord
+	 */
+	public void deleteMessage(List<IMessage> messages) {
+		messages.forEach(message -> deleteMessage(message));
+	}
+
+	/**
 	 * Gets a list of pinned messages in the specified channel.
 	 * 
 	 * @param channel
