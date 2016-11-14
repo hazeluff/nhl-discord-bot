@@ -150,21 +150,27 @@ public class DiscordManagerTest {
 	}
 
 	@Test
-	public void updateMessageShouldInvokeIMessageEditWhenMessageIsNew()
+	public void updateMessageShouldReturnNewIMessageWhenMessageIsNew()
 			throws MissingPermissionsException, RateLimitException, DiscordException {
 		LOGGER.info("updateMessageShouldInvokeIMessageEditWhenMessageIsNew");
-		discordManager.updateMessage(mockMessage, NEW_MESSAGE);
+		when(mockMessage.edit(NEW_MESSAGE)).thenReturn(mockMessage2);
+		
+		IMessage result = discordManager.updateMessage(mockMessage, NEW_MESSAGE);
 
 		verify(mockMessage).edit(NEW_MESSAGE);
+		assertEquals(mockMessage2, result);
 	}
 
 	@Test
 	public void updateMessageShouldNotInvokeMessageEditWhenMessageIsTheSame()
 			throws MissingPermissionsException, RateLimitException, DiscordException {
 		LOGGER.info("updateMessageShouldNotInvokeMessageEditWhenMessageIsTheSame");
-		discordManager.updateMessage(mockMessage, MESSAGE);
+		when(mockMessage.edit(NEW_MESSAGE)).thenReturn(mockMessage2);
+
+		IMessage result = discordManager.updateMessage(mockMessage, MESSAGE);
 
 		verify(mockMessage, never()).edit(anyString());
+		assertEquals(mockMessage, result);
 	}
 
 	@Test
@@ -196,14 +202,18 @@ public class DiscordManagerTest {
 
 	@Test
 	@PrepareForTest(DiscordManager.class)
-	public void updateMessageShouldUpdateAllMessage() {
+	public void updateMessageShouldReturnUpdatedMessages() {
 		LOGGER.info("updateMessageShouldUpdateAllMessage");
-		doNothing().when(spyDiscordManager).updateMessage(any(IMessage.class), anyString());
+		IMessage mockUpdatedMessage = mock(IMessage.class);
+		IMessage mockUpdatedMessage2 = mock(IMessage.class);
+		doReturn(mockUpdatedMessage).when(spyDiscordManager).updateMessage(mockMessage, NEW_MESSAGE);
+		doReturn(mockUpdatedMessage2).when(spyDiscordManager).updateMessage(mockMessage2, NEW_MESSAGE);
 
-		spyDiscordManager.sendMessage(Arrays.asList(mockChannel, mockChannel2), NEW_MESSAGE);
+		List<IMessage> result = spyDiscordManager.updateMessage(Arrays.asList(mockMessage, mockMessage2), NEW_MESSAGE);
 
-		verify(spyDiscordManager).sendMessage(mockChannel, NEW_MESSAGE);
-		verify(spyDiscordManager).sendMessage(mockChannel2, NEW_MESSAGE);
+		verify(spyDiscordManager).updateMessage(mockMessage, NEW_MESSAGE);
+		verify(spyDiscordManager).updateMessage(mockMessage2, NEW_MESSAGE);
+		assertEquals(Arrays.asList(mockUpdatedMessage, mockUpdatedMessage2), result);
 	}
 
 	@Test

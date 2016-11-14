@@ -67,24 +67,26 @@ public class DiscordManager {
 	}
 
 	/**
-	 * Updates the message in Discord
+	 * Updates the message in Discord. Returns the new IMessage if successful. Else it returns the original IMessage.
 	 * 
 	 * @param messages
 	 *            existing message in Discord
 	 * @param newMessage
 	 *            new message
+	 * @return
 	 */
-	public void updateMessage(IMessage message, String newMessage) {
+	public IMessage updateMessage(IMessage message, String newMessage) {
 		LOGGER.info("Updating message [" + message.getContent() + "][" + newMessage + "]");
 		try {
 			if (!message.getContent().equals(newMessage)) {
-				message.edit(newMessage);
+				return message.edit(newMessage);
 			} else {
 				LOGGER.warn("No change to the message [" + message.getContent() + "]");
 			}
 		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
 			LOGGER.error("Could not edit message [" + message.getContent() + "] to [" + newMessage + "]", e);
 		}
+		return message;
 	}
 
 	/**
@@ -94,11 +96,14 @@ public class DiscordManager {
 	 *            existing messages in Discord
 	 * @param newMessage
 	 *            new message
+	 * @return
 	 */
-	public void updateMessage(List<IMessage> messages, String newMessage) {
-		for (IMessage message : messages) {
-			updateMessage(message, newMessage);
-		}
+	public List<IMessage> updateMessage(List<IMessage> messages, String newMessage) {
+		List<IMessage> updatedMessages = new ArrayList<>();
+		messages.forEach(message -> {
+			updatedMessages.add(updateMessage(message, newMessage));
+		});
+		return updatedMessages;
 	}
 
 	/**

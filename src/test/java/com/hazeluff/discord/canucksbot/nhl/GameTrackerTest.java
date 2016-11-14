@@ -23,7 +23,6 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -293,52 +292,78 @@ public class GameTrackerTest {
 		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Test
 	@PrepareForTest(Utils.class)
 	public void updateChannelShouldShouldInvokeClasses() {
 		LOGGER.info("updateChannelShouldInvokeClasses");
+		doNothing().when(spyGameTracker).updateMessages();
 		mockStatic(Utils.class);
-		GameEvent mockEvent = mock(GameEvent.class);
-		when(mockEvent.getId()).thenReturn(100);
 		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED, GameStatus.STARTED, GameStatus.STARTED,
 				GameStatus.STARTED, GameStatus.STARTED, GameStatus.FINAL);
-		when(mockGame.getNewEvents()).thenReturn(Arrays.asList(mockEvent), Collections.emptyList(),
-				Collections.emptyList());
-		when(mockGame.getUpdatedEvents()).thenReturn(Collections.emptyList(), Arrays.asList(mockEvent),
-				Collections.emptyList());
-		String eventMessage = "EventMessage";
-		doReturn(eventMessage).when(spyGameTracker).buildEventMessage(any(GameEvent.class));
-		List<IMessage> sentMessages = new ArrayList<>();
-		when(mockDiscordManager.sendMessage(any(List.class), anyString())).thenReturn(sentMessages);
 
 		spyGameTracker.updateChannel();
 
-		InOrder inOrder = inOrder(mockGame, mockDiscordManager);
-		inOrder.verify(mockGame).update();
-		inOrder.verify(mockDiscordManager).sendMessage(spyGameTracker.getChannels(), eventMessage);
-		inOrder.verify(mockGame).update();
-		inOrder.verify(mockDiscordManager).updateMessage(sentMessages, eventMessage);
-		inOrder.verify(mockGame).update();
-		inOrder.verify(mockDiscordManager, never()).sendMessage(spyGameTracker.getChannels(), eventMessage);
-		inOrder.verify(mockDiscordManager, never()).updateMessage(sentMessages, eventMessage);
+		verify(spyGameTracker, times(3)).updateMessages();
 		verifyStatic(times(2));
 		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void updateChannelShouldNotInvokeClassesIfGameIsFinal() {
 		LOGGER.info("updateChannelShouldNotInvokeClassesIfGameIsFinal");
+		doNothing().when(spyGameTracker).updateMessages();
+		mockStatic(Utils.class);
 		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
 
-		gameTracker.updateChannel();
+		spyGameTracker.updateChannel();
 
-		verify(mockGame, never()).update();
-		verify(mockDiscordManager, never()).sendMessage(any(List.class), anyString());
-		verify(mockDiscordManager, never()).updateMessage(any(List.class), anyString());
+		verify(spyGameTracker, never()).updateMessages();
 		verifyStatic(never());
 		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
+	}
+
+	@Test
+	public void updateMessagesShouldInvokeClasses() {
+		GameEvent mockEvent = mock(GameEvent.class);
+		when(mockEvent.getId()).thenReturn(100);
+		Player mockPlayer = mock(Player.class);
+		String playerName = "PlayerName";
+		when(mockPlayer.getFullName()).thenReturn(playerName);
+		when(mockEvent.getPlayers()).thenReturn(Arrays.asList(mockPlayer));
+		when(mockGame.getNewEvents()).thenReturn(Arrays.asList(mockEvent));
+		when(mockGame.getUpdatedEvents()).thenReturn(Arrays.asList(mockEvent));
+		when(mockGame.getRemovedEvents()).thenReturn(Arrays.asList(mockEvent));
+		String eventMessage = "EventMessage";
+		doReturn(eventMessage).when(spyGameTracker).buildEventMessage(any(GameEvent.class));
+		List<IMessage> sentMessages = Arrays.asList(mock(IMessage.class));
+		List<IMessage> updatedMessages = Arrays.asList(mock(IMessage.class));
+		when(mockDiscordManager.sendMessage(anyListOf(IChannel.class), anyString())).thenReturn(sentMessages);
+		when(mockDiscordManager.updateMessage(anyListOf(IMessage.class), anyString())).thenReturn(updatedMessages);
+
+		spyGameTracker.updateMessages();
+
+		InOrder inOrder = inOrder(mockGame, mockDiscordManager);
+		inOrder.verify(mockGame).update();
+		inOrder.verify(mockDiscordManager).sendMessage(spyGameTracker.getChannels(), eventMessage);
+		inOrder.verify(mockDiscordManager).updateMessage(sentMessages, eventMessage);
+		inOrder.verify(mockDiscordManager).sendMessage(eq(spyGameTracker.getChannels()), captorString.capture());
+		assertTrue(captorString.getValue().contains(playerName));
+	}
+
+	@Test
+	public void updateMessagesShouldNotUpdateMessageWhenMessagesDoNotExist() {
+		GameEvent mockEvent = mock(GameEvent.class);
+		when(mockEvent.getId()).thenReturn(100);
+		when(mockEvent.getPlayers()).thenReturn(Collections.emptyList());
+		when(mockGame.getUpdatedEvents()).thenReturn(Arrays.asList(mockEvent));
+		when(mockGame.getRemovedEvents()).thenReturn(Collections.emptyList());
+		String eventMessage = "EventMessage";
+		doReturn(eventMessage).when(spyGameTracker).buildEventMessage(any(GameEvent.class));
+
+		spyGameTracker.updateMessages();
+
+		verify(mockDiscordManager, never()).sendMessage(anyListOf(IChannel.class), anyString());
+		verify(mockDiscordManager, never()).updateMessage(anyListOf(IMessage.class), anyString());
 	}
 
 	@Test

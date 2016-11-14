@@ -225,14 +225,14 @@ public class GameTracker extends Thread {
 			String message = buildEventMessage(event);
 			if (eventMessages.containsKey(eventId)) {
 				List<IMessage> sentMessages = eventMessages.get(eventId);
-				discordManager.updateMessage(sentMessages, message);
+				List<IMessage> updatedMessages = discordManager.updateMessage(sentMessages, message);
+				eventMessages.put(eventId, updatedMessages);
 			}
 		});
 		// Delete messages of removed events
 		game.getRemovedEvents().stream().forEach(event -> {
-			int eventId = event.getId();
-			discordManager.deleteMessage(eventMessages.get(eventId));
-			eventMessages.remove(eventId);
+			discordManager.sendMessage(channels,
+					String.format("Goal by %s has been rescinded.", event.getPlayers().get(0).getFullName()));
 		});
 	}
 
