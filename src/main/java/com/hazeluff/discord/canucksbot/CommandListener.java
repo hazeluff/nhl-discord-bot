@@ -17,6 +17,7 @@ import com.hazeluff.discord.canucksbot.utils.Utils;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
 
 /**
@@ -101,7 +102,9 @@ public class CommandListener {
 				// score
 				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
-					discordManager.sendMessage(channel, "Please run this command in a channel specific for games.");
+					discordManager.sendMessage(channel,
+							String.format("Please run this command in a  Game Day Channel.\nLatest game channel: %s",
+									getLatestGameChannel(channel.getGuild(), Team.VANCOUVER_CANUCKS)));
 				} else if (game.getStatus() == GameStatus.PREVIEW) {
 					discordManager.sendMessage(channel, "The game hasn't started yet. **0** - **0**");
 				} else {
@@ -112,7 +115,9 @@ public class CommandListener {
 				// goals
 				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
-					discordManager.sendMessage(channel, "Please run this command in a channel specific for games.");
+					discordManager.sendMessage(channel,
+							String.format("Please run this command in a  Game Day Channel.\nLatest game channel: %s",
+									getLatestGameChannel(channel.getGuild(), Team.VANCOUVER_CANUCKS)));
 				} else if (game.getStatus() == GameStatus.PREVIEW) {
 					discordManager.sendMessage(channel, "The game hasn't started yet.");
 				} else {
@@ -235,5 +240,21 @@ public class CommandListener {
 			}
 		}
 		return false;
+	}
+
+
+	String getLatestGameChannel(IGuild guild, Team team) {
+		Game game = gameScheduler.getCurrentGame(team);
+		if (game == null) {
+			game = gameScheduler.getLastGame(Team.VANCOUVER_CANUCKS);
+		}
+		String channelName = game.getChannelName().toLowerCase();
+		List<IChannel> channels = guild.getChannelsByName(channelName);
+		if (!channels.isEmpty()) {
+			channelName = "<#" + channels.get(0).getID() + ">";
+		} else {
+			channelName = "#" + channelName;
+		}
+		return channelName;
 	}
 }

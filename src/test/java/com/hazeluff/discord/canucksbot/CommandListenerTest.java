@@ -1,5 +1,6 @@
 package com.hazeluff.discord.canucksbot;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -12,6 +13,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +51,10 @@ public class CommandListenerTest {
 	private static final String AUTHOR_USER_ID = "1234567891";
 	private static final String MESSAGE_CONTENT = "Message Content";
 	private static final String GAME_DETAILS = "Details";
+	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
+	private static final String CHANNEL_NAME = "ChannelName";
+	private static final String CHANNEL_ID = "1235352987987698";
+	private static final String CHANNEL_MENTION = "<#" + CHANNEL_ID + ">";
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private CanucksBot mockCanucksBot;
@@ -89,6 +97,8 @@ public class CommandListenerTest {
 		when(mockCanucksBot.getId()).thenReturn(BOT_ID);
 		when(mockCanucksBot.getMentionId()).thenReturn(BOT_MENTION_ID);
 		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
+		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
+		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
 		commandListener = new CommandListener(mockCanucksBot);
 		spyCommandListener = spy(commandListener);
 	}
@@ -193,7 +203,9 @@ public class CommandListenerTest {
 	@PrepareForTest(CommandListener.class)
 	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndChannelIsNotGameDayChannel() {
 		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsNextGame");
+		String latestGameChannel = "<#LatestGameChannel>";
 		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		doReturn(latestGameChannel).when(spyCommandListener).getLatestGameChannel(mockGuild, TEAM);
 		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
 		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(null);
 
@@ -201,7 +213,8 @@ public class CommandListenerTest {
 
 		assertTrue(result);
 		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, "Please run this command in a channel specific for games.");
+		verify(mockDiscordManager).sendMessage(mockChannel, 
+				"Please run this command in a  Game Day Channel.\nLatest game channel: " + latestGameChannel);
 	}
 
 	@Test
@@ -243,7 +256,9 @@ public class CommandListenerTest {
 	@PrepareForTest(CommandListener.class)
 	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndChannelIsNotGameDayChannel() {
 		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndChannelIsNotGameDayChannel");
+		String latestGameChannel = "<#LatestGameChannel>";
 		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		doReturn(latestGameChannel).when(spyCommandListener).getLatestGameChannel(mockGuild, TEAM);
 		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
 		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(null);
 
@@ -252,7 +267,7 @@ public class CommandListenerTest {
 		assertTrue(result);
 		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
 		verify(mockDiscordManager).sendMessage(mockChannel,
-				"Please run this command in a channel specific for games.");
+				"Please run this command in a  Game Day Channel.\nLatest game channel: " + latestGameChannel);
 	}
 
 	@Test
@@ -590,6 +605,7 @@ public class CommandListenerTest {
 	@Test
 	@PrepareForTest(Utils.class)
 	public void shouldFuckMessierShouldNotCountsThatArePastLifespan() {
+		LOGGER.info("shouldFuckMessierShouldNotCountsThatArePastLifespan");
 		long lifespan = CommandListener.FUCK_MESSIER_COUNT_LIFESPAN;
 		mockStatic(Utils.class);
 		when(Utils.getCurrentTime()).thenReturn(0l, 1l, lifespan + 2, lifespan + 3, lifespan + 4, lifespan + 5,
@@ -603,5 +619,53 @@ public class CommandListenerTest {
 		assertFalse(commandListener.shouldFuckMessier(mockMessage));
 		assertTrue(commandListener.shouldFuckMessier(mockMessage));
 
+	}
+
+	@Test
+	public void getLatestGameChannelShouldReturnChannelNameOfCurrentGame() {
+		LOGGER.info("getLatestGameChannelShouldReturnChannelNameOfCurrentGame");
+		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(mockGame);
+		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Collections.emptyList());
+
+		String result = commandListener.getLatestGameChannel(mockGuild, TEAM);
+
+		assertEquals("#" + CHANNEL_NAME.toLowerCase(), result);
+	}
+
+	@Test
+	public void getLatestGameChannelShouldReturnChannelMentionOfCurrentGame() {
+		LOGGER.info("getLatestGameChannelShouldReturnChannelMentionOfCurrentGame");
+		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(mockGame);
+		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Arrays.asList(mockChannel));
+		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+
+		String result = commandListener.getLatestGameChannel(mockGuild, TEAM);
+
+		assertEquals(CHANNEL_MENTION, result);
+	}
+
+	@Test
+	public void getLatestGameChannelShouldReturnChannelNameOfLastGame() {
+		LOGGER.info("getLatestGameChannelShouldReturnChannelNameOfLastGame");
+		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(null);
+		when(mockScheduler.getLastGame(TEAM)).thenReturn(mockGame);
+		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Collections.emptyList());
+
+		String result = commandListener.getLatestGameChannel(mockGuild, TEAM);
+
+		assertEquals("#" + CHANNEL_NAME.toLowerCase(), result);
+	}
+
+	@Test
+	public void getLatestGameChannelShouldReturnChannelMentionOfLastGame() {
+		LOGGER.info("getLatestGameChannelShouldReturnChannelMentionOfLastGame");
+		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(null);
+		when(mockScheduler.getLastGame(TEAM)).thenReturn(mockGame);
+		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Arrays.asList(mockChannel));
+		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+
+		String result = commandListener.getLatestGameChannel(mockGuild, TEAM);
+
+		assertEquals(CHANNEL_MENTION, result);
 	}
 }
