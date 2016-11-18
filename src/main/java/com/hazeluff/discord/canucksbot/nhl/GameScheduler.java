@@ -90,7 +90,6 @@ public class GameScheduler extends Thread {
 					uriBuilder.addParameter("endDate", "2017-06-15");
 					uriBuilder.addParameter("teamId", String.valueOf(team.getId()));
 					uriBuilder.addParameter("expand", "schedule.scoringplays");
-					System.out.println(uriBuilder.build());
 					strJSONSchedule = HttpUtils.get(uriBuilder.build());
 				} catch (URISyntaxException e) {
 					LOGGER.error("Error building URI", e);
