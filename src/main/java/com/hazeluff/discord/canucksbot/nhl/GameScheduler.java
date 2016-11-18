@@ -161,6 +161,7 @@ public class GameScheduler extends Thread {
 			} else {
 				list.add(getNextGame(team));
 			}
+			System.out.println(list);
 		}
 	}
 
@@ -174,8 +175,8 @@ public class GameScheduler extends Thread {
 		LOGGER.info("Starting trackers.");
 		for (List<Game> latestGames : teamLatestGames.values()) {
 			for (Game game : latestGames) {
+				GameTracker newGameTracker = getGameTracker(game);
 				if (!game.isEnded()) {
-					GameTracker newGameTracker = getGameTracker(game);
 					if (!gameTrackers.contains(newGameTracker)) {
 						newGameTracker.start();
 						gameTrackers.add(newGameTracker);

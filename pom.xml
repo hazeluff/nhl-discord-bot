@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.hazeluff.discord</groupId>
   <artifactId>canucksbot</artifactId>
-  <version>0.1.19</version>
+  <version>0.1.20</version>
   <packaging>jar</packaging>
   <name>CanucksBot</name>
   <url>http://maven.apache.org</url>

@@ -206,8 +206,8 @@ public class GameSchedulerTest {
 
 		spyGameScheduler.startTrackers();
 
-		verify(spyGameScheduler, never()).getGameTracker(mockGame1);
-		verify(spyGameScheduler, never()).getGameTracker(mockGame2);
+		verify(spyGameScheduler).getGameTracker(mockGame1);
+		verify(spyGameScheduler).getGameTracker(mockGame2);
 		verify(spyGameScheduler).getGameTracker(mockGame3);
 		verify(mockGameTracker1, never()).start();
 		verify(mockGameTracker2, never()).start();
@@ -231,8 +231,8 @@ public class GameSchedulerTest {
 
 		spyGameScheduler.startTrackers();
 
-		verify(spyGameScheduler, never()).getGameTracker(mockGame1);
-		verify(spyGameScheduler, never()).getGameTracker(mockGame2);
+		verify(spyGameScheduler).getGameTracker(mockGame1);
+		verify(spyGameScheduler).getGameTracker(mockGame2);
 		verify(spyGameScheduler).getGameTracker(mockGame3);
 		verify(mockGameTracker1, never()).start();
 		verify(mockGameTracker2, never()).start();
