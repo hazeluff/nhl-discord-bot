@@ -56,7 +56,7 @@ public class GameTracker extends Thread {
 	// Time before game to poll faster
 	static final long CLOSE_TO_START_THRESHOLD_MS = 300000l;
 	// Time after game is final to continue updates
-	static final long POST_GAME_UPDATE_DURATION = 300000l;
+	static final long POST_GAME_UPDATE_DURATION = 600000l;
 
 	private final DiscordManager discordManager;
 	private final Game game;
@@ -125,13 +125,17 @@ public class GameTracker extends Thread {
 			LOGGER.info("Game is about to start!");
 			discordManager.sendMessage(channels, "Game is about to start. GO CANUCKS GO!");
 
-			updateChannel();
+			// If the game is not final after the post game updates, then it will loop back and continue to track the
+			// game as if it hasn't ended yet.
+			while (game.getStatus() != GameStatus.FINAL) {
+				updateChannel();
+				// Game is over
+				sendEndOfGameMessage();
+				updatePinnedMessages();
 
-			// Game is over
-			sendEndOfGameMessage();
-			updatePinnedMessages();
-
-			updateChannelPostGame();
+				// Keep checking if game is over.
+				updateChannelPostGame();
+			}
 		} else {
 			LOGGER.info("Game is already finished");
 		}
@@ -278,12 +282,14 @@ public class GameTracker extends Thread {
 	 */
 	void updateChannelPostGame() {
 		int iterations = 0;
-		while (iterations * ACTIVE_POLL_RATE_MS < POST_GAME_UPDATE_DURATION) {
+		while (iterations * ACTIVE_POLL_RATE_MS < POST_GAME_UPDATE_DURATION && game.getStatus() == GameStatus.FINAL) {
 			iterations++;
 			updateMessages();
 			updateEndOfGameMessage();
 			updatePinnedMessages();
-			Utils.sleep(ACTIVE_POLL_RATE_MS);
+			if (game.getStatus() == GameStatus.FINAL) {
+				Utils.sleep(ACTIVE_POLL_RATE_MS);
+			}
 		}
 	}
 

@@ -197,7 +197,7 @@ public class GameTrackerTest {
 	@Test
 	public void runShouldInvokeMethodsWhenStatusIsNotFinal() throws Exception {
 		LOGGER.info("runInvokeMethodsWhenStatusIsNotFinal");
-		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.FINAL);
 		doNothing().when(spyGameTracker).sendReminders();
 		doNothing().when(spyGameTracker).waitForStart();
 		doNothing().when(spyGameTracker).updateChannel();
@@ -218,6 +218,27 @@ public class GameTrackerTest {
 		inOrder.verify(spyGameTracker).sendEndOfGameMessage();
 		inOrder.verify(spyGameTracker).updatePinnedMessages();
 		inOrder.verify(spyGameTracker).updateChannelPostGame();
+	}
+
+	@Test
+	public void runShouldResumeUpdatingChannelIfGameIsNotActuallyFinal() throws Exception {
+		LOGGER.info("runShouldResumeUpdatingChannelIfGameIsNotActuallyFinal");
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.LIVE, GameStatus.FINAL);
+		doNothing().when(spyGameTracker).sendReminders();
+		doNothing().when(spyGameTracker).waitForStart();
+		doNothing().when(spyGameTracker).updateChannel();
+		doNothing().when(spyGameTracker).sendEndOfGameMessage();
+		doNothing().when(spyGameTracker).updatePinnedMessages();
+		doNothing().when(spyGameTracker).updateChannelPostGame();
+
+		assertFalse(spyGameTracker.isFinished());
+		spyGameTracker.run();
+		assertTrue(spyGameTracker.isFinished());
+
+		verify(spyGameTracker, times(2)).updateChannel();
+		verify(spyGameTracker, times(2)).sendEndOfGameMessage();
+		verify(spyGameTracker, times(2)).updatePinnedMessages();
+		verify(spyGameTracker, times(2)).updateChannelPostGame();
 	}
 
 	@Test
@@ -539,6 +560,7 @@ public class GameTrackerTest {
 		doNothing().when(spyGameTracker).updateMessages();
 		doNothing().when(spyGameTracker).updateEndOfGameMessage();
 		doNothing().when(spyGameTracker).updatePinnedMessages();
+		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
 		mockStatic(Utils.class);
 		
 		spyGameTracker.updateChannelPostGame();
@@ -550,6 +572,29 @@ public class GameTrackerTest {
 		verify(spyGameTracker, times(iterations)).updateEndOfGameMessage();
 		verify(spyGameTracker, times(iterations)).updatePinnedMessages();
 		verifyStatic(times(iterations));
+		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
+	}
+
+	@Test
+	@PrepareForTest(Utils.class)
+	public void updateChannelPostGameShouldInvokeUpdatesUntilGameIsNotFinal() {
+		LOGGER.info("updateChannelPostGameShouldInvokeUpdatesUntilGameIsNotFinal");
+		doNothing().when(spyGameTracker).updateMessages();
+		doNothing().when(spyGameTracker).updateEndOfGameMessage();
+		doNothing().when(spyGameTracker).updatePinnedMessages();
+		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL, GameStatus.FINAL, GameStatus.FINAL, GameStatus.FINAL,
+				GameStatus.FINAL, GameStatus.LIVE, GameStatus.LIVE);
+		mockStatic(Utils.class);
+		
+		spyGameTracker.updateChannelPostGame();
+		
+		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.ACTIVE_POLL_RATE_MS);
+		assertTrue(iterations > 4);
+		
+		verify(spyGameTracker, times(3)).updateMessages();
+		verify(spyGameTracker, times(3)).updateEndOfGameMessage();
+		verify(spyGameTracker, times(3)).updatePinnedMessages();
+		verifyStatic(times(2));
 		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
 	}
 }
