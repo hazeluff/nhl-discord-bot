@@ -296,7 +296,6 @@ public class Game {
 			JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
 			JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
 					.getJSONObject(0);
-
 			updateInfo(jsonGame);
 			updateEvents(jsonGame);
 		} catch (URISyntaxException e) {
@@ -332,7 +331,7 @@ public class Game {
 			actualEvents.add(new GameEvent(jsonScoringPlays.getJSONObject(i)));
 		}
 		actualEvents.forEach(actualEvent -> {
-			if (!events.stream().anyMatch(event -> event.equals(actualEvent))) {
+			if (!actualEvent.getPlayers().isEmpty() && !events.stream().anyMatch(event -> event.equals(actualEvent))) {
 				if (events.removeIf(event -> event.getId() == actualEvent.getId())) {
 					// Updated events
 					LOGGER.debug("Updated event: [" + actualEvent + "]");
