@@ -22,7 +22,7 @@ public class CanucksCustomMessages {
 		aliases.put(8475690, "Our lord and saviour, **ChrisT**, has arrived!");
 		aliases.put(8475790, "Real **Gud** goal!");
 		aliases.put(8476466, "Thx **Bae** <3.");
-		aliases.put(8477018, ":D Goal! **Ben Hutton** :D");
+		aliases.put(8477018, ":smile: Goal! **Ben Hutton** :smile:");
 		aliases.put(8477500, "They don't call him **Bo Scorevat** for no reason.");
 		aliases.put(8477937, "BIG COUNTRY GOAL :cowboy:");
 		aliases.put(8473415, "Goal by **Bulldog**.");
