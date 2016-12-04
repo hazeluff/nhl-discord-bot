@@ -614,7 +614,7 @@ public class GameTest {
 	}
 
 	@Test
-	public void getGoalMessageShouldDisplayRegularPeriodGoalsAndShootoutGoal() {
+	public void getGoalMessageShouldDisplayRegularPeriodGoalsAndShootoutGoals() {
 		LOGGER.info("getGoalMessageShouldDisplayRegularPeriodGoalsAndShootoutGoal");
 		GameEvent mockGameEvent1 = mock(GameEvent.class);
 		String details1 = "d1";
@@ -632,13 +632,18 @@ public class GameTest {
 		String details4 = "d4";
 		when(mockGameEvent4.getPeriod()).thenReturn(new GamePeriod(5, Type.SHOOTOUT, "1st"));
 		when(mockGameEvent4.getDetails()).thenReturn(details4);
-		EVENTS.addAll(Arrays.asList(mockGameEvent1, mockGameEvent2, mockGameEvent3, mockGameEvent4));
+		GameEvent mockGameEvent5 = mock(GameEvent.class);
+		String details5 = "d5";
+		when(mockGameEvent5.getPeriod()).thenReturn(new GamePeriod(5, Type.SHOOTOUT, "1st"));
+		when(mockGameEvent5.getDetails()).thenReturn(details5);
+		EVENTS.addAll(Arrays.asList(mockGameEvent1, mockGameEvent2, mockGameEvent3, mockGameEvent4, mockGameEvent5));
 		game = newGame();
 
 		String result = game.getGoalsMessage();
 
 		assertEquals("```\n1st Period:\n" + details1 + "\n\n2nd Period:\n" + details2 + "\n\n3rd Period:\n" + details3
-				+ "\n\n" + mockGameEvent4.getPeriod().getDisplayValue() + ":\n" + details4 + "\n```", result);
+				+ "\n\n" + mockGameEvent4.getPeriod().getDisplayValue() + ":\n" + details4 + "\n" + details5 + "\n```",
+				result);
 	}
 
 	@Test

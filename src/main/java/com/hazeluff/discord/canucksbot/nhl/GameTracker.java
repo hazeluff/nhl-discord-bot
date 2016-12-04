@@ -42,7 +42,7 @@ public class GameTracker extends Thread {
 
 	// <threshold,message>
 	@SuppressWarnings("serial")
-	private static final Map<Long, String> gameReminders = new HashMap<Long, String>() {{
+	private final Map<Long, String> gameReminders = new HashMap<Long, String>() {{
 		put(3600000l, "60 minutes till puck drop.");
 		put(1800000l, "30 minutes till puck drop.");
 		put(600000l, "10 minutes till puck drop.");

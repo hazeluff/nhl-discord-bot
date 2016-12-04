@@ -388,7 +388,7 @@ public class Game {
 			GameEvent gameEvent = goals.stream().filter(isOtherPeriod).findFirst().get();
 			GamePeriod period = gameEvent.getPeriod();
 			response.append("\n\n").append(period.getDisplayValue()).append(":");
-			response.append("\n").append(gameEvent.getDetails());
+			goals.stream().filter(isOtherPeriod).forEach(event -> response.append("\n").append(event.getDetails()));
 		}
 		response.append("\n```");
 		return response.toString();
