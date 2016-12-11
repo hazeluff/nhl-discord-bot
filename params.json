@@ -1,6 +1,6 @@
 {
-  "name": "Discord-canucks-bot",
+  "name": "Discord-NHLBot",
   "tagline": "Discord Bot that posts NHL game events",
-  "body": "### Add CanucksBot to your Discord\r\nhttps://discordapp.com/oauth2/authorize?client_id=239924192873676801&scope=bot&permissions=93200\r\n",
+  "body": "### Add NHL to your Discord\r\nhttps://discordapp.com/oauth2/authorize?client_id=239924192873676801&scope=bot&permissions=93200\r\n",
   "note": "Don't delete this file! It's used internally to help with page regeneration."
 }
