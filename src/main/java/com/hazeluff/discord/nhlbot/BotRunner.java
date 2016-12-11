@@ -9,6 +9,7 @@ import com.hazeluff.discord.nhlbot.bot.NHLBot;
  */
 public class BotRunner 
 {
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
 		NHLBot bot = new NHLBot(args[0]);
