@@ -248,7 +248,7 @@ public class CommandListener {
 	String getLatestGameChannel(IGuild guild, Team team) {
 		Game game = gameScheduler.getCurrentGame(team);
 		if (game == null) {
-			game = gameScheduler.getLastGame(Team.VANCOUVER_CANUCKS);
+			game = gameScheduler.getLastGame(team);
 		}
 		String channelName = game.getChannelName().toLowerCase();
 		List<IChannel> channels = guild.getChannelsByName(channelName);

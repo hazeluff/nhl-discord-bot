@@ -1,12 +1,12 @@
-# discord-canucks-bot
+# discord-nhlbot
 # Fuck Messier
 
-![CanucksBot](https://cdn.discordapp.com/attachments/239331036364931073/239335602191990784/unknown.png)
+![NHLBot](https://cdn.discordapp.com/attachments/239331036364931073/239335602191990784/unknown.png)
 
 ## Add bot:
 
-Develop: https://discordapp.com/oauth2/authorize?client_id=239197369843843073&scope=bot&permissions=93200
-Production: https://discordapp.com/oauth2/authorize?client_id=239924192873676801&scope=bot&permissions=93200
+Develop: https://discordapp.com/oauth2/authorize?client_id=257345572162371588&scope=bot&permissions=93200
+Production: https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=93200
 
 ### Permissions for bot
 

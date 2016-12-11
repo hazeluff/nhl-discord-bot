@@ -7,9 +7,9 @@
     </appender>
     
     <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/canucksbot.log</file>
+      <file>logs/nhlbot.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-      <fileNamePattern>logs/canucksbot-%d{yy-MM-dd}.%i.log</fileNamePattern>
+      <fileNamePattern>logs/nhlbot-%d{yy-MM-dd}.%i.log</fileNamePattern>
         <maxFileSize>200MB</maxFileSize>    
         <maxHistory>30</maxHistory>
       </rollingPolicy>
@@ -19,9 +19,9 @@
     </appender>
     
     <appender name="ErrorFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/canucksbot.err</file>
+      <file>logs/nhlbot.err</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-      <fileNamePattern>logs/canucksbot-%d{yy-MM-dd}.%i.err</fileNamePattern>
+      <fileNamePattern>logs/nhlbot-%d{yy-MM-dd}.%i.err</fileNamePattern>
         <maxFileSize>200MB</maxFileSize>    
         <maxHistory>30</maxHistory>
       </rollingPolicy>
@@ -30,7 +30,7 @@
       </encoder>
     </appender>    
     
-    <logger name="com.hazeluff.discord.canucksbot" level="debug" additivity="false">
+    <logger name="com.hazeluff.discord.nhlbot" level="debug" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="File"/>
     </logger>
