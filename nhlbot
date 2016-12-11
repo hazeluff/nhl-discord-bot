@@ -6,10 +6,10 @@
 # 3) Symlink /opt/nhlbot/nhlbot to the jar
 # 4) chmod +x /etc/init.d/nhlbot
 #
-# Run like service: sudo service canucksbot start/stop/restart
+# Run like service: sudo service NHLBot start/stop/restart
 
-SERVICE_NAME=CanucksBot
-INSTALL_DIR=/opt/canucksbot
+SERVICE_NAME=NHLBot
+INSTALL_DIR=/opt/nhlbot
 PATH_TO_JAR=$INSTALL_DIR/nhlbot
 PID_PATH_NAME=/tmp/nhlbot-pid
 BOT_KEY=<BotKey>

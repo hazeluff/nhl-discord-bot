@@ -167,7 +167,7 @@ public class Game {
 	}
 
 	/**
-	 * Gets the message that CanucksBot will respond with when queried about
+	 * Gets the message that NHLBot will respond with when queried about
 	 * this game
 	 * 
 	 * @return message in the format: "The next game is:\n<br>
@@ -183,7 +183,7 @@ public class Game {
 	}
 
 	/**
-	 * Gets the message that CanucksBot will respond with when queried about the
+	 * Gets the message that NHLBot will respond with when queried about the
 	 * score of this game
 	 * 
 	 * @return message in the format : "Home Team **homeScore** - **awayScore**

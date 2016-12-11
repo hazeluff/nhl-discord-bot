@@ -22,9 +22,9 @@ public class ReadyListener extends DiscordManager {
 
 	private final GameScheduler gameScheduler;
 
-	public ReadyListener(NHLBot canucksBot) {
-		super(canucksBot.getClient());
-		this.gameScheduler = canucksBot.getGameScheduler();
+	public ReadyListener(NHLBot nhlBot) {
+		super(nhlBot.getClient());
+		this.gameScheduler = nhlBot.getGameScheduler();
 	}
 
 

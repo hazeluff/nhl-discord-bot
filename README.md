@@ -28,7 +28,7 @@ Production: https://discordapp.com/oauth2/authorize?client_id=257345858515894272
 - [ ] Bot messages during gameplay to cheer on team.
 
 ## Commands
-`@CanucksBot [command]`
+`@NHLBot [command]`
 - `fuckmessier` Fuck Messier.
 - `nextgame` Replies with information about the next game.
 - `about` Displays information about bot/author.

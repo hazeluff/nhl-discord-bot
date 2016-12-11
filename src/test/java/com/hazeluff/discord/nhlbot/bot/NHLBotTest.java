@@ -19,10 +19,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.CommandListener;
-import com.hazeluff.discord.nhlbot.bot.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.ReadyListener;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 
 import sx.blah.discord.api.ClientBuilder;
@@ -32,8 +28,8 @@ import sx.blah.discord.util.DiscordException;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(NHLBot.class)
-public class CanucksBotTest {
-	private static final Logger LOGGER = LoggerFactory.getLogger(CanucksBotTest.class);
+public class NHLBotTest {
+	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBotTest.class);
 
 	@Mock
 	IDiscordClient mockClient;
@@ -67,7 +63,7 @@ public class CanucksBotTest {
 
 	@Test
 	public void constructorShouldRegisterListeners() throws Exception {
-		LOGGER.info("canucksBotShouldRegisterListeners");
+		LOGGER.info("constructorShouldRegisterListeners");
 		mockStatic(NHLBot.class);
 		when(NHLBot.getClient(TOKEN)).thenReturn(mockClient);
 
@@ -79,16 +75,16 @@ public class CanucksBotTest {
 
 	@Test
 	public void constructorShouldSetAccessibleMembers() throws Exception {
-		LOGGER.info("canucksBotShouldSetAccessibleMembers");
+		LOGGER.info("constructorShouldSetAccessibleMembers");
 		mockStatic(NHLBot.class);
 		when(NHLBot.getClient(TOKEN)).thenReturn(mockClient);
 
-		NHLBot canucksBot = new NHLBot(TOKEN);
+		NHLBot NHLBot = new NHLBot(TOKEN);
 
-		assertEquals(mockClient, canucksBot.getClient());
-		assertEquals(mockDiscordManager, canucksBot.getDiscordManager());
-		assertEquals(mockGameScheduler, canucksBot.getGameScheduler());
-		assertEquals(ID, canucksBot.getId());
+		assertEquals(mockClient, NHLBot.getClient());
+		assertEquals(mockDiscordManager, NHLBot.getDiscordManager());
+		assertEquals(mockGameScheduler, NHLBot.getGameScheduler());
+		assertEquals(ID, NHLBot.getId());
 	}
 
 	@Test

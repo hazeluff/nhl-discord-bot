@@ -62,7 +62,7 @@ public class CommandListenerTest {
 	private static final String CHANNEL_MENTION = "<#" + CHANNEL_ID + ">";
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
-	private NHLBot mockCanucksBot;
+	private NHLBot mockNHLBot;
 	@Mock
 	private IDiscordClient mockClient;
 	@Mock
@@ -90,21 +90,21 @@ public class CommandListenerTest {
 
 	@Before
 	public void setup() {
-		when(mockCanucksBot.getClient()).thenReturn(mockClient);
-		when(mockCanucksBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockCanucksBot.getGameScheduler()).thenReturn(mockScheduler);
+		when(mockNHLBot.getClient()).thenReturn(mockClient);
+		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
+		when(mockNHLBot.getGameScheduler()).thenReturn(mockScheduler);
 		when(mockEvent.getMessage()).thenReturn(mockMessage);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockChannel.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
 		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
 		when(mockAuthorUser.getID()).thenReturn(AUTHOR_USER_ID);
-		when(mockCanucksBot.getId()).thenReturn(BOT_ID);
-		when(mockCanucksBot.getMentionId()).thenReturn(BOT_MENTION_ID);
+		when(mockNHLBot.getId()).thenReturn(BOT_ID);
+		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
 		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
 		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
 		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
-		commandListener = new CommandListener(mockCanucksBot);
+		commandListener = new CommandListener(mockNHLBot);
 		spyCommandListener = spy(commandListener);
 	}
 	
@@ -153,7 +153,7 @@ public class CommandListenerTest {
 		verify(spyCommandListener).replyToMention(mockMessage);
 		verify(spyCommandListener).isBotCommand(mockMessage);
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
-		assertTrue(captorResponse.getValue().contains("`@CanucksBot help`"));
+		assertTrue(captorResponse.getValue().contains("`@NHLBot help`"));
 		verify(spyCommandListener, never()).shouldFuckMessier(any(IMessage.class));
 	}
 

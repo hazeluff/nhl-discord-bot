@@ -30,7 +30,7 @@ public class ReadyListenerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReadyListenerTest.class);
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
-	NHLBot mockCanucksBot;
+	NHLBot mockNHLBot;
 	@Mock
 	IDiscordClient mockClient;
 	@Mock
@@ -46,11 +46,11 @@ public class ReadyListenerTest {
 
 	@Before
 	public void setup() {
-		when(mockCanucksBot.getClient()).thenReturn(mockClient);
-		when(mockCanucksBot.getGameScheduler()).thenReturn(mockScheduler);
+		when(mockNHLBot.getClient()).thenReturn(mockClient);
+		when(mockNHLBot.getGameScheduler()).thenReturn(mockScheduler);
 		when(mockClient.getGuilds()).thenReturn(Arrays.asList(mockGuild1, mockGuild2));
 
-		readyListener = new ReadyListener(mockCanucksBot);
+		readyListener = new ReadyListener(mockNHLBot);
 	}
 	
 	@Test

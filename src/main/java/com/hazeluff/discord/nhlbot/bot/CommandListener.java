@@ -38,12 +38,12 @@ public class CommandListener {
 
 	private final DiscordManager discordManager;
 	private final GameScheduler gameScheduler;
-	private final NHLBot canucksBot;
+	private final NHLBot nhlBot;
 
-	public CommandListener(NHLBot canucksBot) {
-		discordManager = canucksBot.getDiscordManager();
-		this.gameScheduler = canucksBot.getGameScheduler();
-		this.canucksBot = canucksBot;
+	public CommandListener(NHLBot nhlBot) {
+		discordManager = nhlBot.getDiscordManager();
+		this.gameScheduler = nhlBot.getGameScheduler();
+		this.nhlBot = nhlBot;
 	}
 
 	@EventSubscriber
@@ -66,7 +66,7 @@ public class CommandListener {
 		
 		if (isBotCommand(message)) {
 			discordManager.sendMessage(message.getChannel(),
-					"Sorry, I don't understand that. Send `@CanucksBot help` for a list of commands.");
+					"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
 			return;
 		}
 
@@ -76,7 +76,7 @@ public class CommandListener {
 	}
 
 	/**
-	 * Sends a message if the message in the form of a command (Starts with "@CanucksBot")
+	 * Sends a message if the message in the form of a command (Starts with "@NHLBot")
 	 * 
 	 * @param channel
 	 *            channel to send the message to
@@ -89,7 +89,7 @@ public class CommandListener {
 		IChannel channel = message.getChannel();
 		String strMessage = message.getContent();
 		if (isBotCommand(message)) {
-			String[] arguments = strMessage.substring(canucksBot.getMentionId().length()).trim().split("\\s+");
+			String[] arguments = strMessage.substring(nhlBot.getMentionId().length()).trim().split("\\s+");
 
 			if (arguments[0].equalsIgnoreCase("fuckmessier")) {
 				// fuckmessier
@@ -151,7 +151,7 @@ public class CommandListener {
 	}
 
 	/**
-	 * Sends a message if CanucksBot is mentioned and phrases match ones that have responses.
+	 * Sends a message if NHLBot is mentioned and phrases match ones that have responses.
 	 * 
 	 * @param message
 	 *            message received
@@ -194,24 +194,24 @@ public class CommandListener {
 	}
 
 	/**
-	 * Determines if CanucksBot is mentioned at the start of the message.
+	 * Determines if NHLBot is mentioned at the start of the message.
 	 * 
 	 * @param strMessage
-	 *            message to determine if CanucksBot is mentioned in
-	 * @return true, if CanucksBot is mentioned; false, otherwise.
+	 *            message to determine if NHLBot is mentioned in
+	 * @return true, if NHLBot is mentioned; false, otherwise.
 	 */
 	boolean isBotCommand(IMessage message) {
-		return message.getContent().startsWith(canucksBot.getMentionId());
+		return message.getContent().startsWith(nhlBot.getMentionId());
 	}
 	
 	/**
-	 * Determines if CanucksBot is mentioned in the message
+	 * Determines if NHLBot is mentioned in the message
 	 * 
 	 * @param message
 	 * @return
 	 */
 	boolean isBotMentioned(IMessage message) {
-		return message.getContent().contains(canucksBot.getMentionId());
+		return message.getContent().contains(nhlBot.getMentionId());
 	}
 
 	/**

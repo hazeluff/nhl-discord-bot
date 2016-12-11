@@ -21,14 +21,14 @@ public class NHLBot {
 	private final String id;
 
 	public NHLBot(String botToken) {
-		LOGGER.info("Running CanucksBot v" + Config.VERSION);
+		LOGGER.info("Running NHLBot v" + Config.VERSION);
 		client = getClient(botToken);
 		discordManager = new DiscordManager(client);
 		gameScheduler = new GameScheduler(discordManager);
 
 		try {
 			id = client.getApplicationClientID();
-			LOGGER.info("CanucksBot. id [" + id + "]");
+			LOGGER.info("NHLBot. id [" + id + "]");
 		} catch (DiscordException e) {
 			LOGGER.error("Failed to get Application Client ID", e);
 			throw new RuntimeException(e);
