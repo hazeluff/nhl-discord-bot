@@ -18,7 +18,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucksbot.utils.Utils;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 @RunWith(PowerMockRunner.class)
 public class UtilsTest {

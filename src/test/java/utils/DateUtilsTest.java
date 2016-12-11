@@ -11,7 +11,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucksbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.DateUtils;
 
 @RunWith(PowerMockRunner.class)
 public class DateUtilsTest {

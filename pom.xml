@@ -2,10 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.hazeluff.discord</groupId>
-  <artifactId>canucksbot</artifactId>
-  <version>0.1.23</version>
+  <artifactId>nhlbot</artifactId>
+  <version>0.2.0</version>
   <packaging>jar</packaging>
-  <name>CanucksBot</name>
+  <name>NHLBot</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>    
@@ -45,7 +45,12 @@
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <version>20160810</version>
-  </dependency>
+    </dependency>
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongo-java-driver</artifactId>
+      <version>3.4.0</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -54,7 +59,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>com.hazeluff.discord.canucksbot.BotRunner</mainClass>
+              <mainClass>com.hazeluff.discord.nhlbot.BotRunner</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
