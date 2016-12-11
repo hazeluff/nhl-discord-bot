@@ -74,4 +74,13 @@ public class NHLBot {
 	public String getMentionId() {
 		return "<@" + id + ">";
 	}
+
+	/**
+	 * Gets the id of the bot, in the format displayed in a message, when the bot is mentioned by Nickname.
+	 * 
+	 * @return
+	 */
+	public String getNicknameMentionId() {
+		return "<@!" + id + ">";
+	}
 }

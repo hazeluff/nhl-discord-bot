@@ -30,10 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
-import com.hazeluff.discord.nhlbot.bot.BotPhrases;
-import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.CommandListener;
-import com.hazeluff.discord.nhlbot.bot.DiscordManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
@@ -53,6 +49,7 @@ public class CommandListenerTest {
 
 	private static final String BOT_ID = "1234567890";
 	private static final String BOT_MENTION_ID = "<@" + BOT_ID + ">";
+	private static final String BOT_NICKNAME_MENTION_ID = "<@!" + BOT_ID + ">";
 	private static final String AUTHOR_USER_ID = "1234567891";
 	private static final String MESSAGE_CONTENT = "Message Content";
 	private static final String GAME_DETAILS = "Details";
@@ -101,6 +98,7 @@ public class CommandListenerTest {
 		when(mockAuthorUser.getID()).thenReturn(AUTHOR_USER_ID);
 		when(mockNHLBot.getId()).thenReturn(BOT_ID);
 		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
+		when(mockNHLBot.getNicknameMentionId()).thenReturn(BOT_NICKNAME_MENTION_ID);
 		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
 		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
 		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
@@ -542,6 +540,14 @@ public class CommandListenerTest {
 	}
 
 	@Test
+	public void isBotCommandShouldReturnTrueWhenBotNicknameIsMentioned() {
+		LOGGER.info("isBotCommandShouldReturnTrueWhenBotNickNameIsMentioned");
+		String content = BOT_NICKNAME_MENTION_ID + " command";
+		when(mockMessage.getContent()).thenReturn(content, content);
+		assertTrue(commandListener.isBotCommand(mockMessage));
+	}
+
+	@Test
 	public void isBotCommandShouldReturnFalseWhenBotIsNotMentioned() {
 		LOGGER.info("isBotCommandShouldReturnFalseWhenBotIsNotMentioned");
 		String content = "<@9876543210> I hope we make the playoffs this year.";
@@ -551,13 +557,25 @@ public class CommandListenerTest {
 
 	// isBotMentioned
 	@Test
-	public void isBotMentionedShouldReturnFalseIfMessageContainsBot() {
-		LOGGER.info("isBotMentionedShouldReturnFalseIfMessageContainsBot");
-		String content = BOT_MENTION_ID + " hey, what's up?";
+	public void isBotMentionedShouldReturnTrueIfMessageContainsBot() {
+		LOGGER.info("isBotMentionedShouldReturnTrueIfMessageContainsBot");
+		String content = BOT_MENTION_ID + "hey, what's up?";
 		when(mockMessage.getContent()).thenReturn(content);
 		assertTrue(commandListener.isBotMentioned(mockMessage));
 
 		String content2 = "fuck off " + BOT_MENTION_ID;
+		when(mockMessage.getContent()).thenReturn(content2);
+		assertTrue(commandListener.isBotMentioned(mockMessage));
+	}
+
+	@Test
+	public void isBotMentionedShouldReturnTrueIfMessageContainsBotNickname() {
+		LOGGER.info("isBotMentionedShouldReturnTrueIfMessageContainsBotNickname");
+		String content = BOT_NICKNAME_MENTION_ID + "hey, what's up?";
+		when(mockMessage.getContent()).thenReturn(content);
+		assertTrue(commandListener.isBotMentioned(mockMessage));
+
+		String content2 = "fuck off " + BOT_NICKNAME_MENTION_ID;
 		when(mockMessage.getContent()).thenReturn(content2);
 		assertTrue(commandListener.isBotMentioned(mockMessage));
 	}

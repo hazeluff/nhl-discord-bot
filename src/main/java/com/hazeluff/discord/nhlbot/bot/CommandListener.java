@@ -89,18 +89,18 @@ public class CommandListener {
 		IChannel channel = message.getChannel();
 		String strMessage = message.getContent();
 		if (isBotCommand(message)) {
-			String[] arguments = strMessage.substring(nhlBot.getMentionId().length()).trim().split("\\s+");
+			String[] arguments = strMessage.split("\\s+");
 
-			if (arguments[0].equalsIgnoreCase("fuckmessier")) {
+			if (arguments[1].equalsIgnoreCase("fuckmessier")) {
 				// fuckmessier
 				discordManager.sendMessage(channel, "FUCK MESSIER");
 				return true;
-			} else if (arguments[0].equalsIgnoreCase("nextgame")) {
+			} else if (arguments[1].equalsIgnoreCase("nextgame")) {
 				// nextgame
 				Game nextGame = gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS);
 				discordManager.sendMessage(channel, "The next game is:\n" + nextGame.getDetailsMessage());
 				return true;
-			} else if (arguments[0].equalsIgnoreCase("score")) {
+			} else if (arguments[1].equalsIgnoreCase("score")) {
 				// score
 				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
@@ -113,7 +113,7 @@ public class CommandListener {
 					discordManager.sendMessage(channel, game.getScoreMessage());
 				}
 				return true;
-			} else if (arguments[0].equalsIgnoreCase("goals")) {
+			} else if (arguments[1].equalsIgnoreCase("goals")) {
 				// goals
 				Game game = gameScheduler.getGameByChannelName(channel.getName());
 				if (game == null) {
@@ -127,7 +127,7 @@ public class CommandListener {
 							String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
 				}
 				return true;
-			} else if (arguments[0].equalsIgnoreCase("help")) {
+			} else if (arguments[1].equalsIgnoreCase("help")) {
 				// help
 				discordManager.sendMessage(channel,
 						"Here are a list of commands:\n" + "`nextgame` - Displays information of the next game.\n"
@@ -137,7 +137,7 @@ public class CommandListener {
 								+ "You must be in a 'Game Day Channel' to use this command.\n"
 								+ "`about` - Displays information about me.\n");
 				return true;
-			} else if (arguments[0].equalsIgnoreCase("about")) {
+			} else if (arguments[1].equalsIgnoreCase("about")) {
 				// about
 				discordManager.sendMessage(channel,
 						String.format("Version: %s\nWritten by %s\nCheckout my GitHub: %s\nContact me: %s",
@@ -201,7 +201,9 @@ public class CommandListener {
 	 * @return true, if NHLBot is mentioned; false, otherwise.
 	 */
 	boolean isBotCommand(IMessage message) {
-		return message.getContent().startsWith(nhlBot.getMentionId());
+		String messageContent = message.getContent();
+		return messageContent.startsWith(nhlBot.getMentionId())
+				|| messageContent.startsWith(nhlBot.getNicknameMentionId());
 	}
 	
 	/**
@@ -211,7 +213,8 @@ public class CommandListener {
 	 * @return
 	 */
 	boolean isBotMentioned(IMessage message) {
-		return message.getContent().contains(nhlBot.getMentionId());
+		String messageContent = message.getContent();
+		return messageContent.contains(nhlBot.getMentionId()) || messageContent.contains(nhlBot.getNicknameMentionId());
 	}
 
 	/**
