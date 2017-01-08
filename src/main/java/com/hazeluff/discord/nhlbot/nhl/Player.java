@@ -54,7 +54,7 @@ public class Player {
 	 * @param fullName
 	 * @param role
 	 */
-	Player(int id, String fullName, EventRole role) {
+	public Player(int id, String fullName, EventRole role) {
 		this.id = id;
 		this.fullName = fullName;
 		this.role = role;

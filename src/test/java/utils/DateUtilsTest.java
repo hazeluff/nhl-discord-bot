@@ -3,7 +3,7 @@ package utils;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +20,7 @@ public class DateUtilsTest {
 	@Test
 	public void parseNHLDateShouldReturnDate() {
 		LOGGER.info("parseNHLDateShouldReturnDate");
-		LocalDateTime result = DateUtils.parseNHLDate("2000-12-08T15:20:30Z");
+		ZonedDateTime result = DateUtils.parseNHLDate("2000-12-08T15:20:30Z");
 
 		assertEquals(2000, result.getYear());
 		assertEquals(12, result.getMonthValue());
@@ -33,7 +33,7 @@ public class DateUtilsTest {
 	@Test
 	public void parseNHLDateShouldReturnNullWhenDateIsInvalid() {
 		LOGGER.info("parseNHLDateShouldReturnNullWhenDateIsInvalid");
-		LocalDateTime result = DateUtils.parseNHLDate("asdf");
+		ZonedDateTime result = DateUtils.parseNHLDate("asdf");
 
 		assertNull(result);
 	}

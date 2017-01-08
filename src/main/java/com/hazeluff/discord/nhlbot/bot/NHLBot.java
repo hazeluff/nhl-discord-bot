@@ -4,58 +4,100 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
+import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
+import com.hazeluff.discord.nhlbot.utils.Utils;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
 
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
+import sx.blah.discord.handle.obj.Status;
 import sx.blah.discord.util.DiscordException;
 
 
 public class NHLBot {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBot.class);
 
-	private final IDiscordClient client;
+	private final IDiscordClient discordClient;
+	private final MongoDatabase mongoDatabase;
+	private final GuildPreferencesManager guildPreferencesManager;
 	private final DiscordManager discordManager;
+	private final GameChannelsManager gameChannelsManager;
 	private final GameScheduler gameScheduler;
 	private final String id;
 
 	public NHLBot(String botToken) {
 		LOGGER.info("Running NHLBot v" + Config.VERSION);
-		client = getClient(botToken);
-		discordManager = new DiscordManager(client);
-		gameScheduler = new GameScheduler(discordManager);
+		// Init DiscordClient
+		discordClient = getClient(botToken);
 
 		try {
-			id = client.getApplicationClientID();
+			id = discordClient.getApplicationClientID();
 			LOGGER.info("NHLBot. id [" + id + "]");
 		} catch (DiscordException e) {
 			LOGGER.error("Failed to get Application Client ID", e);
-			throw new RuntimeException(e);
+			throw new NHLBotException(e);
 		}
-		EventDispatcher dispatcher = client.getDispatcher();
-		dispatcher.registerListener(new ReadyListener(this));
+
+		// Init MongoClient/GuildPreferences
+		mongoDatabase = getMongoDatabaseInstance();
+		guildPreferencesManager = GuildPreferencesManager.getInstance(discordClient, mongoDatabase);
+
+		// Init other classes
+		discordManager = new DiscordManager(discordClient);
+		gameChannelsManager = new GameChannelsManager(this);
+		gameScheduler = new GameScheduler(this);
+
+		// Register listeners
+		EventDispatcher dispatcher = discordClient.getDispatcher();
 		dispatcher.registerListener(new CommandListener(this));
+		gameScheduler.start();
 	}
 
 	static IDiscordClient getClient(String token) {
 		ClientBuilder clientBuilder = new ClientBuilder();
 		clientBuilder.withToken(token);
-
+		IDiscordClient client;
 		try {
-			return clientBuilder.login();
+			client = clientBuilder.login();
 		} catch (DiscordException e) {
-			LOGGER.error("Could not login.", e);
-			return null;
+			LOGGER.error("Could not log in.", e);
+			throw new NHLBotException(e);
 		}
+		while (!client.isReady()) {
+			LOGGER.info("Waiting for client to be ready.");
+			Utils.sleep(5000);
+		}
+		LOGGER.info("Client is ready.");
+		client.changeStatus(Status.game("hazeluff.com"));
+
+		return client;
 	}
 
-	public IDiscordClient getClient() {
-		return client;
+	static MongoDatabase getMongoDatabaseInstance() {
+		return new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT).getDatabase(Config.MONGO_DATABASE_NAME);
+	}
+
+	public IDiscordClient getDiscordClient() {
+		return discordClient;
+	}
+
+	public MongoDatabase getMongoDatabase() {
+		return mongoDatabase;
+	}
+
+	public GuildPreferencesManager getGuildPreferencesManager() {
+		return guildPreferencesManager;
 	}
 
 	public DiscordManager getDiscordManager() {
 		return discordManager;
+	}
+
+	public GameChannelsManager getGameChannelsManager() {
+		return gameChannelsManager;
 	}
 
 	public GameScheduler getGameScheduler() {

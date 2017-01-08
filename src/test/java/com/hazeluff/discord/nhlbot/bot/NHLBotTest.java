@@ -2,13 +2,17 @@ package com.hazeluff.discord.nhlbot.bot;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +23,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.Config;
+import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
+import com.hazeluff.discord.nhlbot.utils.Utils;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
 
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
@@ -27,49 +36,57 @@ import sx.blah.discord.api.events.EventDispatcher;
 import sx.blah.discord.util.DiscordException;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(NHLBot.class)
+@PrepareForTest({ NHLBot.class, GuildPreferencesManager.class })
 public class NHLBotTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBotTest.class);
 
 	@Mock
-	IDiscordClient mockClient;
+	ClientBuilder mockClientBuilder;
+	@Mock
+	IDiscordClient mockDiscordClient;
 	@Mock
 	DiscordManager mockDiscordManager;
+	@Mock
+	MongoClient mockMongoClient;
+	@Mock
+	MongoDatabase mockMongoDatabase;
+	@Mock
+	GuildPreferencesManager mockGuildPreferencesManager;
+	@Mock
+	GameChannelsManager mockGameChannelsManager;
 	@Mock
 	GameScheduler mockGameScheduler;
 	@Mock
 	EventDispatcher mockEventDispatcher;
 	@Mock
-	ReadyListener mockReadyListener;
-	@Mock
 	CommandListener mockCommandListener;
-	@Mock
-	ClientBuilder mockClientBuilder;
 
-	private static final String TOKEN = "weivalk120vu9asd987";
-	private static final String ID = "123983478998712";
+	private static final String TOKEN = RandomStringUtils.randomAlphanumeric(20);
+	private static final String ID = RandomStringUtils.randomNumeric(10);
 
 
 	@Before
 	public void setup() throws Exception {
 		whenNew(ClientBuilder.class).withNoArguments().thenReturn(mockClientBuilder);
-		whenNew(DiscordManager.class).withArguments(mockClient).thenReturn(mockDiscordManager);
-		whenNew(GameScheduler.class).withArguments(mockDiscordManager).thenReturn(mockGameScheduler);
-		whenNew(ReadyListener.class).withAnyArguments().thenReturn(mockReadyListener);
 		whenNew(CommandListener.class).withAnyArguments().thenReturn(mockCommandListener);
-		when(mockClient.getDispatcher()).thenReturn(mockEventDispatcher);
-		when(mockClient.getApplicationClientID()).thenReturn(ID);
+		whenNew(DiscordManager.class).withArguments(mockDiscordClient).thenReturn(mockDiscordManager);
+		whenNew(GameChannelsManager.class).withAnyArguments().thenReturn(mockGameChannelsManager);
+		whenNew(GameScheduler.class).withAnyArguments().thenReturn(mockGameScheduler);
+		when(mockDiscordClient.getDispatcher()).thenReturn(mockEventDispatcher);
+		when(mockDiscordClient.getApplicationClientID()).thenReturn(ID);
+		mockStatic(GuildPreferencesManager.class);
+		when(GuildPreferencesManager.getInstance(mockDiscordClient, mockMongoDatabase))
+				.thenReturn(mockGuildPreferencesManager);
 	}
 
 	@Test
 	public void constructorShouldRegisterListeners() throws Exception {
 		LOGGER.info("constructorShouldRegisterListeners");
-		mockStatic(NHLBot.class);
-		when(NHLBot.getClient(TOKEN)).thenReturn(mockClient);
+		mockStatic(NHLBot.class, GuildPreferencesManager.class);
+		when(NHLBot.getClient(TOKEN)).thenReturn(mockDiscordClient);
 
 		new NHLBot(TOKEN);
 
-		verify(mockEventDispatcher).registerListener(mockReadyListener);
 		verify(mockEventDispatcher).registerListener(mockCommandListener);
 	}
 
@@ -77,36 +94,65 @@ public class NHLBotTest {
 	public void constructorShouldSetAccessibleMembers() throws Exception {
 		LOGGER.info("constructorShouldSetAccessibleMembers");
 		mockStatic(NHLBot.class);
-		when(NHLBot.getClient(TOKEN)).thenReturn(mockClient);
+		when(NHLBot.getClient(TOKEN)).thenReturn(mockDiscordClient);
+		when(NHLBot.getMongoDatabaseInstance()).thenReturn(mockMongoDatabase);
 
-		NHLBot NHLBot = new NHLBot(TOKEN);
+		NHLBot nlhBotBot = new NHLBot(TOKEN);
 
-		assertEquals(mockClient, NHLBot.getClient());
-		assertEquals(mockDiscordManager, NHLBot.getDiscordManager());
-		assertEquals(mockGameScheduler, NHLBot.getGameScheduler());
-		assertEquals(ID, NHLBot.getId());
+		assertEquals(mockDiscordClient, nlhBotBot.getDiscordClient());
+		assertEquals(mockMongoDatabase, nlhBotBot.getMongoDatabase());
+		assertEquals(mockDiscordManager, nlhBotBot.getDiscordManager());
+		assertEquals(mockGuildPreferencesManager, nlhBotBot.getGuildPreferencesManager());
+		assertEquals(mockGameChannelsManager, nlhBotBot.getGameChannelsManager());
+		assertEquals(mockGameScheduler, nlhBotBot.getGameScheduler());
+		assertEquals(ID, nlhBotBot.getId());
+	}
+
+	@Test(expected = NHLBotException.class)
+	public void constructorShouldThrowExceptionWhenDiscordClientGetApplicationClientIDDoes() throws DiscordException {
+		mockStatic(NHLBot.class);
+		when(NHLBot.getClient(TOKEN)).thenReturn(mockDiscordClient);
+		doThrow(DiscordException.class).when(mockDiscordClient).getApplicationClientID();
+
+		new NHLBot(TOKEN);
 	}
 
 	@Test
+	@PrepareForTest({ NHLBot.class, GuildPreferencesManager.class, Utils.class })
 	public void getClientShouldReturnIDiscordClient() throws Exception {
 		LOGGER.info("getClientShouldReturnIDiscordClient");
-		when(mockClientBuilder.login()).thenReturn(mockClient);
+		when(mockClientBuilder.login()).thenReturn(mockDiscordClient);
+		when(mockDiscordClient.isReady()).thenReturn(false, false, true);
+		mockStatic(Utils.class);
 
 		IDiscordClient result = NHLBot.getClient(TOKEN);
 
-		assertEquals(mockClient, result);
+		assertEquals(mockDiscordClient, result);
 		InOrder inOrder = inOrder(mockClientBuilder);
 		inOrder.verify(mockClientBuilder).withToken(TOKEN);
 		inOrder.verify(mockClientBuilder).login();
+		verifyStatic(times(2));
+		Utils.sleep(anyLong());
 	}
 
-	@Test
-	public void getClientShouldReturnNullWhenDiscordExceptionIsThrown() throws DiscordException {
-		LOGGER.info("getClientShouldReturnIDiscordClient");
+	@Test(expected = NHLBotException.class)
+	public void getClientShouldThrowExceptionWhenClientBuilderLoginDoes() throws DiscordException {
+		LOGGER.info("getClientShouldThrowExceptionWhenDiscordClientDoes");
 		doThrow(DiscordException.class).when(mockClientBuilder).login();
 		
 		IDiscordClient result = NHLBot.getClient(TOKEN);
 		
 		assertNull(result);
+	}
+
+	@Test
+	public void getMongoDatabaseInstanceShouldReturnMongoDatabase() throws Exception {
+		LOGGER.info("getMongoDatabaseInstanceShouldReturnMongoDatabase");
+		whenNew(MongoClient.class).withArguments(Config.MONGO_HOST, Config.MONGO_PORT).thenReturn(mockMongoClient);
+		when(mockMongoClient.getDatabase(Config.MONGO_DATABASE_NAME)).thenReturn(mockMongoDatabase);
+
+		MongoDatabase result = NHLBot.getMongoDatabaseInstance();
+
+		assertEquals(mockMongoDatabase, result);
 	}
 }

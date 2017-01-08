@@ -1,18 +1,13 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -21,10 +16,10 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.Before;
@@ -39,9 +34,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.DiscordManager;
-import com.hazeluff.discord.nhlbot.nhl.Player.EventRole;
-import com.hazeluff.discord.nhlbot.nhl.custommessages.CanucksCustomMessages;
+import com.hazeluff.discord.nhlbot.bot.GameChannelsManager;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -57,22 +50,16 @@ public class GameTrackerTest {
 	private static final Team TEAM = Team.EDMONTON_OILERS;
 	private static final Team HOME_TEAM = Team.VANCOUVER_CANUCKS;
 	private static final Team AWAY_TEAM = Team.FLORIDA_PANTHERS;
+	private static final ZoneId TIME_ZONE = ZoneId.of("America/Vancouver");
 	private static final String CHANNEL_NAME = "ChannelName";
 	private static final String GAME_DETAILS = "GameDetails";
-	private List<IGuild> HOME_GUILDS;
-	private List<IGuild> AWAY_GUILDS;
 	private List<IChannel> HOME_CHANNELS;
 	private List<IChannel> AWAY_CHANNELS;
-	private Player PLAYER = new Player(1, "Player1", EventRole.SCORER);
-	private Player PLAYER2 = new Player(2, "Player2", EventRole.ASSIST);
-	private Player PLAYER3 = new Player(3, "Player3", EventRole.ASSIST);
 
 	@Mock
-	private DiscordManager mockDiscordManager;
+	private GameChannelsManager mockGameChannelsManager;
 	@Mock
 	private Game mockGame;
-	@Mock
-	private GameScheduler mockScheduler;
 	@Mock
 	private IGuild mockHomeGuild;
 	@Mock
@@ -94,92 +81,27 @@ public class GameTrackerTest {
 
 	@Before
 	public void before() {
-		HOME_GUILDS = Arrays.asList(mockHomeGuild);
-		AWAY_GUILDS = Arrays.asList(mockAwayGuild);
 		HOME_CHANNELS = Arrays.asList(mockHomeChannel);
 		AWAY_CHANNELS = Arrays.asList(mockAwayChannel);
 		when(mockGame.getHomeTeam()).thenReturn(HOME_TEAM);
 		when(mockGame.getAwayTeam()).thenReturn(AWAY_TEAM);
-		when(mockScheduler.getSubscribedGuilds(HOME_TEAM)).thenReturn(HOME_GUILDS);
-		when(mockScheduler.getSubscribedGuilds(AWAY_TEAM)).thenReturn(AWAY_GUILDS);
 		when(mockHomeGuild.getChannels()).thenReturn(HOME_CHANNELS);
 		when(mockAwayGuild.getChannels()).thenReturn(AWAY_CHANNELS);
 		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
-		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
+		when(mockGame.getDetailsMessage(TIME_ZONE)).thenReturn(GAME_DETAILS);
 		when(mockHomeChannel.getName()).thenReturn(CHANNEL_NAME);
 		when(mockAwayChannel.getName()).thenReturn(CHANNEL_NAME);
 		when(mockGameEvent.getTeam()).thenReturn(TEAM);
 
-		gameTracker = new GameTracker(mockDiscordManager, mockScheduler, mockGame);
+		gameTracker = new GameTracker(mockGameChannelsManager, mockGame);
 		spyGameTracker = spy(gameTracker);
-	}
-
-	@Test
-	public void constructorShouldCreateNewChannelsForSubscribedGuilds() {
-		LOGGER.info("constructorShouldCreateNewChannelsForSubscribedGuilds");
-		reset(mockDiscordManager, mockScheduler, mockGame);
-		when(mockScheduler.getSubscribedGuilds(HOME_TEAM)).thenReturn(HOME_GUILDS);
-		when(mockScheduler.getSubscribedGuilds(AWAY_TEAM)).thenReturn(AWAY_GUILDS);
-		when(mockGame.getHomeTeam()).thenReturn(HOME_TEAM);
-		when(mockGame.getAwayTeam()).thenReturn(AWAY_TEAM);
-		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
-		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
-		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
-		when(mockHomeChannel.getName()).thenReturn("not" + CHANNEL_NAME);
-		when(mockAwayChannel.getName()).thenReturn("not" + CHANNEL_NAME);
-		IChannel createdHomeChannel = mock(IChannel.class);
-		IChannel createdAwayChannel = mock(IChannel.class);
-		when(mockDiscordManager.createChannel(mockHomeGuild, CHANNEL_NAME)).thenReturn(createdHomeChannel);
-		when(mockDiscordManager.createChannel(mockAwayGuild, CHANNEL_NAME)).thenReturn(createdAwayChannel);
-		IMessage pinnedHomeMessage = mock(IMessage.class);
-		IMessage pinnedAwayMessage = mock(IMessage.class);
-		when(mockDiscordManager.sendMessage(createdHomeChannel, GAME_DETAILS)).thenReturn(pinnedHomeMessage);
-		when(mockDiscordManager.sendMessage(createdAwayChannel, GAME_DETAILS)).thenReturn(pinnedAwayMessage);
-
-		GameTracker result = new GameTracker(mockDiscordManager, mockScheduler, mockGame);
-		
-		verify(mockDiscordManager).createChannel(mockHomeGuild, CHANNEL_NAME);
-		verify(mockDiscordManager).changeTopic(createdHomeChannel, "Go Canucks Go!");
-		verify(mockDiscordManager).sendMessage(createdHomeChannel, GAME_DETAILS);
-		verify(mockDiscordManager).pinMessage(createdHomeChannel, pinnedHomeMessage);
-		verify(mockDiscordManager).createChannel(mockAwayGuild, CHANNEL_NAME);
-		verify(mockDiscordManager).changeTopic(createdAwayChannel, "Go Canucks Go!");
-		verify(mockDiscordManager).sendMessage(createdAwayChannel, GAME_DETAILS);
-		verify(mockDiscordManager).pinMessage(createdAwayChannel, pinnedAwayMessage);
-
-		assertEquals(2, result.getChannels().size());
-	}
-
-	@Test
-	public void constructorShouldCreateNotCreateNewChannelsIfAlreadyExisting() {
-		LOGGER.info("constructorShouldCreateNewChannelsForSubscribedGuilds");
-		reset(mockDiscordManager, mockScheduler, mockGame);
-		when(mockScheduler.getSubscribedGuilds(HOME_TEAM)).thenReturn(HOME_GUILDS);
-		when(mockScheduler.getSubscribedGuilds(AWAY_TEAM)).thenReturn(AWAY_GUILDS);
-		when(mockGame.getHomeTeam()).thenReturn(HOME_TEAM);
-		when(mockGame.getAwayTeam()).thenReturn(AWAY_TEAM);
-		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
-		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
-		when(mockHomeChannel.getName()).thenReturn(CHANNEL_NAME);
-		when(mockAwayChannel.getName()).thenReturn(CHANNEL_NAME);
-
-		GameTracker result = new GameTracker(mockDiscordManager, mockScheduler, mockGame);
-		
-		verify(mockDiscordManager, never()).createChannel(mockHomeGuild, CHANNEL_NAME);
-		verify(mockDiscordManager, never()).changeTopic(any(IChannel.class), anyString());
-		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager, never()).pinMessage(any(IChannel.class), any(IMessage.class));
-
-		List<IChannel> channels = result.getChannels();
-		assertTrue(channels.contains(mockHomeChannel));
-		assertTrue(channels.contains(mockAwayChannel));
-		assertEquals(2, channels.size());
 	}
 
 	@Test
 	public void runShouldDoNothingWhenStatusIsFinal() throws Exception {
 		LOGGER.info("runShouldDoNothingWhenStatusIsFinal");
 		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
+		doReturn(true).when(spyGameTracker).waitForStart();
 		
 		assertFalse(spyGameTracker.isFinished());
 		spyGameTracker.run();
@@ -188,10 +110,10 @@ public class GameTrackerTest {
 		verify(spyGameTracker, never()).sendReminders();
 		verify(spyGameTracker, never()).waitForStart();
 		verify(spyGameTracker, never()).updateChannel();
-		verify(spyGameTracker, never()).sendEndOfGameMessage();
-		verify(spyGameTracker, never()).updatePinnedMessages();
+		verify(mockGameChannelsManager, never()).sendEndOfGameMessages(mockGame);
+		verify(mockGameChannelsManager, never()).updatePinnedMessages(mockGame);
 		verify(spyGameTracker, never()).updateChannelPostGame();
-		verifyNoMoreInteractions(mockDiscordManager);
+		verifyNoMoreInteractions(mockGameChannelsManager);
 	}
 
 	@Test
@@ -199,25 +121,36 @@ public class GameTrackerTest {
 		LOGGER.info("runInvokeMethodsWhenStatusIsNotFinal");
 		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.FINAL);
 		doNothing().when(spyGameTracker).sendReminders();
-		doNothing().when(spyGameTracker).waitForStart();
+		doReturn(false).when(spyGameTracker).waitForStart();
 		doNothing().when(spyGameTracker).updateChannel();
-		doNothing().when(spyGameTracker).sendEndOfGameMessage();
-		doNothing().when(spyGameTracker).updatePinnedMessages();
+		doNothing().when(mockGameChannelsManager).sendEndOfGameMessages(mockGame);
+		doNothing().when(mockGameChannelsManager).updatePinnedMessages(mockGame);
 		doNothing().when(spyGameTracker).updateChannelPostGame();
 
 		assertFalse(spyGameTracker.isFinished());
 		spyGameTracker.run();
 		assertTrue(spyGameTracker.isFinished());
 
-		InOrder inOrder = inOrder(spyGameTracker, mockDiscordManager);
+		InOrder inOrder = inOrder(spyGameTracker, mockGameChannelsManager);
 		inOrder.verify(spyGameTracker).sendReminders();
 		inOrder.verify(spyGameTracker).waitForStart();
-		inOrder.verify(mockDiscordManager).sendMessage(spyGameTracker.getChannels(),
-				"Game is about to start. GO CANUCKS GO!");
+		inOrder.verify(mockGameChannelsManager).sendStartOfGameMessage(mockGame);
 		inOrder.verify(spyGameTracker).updateChannel();
-		inOrder.verify(spyGameTracker).sendEndOfGameMessage();
-		inOrder.verify(spyGameTracker).updatePinnedMessages();
+		inOrder.verify(mockGameChannelsManager).sendEndOfGameMessages(mockGame);
+		inOrder.verify(mockGameChannelsManager).updatePinnedMessages(mockGame);
 		inOrder.verify(spyGameTracker).updateChannelPostGame();
+	}
+
+	@Test
+	public void runShouldNotSendStartingMessageWhenGameIsAlreadyStarted() throws Exception {
+		LOGGER.info("runShouldNotSendStartingMessageWhenGameIsAlreadyStarted");
+		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
+		doNothing().when(spyGameTracker).sendReminders();
+		doReturn(false).when(spyGameTracker).waitForStart();
+
+		spyGameTracker.run();
+
+		verify(mockGameChannelsManager, never()).sendStartOfGameMessage(mockGame);
 	}
 
 	@Test
@@ -225,10 +158,8 @@ public class GameTrackerTest {
 		LOGGER.info("runShouldResumeUpdatingChannelIfGameIsNotActuallyFinal");
 		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.LIVE, GameStatus.FINAL);
 		doNothing().when(spyGameTracker).sendReminders();
-		doNothing().when(spyGameTracker).waitForStart();
+		doReturn(true).when(spyGameTracker).waitForStart();
 		doNothing().when(spyGameTracker).updateChannel();
-		doNothing().when(spyGameTracker).sendEndOfGameMessage();
-		doNothing().when(spyGameTracker).updatePinnedMessages();
 		doNothing().when(spyGameTracker).updateChannelPostGame();
 
 		assertFalse(spyGameTracker.isFinished());
@@ -236,62 +167,62 @@ public class GameTrackerTest {
 		assertTrue(spyGameTracker.isFinished());
 
 		verify(spyGameTracker, times(2)).updateChannel();
-		verify(spyGameTracker, times(2)).sendEndOfGameMessage();
-		verify(spyGameTracker, times(2)).updatePinnedMessages();
+		verify(mockGameChannelsManager, times(2)).sendEndOfGameMessages(mockGame);
+		verify(mockGameChannelsManager, times(2)).updatePinnedMessages(mockGame);
 		verify(spyGameTracker, times(2)).updateChannelPostGame();
 	}
 
 	@Test
-	@PrepareForTest({ DateUtils.class, LocalDateTime.class, Utils.class })
+	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
 	public void sendRemindersShouldSendMessages() {
 		LOGGER.info("sendRemindersShouldSendMessages");
-		LocalDateTime mockCurrentTime = LocalDateTime.ofEpochSecond(0l, 0, ZoneOffset.UTC);
-		LocalDateTime mockGameTime = LocalDateTime.ofEpochSecond(1l, 0, ZoneOffset.UTC);
-		mockStatic(DateUtils.class, LocalDateTime.class, Utils.class);
-		when(LocalDateTime.now()).thenReturn(mockCurrentTime);
+		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime mockGameTime = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		mockStatic(DateUtils.class, ZonedDateTime.class, Utils.class);
+		when(ZonedDateTime.now()).thenReturn(mockCurrentTime);
 		when(mockGame.getDate()).thenReturn(mockGameTime);
-		when(DateUtils.diffMs(any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(7200000l, 3500000l,
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(7200000l, 3500000l,
 				3400000l, 1700000l, 1600000l, 500000l, 400000l, 0l);
 
 		gameTracker.sendReminders();
 
-		InOrder inOrder = inOrder(mockDiscordManager);
-		inOrder.verify(mockDiscordManager).sendMessage(gameTracker.getChannels(), "60 minutes till puck drop.");
-		inOrder.verify(mockDiscordManager).sendMessage(gameTracker.getChannels(), "30 minutes till puck drop.");
-		inOrder.verify(mockDiscordManager).sendMessage(gameTracker.getChannels(), "10 minutes till puck drop.");
+		InOrder inOrder = inOrder(mockGameChannelsManager);
+		inOrder.verify(mockGameChannelsManager).sendMessage(mockGame, "60 minutes till puck drop.");
+		inOrder.verify(mockGameChannelsManager).sendMessage(mockGame, "30 minutes till puck drop.");
+		inOrder.verify(mockGameChannelsManager).sendMessage(mockGame, "10 minutes till puck drop.");
 	}
 
 	@Test
-	@PrepareForTest({ DateUtils.class, LocalDateTime.class, Utils.class })
+	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
 	public void sendRemindersShouldSkipMessageIfStartedAfterRemindersPassed() {
 		LOGGER.info("sendRemindersShouldSkipMessageIfStartedAfterRemindersPassed");
-		LocalDateTime mockCurrentTime = LocalDateTime.ofEpochSecond(0l, 0, ZoneOffset.UTC);
-		LocalDateTime mockGameTime = LocalDateTime.ofEpochSecond(1l, 0, ZoneOffset.UTC);
-		mockStatic(DateUtils.class, LocalDateTime.class, Utils.class);
-		when(LocalDateTime.now()).thenReturn(mockCurrentTime);
+		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime mockGameTime = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		mockStatic(DateUtils.class, ZonedDateTime.class, Utils.class);
+		when(ZonedDateTime.now()).thenReturn(mockCurrentTime);
 		when(mockGame.getDate()).thenReturn(mockGameTime);
-		when(DateUtils.diffMs(any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(1900000l, 1700000l,
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(1900000l, 1700000l,
 				500000l, 0l);
 
 		gameTracker.sendReminders();
 
-		InOrder inOrder = inOrder(mockDiscordManager);
-		inOrder.verify(mockDiscordManager, never()).sendMessage(gameTracker.getChannels(),
+		InOrder inOrder = inOrder(mockGameChannelsManager);
+		inOrder.verify(mockGameChannelsManager, never()).sendMessage(mockGame,
 				"60 minutes till puck drop.");
-		inOrder.verify(mockDiscordManager).sendMessage(gameTracker.getChannels(), "30 minutes till puck drop.");
-		inOrder.verify(mockDiscordManager).sendMessage(gameTracker.getChannels(), "10 minutes till puck drop.");
+		inOrder.verify(mockGameChannelsManager).sendMessage(mockGame, "30 minutes till puck drop.");
+		inOrder.verify(mockGameChannelsManager).sendMessage(mockGame, "10 minutes till puck drop.");
 	}
 
 	@Test
-	@PrepareForTest({ DateUtils.class, LocalDateTime.class, Utils.class })
+	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
 	public void sendRemindersShouldSleepUntilNearStartOfGame() {
 		LOGGER.info("sendRemindersShouldSleepUntilNearStartOfGame");
-		LocalDateTime mockCurrentTime = LocalDateTime.ofEpochSecond(0l, 0, ZoneOffset.UTC);
-		LocalDateTime mockGameTime = LocalDateTime.ofEpochSecond(1l, 0, ZoneOffset.UTC);
-		mockStatic(DateUtils.class, LocalDateTime.class, Utils.class);
-		when(LocalDateTime.now()).thenReturn(mockCurrentTime);
+		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime mockGameTime = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		mockStatic(DateUtils.class, ZonedDateTime.class, Utils.class);
+		when(ZonedDateTime.now()).thenReturn(mockCurrentTime);
 		when(mockGame.getDate()).thenReturn(mockGameTime);
-		when(DateUtils.diffMs(any(LocalDateTime.class), any(LocalDateTime.class)))
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class)))
 				.thenReturn(GameTracker.CLOSE_TO_START_THRESHOLD_MS + 1, GameTracker.CLOSE_TO_START_THRESHOLD_MS + 1,
 						GameTracker.CLOSE_TO_START_THRESHOLD_MS + 1, GameTracker.CLOSE_TO_START_THRESHOLD_MS - 1);
 
@@ -309,8 +240,29 @@ public class GameTrackerTest {
 				GameStatus.STARTED);
 
 		gameTracker.waitForStart();
+
 		verifyStatic(times(3));
 		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
+	}
+
+	@Test
+	@PrepareForTest(Utils.class)
+	public void waitForStartShouldReturnTrueIfAlreadyStarted() {
+		LOGGER.info("waitForStartShouldReturnTrueIfAlreadyStarted");
+		mockStatic(Utils.class);
+		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED);
+
+		assertTrue(gameTracker.waitForStart());
+	}
+
+	@Test
+	@PrepareForTest(Utils.class)
+	public void waitForStartShouldReturnFalseIfNotAlreadyStarted() {
+		LOGGER.info("waitForStartShouldReturnFalseIfNotAlreadyStarted");
+		mockStatic(Utils.class);
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.STARTED);
+
+		assertFalse(gameTracker.waitForStart());
 	}
 	
 	@Test
@@ -345,163 +297,18 @@ public class GameTrackerTest {
 
 	@Test
 	public void updateMessagesShouldInvokeClasses() {
-		GameEvent mockEvent = mock(GameEvent.class);
-		when(mockEvent.getId()).thenReturn(100);
-		Player mockPlayer = mock(Player.class);
-		String playerName = "PlayerName";
-		when(mockPlayer.getFullName()).thenReturn(playerName);
-		when(mockEvent.getPlayers()).thenReturn(Arrays.asList(mockPlayer));
-		when(mockGame.getNewEvents()).thenReturn(Arrays.asList(mockEvent));
-		when(mockGame.getUpdatedEvents()).thenReturn(Arrays.asList(mockEvent));
-		when(mockGame.getRemovedEvents()).thenReturn(Arrays.asList(mockEvent));
-		String eventMessage = "EventMessage";
-		doReturn(eventMessage).when(spyGameTracker).buildEventMessage(any(GameEvent.class));
-		List<IMessage> sentMessages = Arrays.asList(mock(IMessage.class));
-		List<IMessage> updatedMessages = Arrays.asList(mock(IMessage.class));
-		when(mockDiscordManager.sendMessage(anyListOf(IChannel.class), anyString())).thenReturn(sentMessages);
-		when(mockDiscordManager.updateMessage(anyListOf(IMessage.class), anyString())).thenReturn(updatedMessages);
+		LOGGER.info("updateMessagesShouldInvokeClasses");
+		when(mockGame.getNewEvents()).thenReturn(Arrays.asList(mock(GameEvent.class)));
+		when(mockGame.getUpdatedEvents()).thenReturn(Arrays.asList(mock(GameEvent.class)));
+		when(mockGame.getRemovedEvents()).thenReturn(Arrays.asList(mock(GameEvent.class)));
 
 		spyGameTracker.updateMessages();
 
-		InOrder inOrder = inOrder(mockGame, mockDiscordManager);
+		InOrder inOrder = inOrder(mockGame, mockGameChannelsManager);
 		inOrder.verify(mockGame).update();
-		inOrder.verify(mockDiscordManager).sendMessage(spyGameTracker.getChannels(), eventMessage);
-		inOrder.verify(mockDiscordManager).updateMessage(sentMessages, eventMessage);
-		inOrder.verify(mockDiscordManager).sendMessage(eq(spyGameTracker.getChannels()), captorString.capture());
-		assertTrue(captorString.getValue().contains(playerName));
-	}
-
-	@Test
-	public void updateMessagesShouldNotUpdateMessageWhenMessagesDoNotExist() {
-		GameEvent mockEvent = mock(GameEvent.class);
-		when(mockEvent.getId()).thenReturn(100);
-		when(mockEvent.getPlayers()).thenReturn(Collections.emptyList());
-		when(mockGame.getUpdatedEvents()).thenReturn(Arrays.asList(mockEvent));
-		when(mockGame.getRemovedEvents()).thenReturn(Collections.emptyList());
-		String eventMessage = "EventMessage";
-		doReturn(eventMessage).when(spyGameTracker).buildEventMessage(any(GameEvent.class));
-
-		spyGameTracker.updateMessages();
-
-		verify(mockDiscordManager, never()).sendMessage(anyListOf(IChannel.class), anyString());
-		verify(mockDiscordManager, never()).updateMessage(anyListOf(IMessage.class), anyString());
-	}
-
-	@Test
-	public void sendEndOfGameMessageShouldSendMessages() {
-		LOGGER.info("sendEndOfGameMessageShouldSendMessages");
-		Game nextGame = mock(Game.class);
-		String scoreMessage = "ScoreMessage";
-		String goalsMessage = "GoalsMessage";
-		String nextGameDetails = "NextGameDetails";
-		when(mockScheduler.getNextGame(any(Team.class))).thenReturn(nextGame);
-		when(mockGame.getScoreMessage()).thenReturn(scoreMessage);
-		when(mockGame.getGoalsMessage()).thenReturn(goalsMessage);
-		when(nextGame.getDetailsMessage()).thenReturn(nextGameDetails);
-				
-		gameTracker.sendEndOfGameMessage();
-		
-		verify(mockDiscordManager).sendMessage(eq(gameTracker.getChannels()), captorString.capture());
-		assertTrue(captorString.getValue().contains(scoreMessage));
-		assertTrue(captorString.getValue().contains(goalsMessage));
-		assertTrue(captorString.getValue().contains(nextGameDetails));
-	}
-
-	@Test
-	public void updatePinnedMessagesShouldUpdateMessageWhenIsAuthor() {
-		LOGGER.info("updatePinnedMessagesShouldUpdateMessageWhenIsAuthor");
-		String gameDetails = "GameDetails";
-		String goalsMessage = "GoalsMessage";
-		when(mockGame.getDetailsMessage()).thenReturn(gameDetails);
-		when(mockGame.getGoalsMessage()).thenReturn(goalsMessage);
-		when(mockDiscordManager.getPinnedMessages(mockHomeChannel)).thenReturn(Arrays.asList(mockMessage));
-		when(mockDiscordManager.getPinnedMessages(mockAwayChannel)).thenReturn(Arrays.asList(mockMessage));
-		when(mockDiscordManager.isAuthorOfMessage(mockMessage)).thenReturn(true);
-
-		gameTracker.updatePinnedMessages();
-
-		verify(mockDiscordManager, times(2)).updateMessage(eq(mockMessage), captorString.capture());
-		assertTrue(captorString.getAllValues().get(0).contains(gameDetails));
-		assertTrue(captorString.getAllValues().get(0).contains(goalsMessage));
-		assertTrue(captorString.getAllValues().get(1).contains(gameDetails));
-		assertTrue(captorString.getAllValues().get(1).contains(goalsMessage));
-	}
-
-	@Test
-	public void updatePinnedMessagesShouldNotUpdateMessageWhenIsNotAuthor() {
-		LOGGER.info("updatePinnedMessagesShouldNotUpdateMessageWhenIsNotAuthor");
-		when(mockDiscordManager.getPinnedMessages(mockHomeChannel)).thenReturn(Arrays.asList(mockMessage));
-		when(mockDiscordManager.getPinnedMessages(mockAwayChannel)).thenReturn(Arrays.asList(mockMessage));
-		when(mockDiscordManager.isAuthorOfMessage(mockMessage)).thenReturn(false);
-
-		gameTracker.updatePinnedMessages();
-
-		verify(mockDiscordManager, never());
-	}
-
-	@Test
-	@PrepareForTest(CanucksCustomMessages.class)
-	public void buildEventMessageShouldReturnEvenStrengthMessage() {
-		LOGGER.info("buildEventMessageShouldReturnEvenStrengthMessage");
-		when(mockGameEvent.getPlayers()).thenReturn(Arrays.asList(PLAYER));
-		when(mockGameEvent.getStrength()).thenReturn(GameEventStrength.EVEN);
-		mockStatic(CanucksCustomMessages.class);
-		
-		String result = gameTracker.buildEventMessage(mockGameEvent);
-		
-		assertTrue(result.contains(TEAM.getLocation()));
-		assertTrue(result.contains(PLAYER.getFullName()));
-		assertFalse(result.contains(GameEventStrength.EVEN.getValue()));
-	}
-
-	@Test
-	@PrepareForTest(CanucksCustomMessages.class)
-	public void buildEventMessageShouldReturnNonEvenStrengthMessage() {
-		LOGGER.info("buildEventMessageShouldReturnNonEvenStrengthMessage");
-		when(mockGameEvent.getPlayers()).thenReturn(Arrays.asList(PLAYER));
-		when(mockGameEvent.getStrength()).thenReturn(GameEventStrength.PPG);
-		mockStatic(CanucksCustomMessages.class);
-
-		String result = gameTracker.buildEventMessage(mockGameEvent);
-
-		assertTrue(result.contains(TEAM.getLocation()));
-		assertTrue(result.contains(PLAYER.getFullName()));
-		assertTrue(result.contains(GameEventStrength.PPG.getValue().toLowerCase()));
-	}
-
-	@Test
-	@PrepareForTest(CanucksCustomMessages.class)
-	public void buildEventMessageShouldAppendCanucksCustomMessage() {
-		LOGGER.info("buildEventMessageShouldAppendCanucksCustomMessage");
-		when(mockGameEvent.getPlayers()).thenReturn(Arrays.asList(PLAYER));
-		when(mockGameEvent.getStrength()).thenReturn(GameEventStrength.EVEN);
-		mockStatic(CanucksCustomMessages.class);
-		String customMessage = "CustomMessage";
-		when(CanucksCustomMessages.getMessage(anyListOf(Player.class))).thenReturn(customMessage);
-
-		String result = gameTracker.buildEventMessage(mockGameEvent);
-
-		assertTrue(result.startsWith(customMessage));
-		assertTrue(result.contains(TEAM.getLocation()));
-		assertTrue(result.contains(PLAYER.getFullName()));
-		assertFalse(result.contains(GameEventStrength.EVEN.getValue()));
-	}
-
-	@Test
-	@PrepareForTest(CanucksCustomMessages.class)
-	public void buildEventMessageShouldReturnInformationOnAllPlayers() {
-		LOGGER.info("buildEventMessageShouldReturnInformationOnAllPlayers");
-		when(mockGameEvent.getPlayers()).thenReturn(Arrays.asList(PLAYER, PLAYER2, PLAYER3));
-		when(mockGameEvent.getStrength()).thenReturn(GameEventStrength.EVEN);
-		mockStatic(CanucksCustomMessages.class);
-
-		String result = gameTracker.buildEventMessage(mockGameEvent);
-
-		assertTrue(result.contains(TEAM.getLocation()));
-		assertTrue(result.contains(PLAYER.getFullName()));
-		assertTrue(result.contains(PLAYER2.getFullName()));
-		assertTrue(result.contains(PLAYER3.getFullName()));
-		assertFalse(result.contains(GameEventStrength.EVEN.getValue()));
+		inOrder.verify(mockGameChannelsManager).sendEventMessage(mockGame, mockGame.getNewEvents().get(0));
+		inOrder.verify(mockGameChannelsManager).updateEventMessage(mockGame, mockGame.getUpdatedEvents().get(0));
+		inOrder.verify(mockGameChannelsManager).sendDeletedEventMessage(mockGame, mockGame.getRemovedEvents().get(0));
 	}
 
 	@Test
@@ -526,53 +333,23 @@ public class GameTrackerTest {
 	}
 
 	@Test
-	public void sendEndOfGameMessageShouldSendMessage() {
-		LOGGER.info("sendEndOfGameMessageShouldSendMessage");
-		String endOfGameMessage = "EndOfGameMessage";
-		doReturn(endOfGameMessage).when(spyGameTracker).getEndOfGameMessage();
-
-		spyGameTracker.sendEndOfGameMessage();
-
-		verify(mockDiscordManager).sendMessage(spyGameTracker.getChannels(), endOfGameMessage);
-	}
-
-	@Test
-	public void updateEndOfgameMessageShouldUpdateMessages() {
-		LOGGER.info("updateEndOfgameMessageShouldUpdateMessages");
-		String endOfGameMessage = "EndOfGameMessage";
-		doReturn(endOfGameMessage).when(spyGameTracker).getEndOfGameMessage();
-		List<IMessage> sentMessages = Arrays.asList(mockMessage);
-		when(mockDiscordManager.sendMessage(spyGameTracker.getChannels(), endOfGameMessage)).thenReturn(sentMessages);
-
-		spyGameTracker.sendEndOfGameMessage();
-
-		String newEndOfGameMessage = "New" + endOfGameMessage;
-		doReturn(newEndOfGameMessage).when(spyGameTracker).getEndOfGameMessage();
-		spyGameTracker.updateEndOfGameMessage();
-
-		verify(mockDiscordManager).updateMessage(sentMessages, newEndOfGameMessage);
-	}
-
-	@Test
 	@PrepareForTest(Utils.class)
 	public void updateChannelPostGameShouldInvokeUpdatesUntilDurationOver() {
 		LOGGER.info("updateChannelPostGameShouldInvokeUpdatesUntilDurationOver");
 		doNothing().when(spyGameTracker).updateMessages();
-		doNothing().when(spyGameTracker).updateEndOfGameMessage();
-		doNothing().when(spyGameTracker).updatePinnedMessages();
 		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
 		mockStatic(Utils.class);
 		
 		spyGameTracker.updateChannelPostGame();
 		
-		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.ACTIVE_POLL_RATE_MS);
+		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.IDLE_POLL_RATE_MS);
 		assertTrue(iterations > 0);
 		
 		verify(spyGameTracker, times(iterations)).updateMessages();
-		verify(spyGameTracker, times(iterations)).updateEndOfGameMessage();
-		verify(spyGameTracker, times(iterations)).updatePinnedMessages();
+		verify(mockGameChannelsManager, times(iterations)).updateEndOfGameMessages(mockGame);
+		verify(mockGameChannelsManager, times(iterations)).updatePinnedMessages(mockGame);
 		verifyStatic(times(iterations));
-		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
+		Utils.sleep(GameTracker.IDLE_POLL_RATE_MS);
 	}
 
 	@Test
@@ -580,21 +357,19 @@ public class GameTrackerTest {
 	public void updateChannelPostGameShouldInvokeUpdatesUntilGameIsNotFinal() {
 		LOGGER.info("updateChannelPostGameShouldInvokeUpdatesUntilGameIsNotFinal");
 		doNothing().when(spyGameTracker).updateMessages();
-		doNothing().when(spyGameTracker).updateEndOfGameMessage();
-		doNothing().when(spyGameTracker).updatePinnedMessages();
 		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL, GameStatus.FINAL, GameStatus.FINAL, GameStatus.FINAL,
 				GameStatus.FINAL, GameStatus.LIVE, GameStatus.LIVE);
 		mockStatic(Utils.class);
 		
 		spyGameTracker.updateChannelPostGame();
 		
-		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.ACTIVE_POLL_RATE_MS);
+		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.IDLE_POLL_RATE_MS);
 		assertTrue(iterations > 4);
 		
 		verify(spyGameTracker, times(3)).updateMessages();
-		verify(spyGameTracker, times(3)).updateEndOfGameMessage();
-		verify(spyGameTracker, times(3)).updatePinnedMessages();
+		verify(mockGameChannelsManager, times(3)).updateEndOfGameMessages(mockGame);
+		verify(mockGameChannelsManager, times(3)).updatePinnedMessages(mockGame);
 		verifyStatic(times(2));
-		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
+		Utils.sleep(GameTracker.IDLE_POLL_RATE_MS);
 	}
 }

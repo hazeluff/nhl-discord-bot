@@ -6,9 +6,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -16,7 +19,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
+import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
@@ -41,31 +48,37 @@ import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.Permissions;
 
 @RunWith(PowerMockRunner.class)
 public class CommandListenerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListenerTest.class);
 
-	private static final String BOT_ID = "1234567890";
+	private static final String BOT_ID = RandomStringUtils.randomNumeric(10);
 	private static final String BOT_MENTION_ID = "<@" + BOT_ID + ">";
 	private static final String BOT_NICKNAME_MENTION_ID = "<@!" + BOT_ID + ">";
-	private static final String AUTHOR_USER_ID = "1234567891";
+	private static final String AUTHOR_USER_ID = RandomStringUtils.randomNumeric(10);
 	private static final String MESSAGE_CONTENT = "Message Content";
 	private static final String GAME_DETAILS = "Details";
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 	private static final String CHANNEL_NAME = "ChannelName";
-	private static final String CHANNEL_ID = "1235352987987698";
+	private static final String CHANNEL_ID = RandomStringUtils.randomNumeric(10);
 	private static final String CHANNEL_MENTION = "<#" + CHANNEL_ID + ">";
+	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
 	@Mock
-	private IDiscordClient mockClient;
+	private IDiscordClient mockDiscordClient;
 	@Mock
 	private DiscordManager mockDiscordManager;
 	@Mock
-	private GameScheduler mockScheduler;
+	private GameScheduler mockGameScheduler;
+	@Mock
+	private GuildPreferencesManager mockGuildPreferencesManager;
+
 	@Mock
 	private MessageReceivedEvent mockEvent;
 	@Mock
@@ -87,21 +100,23 @@ public class CommandListenerTest {
 
 	@Before
 	public void setup() {
-		when(mockNHLBot.getClient()).thenReturn(mockClient);
+		when(mockNHLBot.getDiscordClient()).thenReturn(mockDiscordClient);
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getGameScheduler()).thenReturn(mockScheduler);
+		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
+		when(mockNHLBot.getGuildPreferencesManager()).thenReturn(mockGuildPreferencesManager);
 		when(mockEvent.getMessage()).thenReturn(mockMessage);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
+		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
 		when(mockChannel.getGuild()).thenReturn(mockGuild);
+		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
-		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
 		when(mockAuthorUser.getID()).thenReturn(AUTHOR_USER_ID);
+		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
 		when(mockNHLBot.getId()).thenReturn(BOT_ID);
 		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
 		when(mockNHLBot.getNicknameMentionId()).thenReturn(BOT_NICKNAME_MENTION_ID);
-		when(mockGame.getDetailsMessage()).thenReturn(GAME_DETAILS);
 		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
-		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+		when(mockGuild.getID()).thenReturn(GUILD_ID);
 		commandListener = new CommandListener(mockNHLBot);
 		spyCommandListener = spy(commandListener);
 	}
@@ -152,6 +167,8 @@ public class CommandListenerTest {
 		verify(spyCommandListener).isBotCommand(mockMessage);
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
 		assertTrue(captorResponse.getValue().contains("`@NHLBot help`"));
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyCommandListener, never()).shouldFuckMessier(any(IMessage.class));
 	}
 
@@ -183,132 +200,9 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
 		verify(mockDiscordManager).sendMessage(mockChannel, "FUCK MESSIER");
-	}
-
-	@Test
-	@PrepareForTest(CommandListener.class)
-	public void replyToCommandShouldSendMessageWhenCommandIsNextGame() {
-		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsNextGame");
-		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " nextGame");
-		when(mockScheduler.getNextGame(any(Team.class))).thenReturn(mockGame);
-
-		boolean result = spyCommandListener.replyToCommand(mockMessage);
-
-		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, "The next game is:\n" + GAME_DETAILS);
-	}
-
-	@Test
-	@PrepareForTest(CommandListener.class)
-	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndChannelIsNotGameDayChannel() {
-		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsNextGame");
-		String latestGameChannel = "<#LatestGameChannel>";
-		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		doReturn(latestGameChannel).when(spyCommandListener).getLatestGameChannel(mockGuild, TEAM);
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
-		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(null);
-
-		boolean result = spyCommandListener.replyToCommand(mockMessage);
-
-		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, 
-				"Please run this command in a  Game Day Channel.\nLatest game channel: " + latestGameChannel);
-	}
-
-	@Test
-	@PrepareForTest(CommandListener.class)
-	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasNotStarted() {
-		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasNotStarted");
-		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
-		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
-		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
-
-		boolean result = spyCommandListener.replyToCommand(mockMessage);
-
-		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, "The game hasn't started yet. **0** - **0**");
-	}
-
-	@Test
-	@PrepareForTest(CommandListener.class)
-	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasStarted() {
-		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasStarted");
-		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
-		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
-		when(mockGame.getStatus()).thenReturn(GameStatus.LIVE);
-		String scoreMessage = "Score Message";
-		when(mockGame.getScoreMessage()).thenReturn(scoreMessage);
-
-		boolean result = spyCommandListener.replyToCommand(mockMessage);
-
-		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
-		assertTrue(captorResponse.getValue().contains(scoreMessage));
-	}
-
-	@Test
-	@PrepareForTest(CommandListener.class)
-	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndChannelIsNotGameDayChannel() {
-		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndChannelIsNotGameDayChannel");
-		String latestGameChannel = "<#LatestGameChannel>";
-		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		doReturn(latestGameChannel).when(spyCommandListener).getLatestGameChannel(mockGuild, TEAM);
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
-		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(null);
-
-		boolean result = spyCommandListener.replyToCommand(mockMessage);
-
-		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel,
-				"Please run this command in a  Game Day Channel.\nLatest game channel: " + latestGameChannel);
-	}
-
-	@Test
-	@PrepareForTest(CommandListener.class)
-	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasNotStarted() {
-		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasNotStarted");
-		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
-		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
-		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
-
-		boolean result = spyCommandListener.replyToCommand(mockMessage);
-
-		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, "The game hasn't started yet.");
-	}
-
-	@Test
-	@PrepareForTest(CommandListener.class)
-	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasStarted() {
-		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasStarted");
-		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
-		when(mockScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
-		when(mockGame.getStatus()).thenReturn(GameStatus.LIVE);
-		String scoreMessage = "Score Message";
-		when(mockGame.getScoreMessage()).thenReturn(scoreMessage);
-		String goalMessage = "Goal Message";
-		when(mockGame.getGoalsMessage()).thenReturn(goalMessage);
-
-		boolean result = spyCommandListener.replyToCommand(mockMessage);
-
-		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
-		assertTrue(captorResponse.getValue().contains(scoreMessage));
-		assertTrue(captorResponse.getValue().contains(goalMessage));
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -321,12 +215,14 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
+		assertTrue(captorResponse.getValue().contains("`subscribe [team]`"));
 		assertTrue(captorResponse.getValue().contains("`nextgame`"));
 		assertTrue(captorResponse.getValue().contains("`score`"));
 		assertTrue(captorResponse.getValue().contains("`goals`"));
 		assertTrue(captorResponse.getValue().contains("`about`"));
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -339,12 +235,328 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertTrue(result);
-		verify(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
 		assertTrue(captorResponse.getValue().contains(Config.VERSION));
 		assertTrue(captorResponse.getValue().contains(Config.HAZELUFF_MENTION));
 		assertTrue(captorResponse.getValue().contains(Config.GIT_URL));
 		assertTrue(captorResponse.getValue().contains(Config.HAZELUFF_EMAIL));
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsSubscribe() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsSubscribe");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " subscribe " + TEAM.getCode());
+		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
+		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);		
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel,
+				"You are now subscribed to games of the **" + TEAM.getFullName() + "**!");
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsSubscribeAndCodeIsInvalid() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsSubscribeAndCodeIsInvalid");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " subscribe asdf");
+		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
+		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel,
+				"[asdf] is not a valid team code. Use `@NHLBot subscribe help` to get a full list of team");
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsSubscribeHelp() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsSubscribeHelp");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " subscribe help");
+		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
+		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
+		String response = captorResponse.getValue();
+		assertTrue(response.contains("`@NHLBot subscribe [team]`"));
+		for (Team team : Team.values()) {
+			assertTrue(response.contains(team.getCode() + " - " + team.getFullName()));
+		}
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsSubscribeWithNoArgument() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsSubscribeWithNoArgument");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " subscribe");
+		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
+		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel,
+				"You must specify an argument for what team you want to subscribe to. `@NHLBot subscribe [team]`");
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsSubscribeAndUserDoesNotHavePermission() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsSubscribeAndUserDoesNotHavePermission");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " subscribe");
+		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
+		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.allOf(Permissions.class).stream()
+						.filter(permission -> permission != Permissions.ADMINISTRATOR)
+						.collect(Collectors.toCollection(() -> EnumSet.noneOf(Permissions.class))));
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel,
+				"You must be an admin to subscribe the guild to a team.");
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsNextGameAndGuildIsNotSubscribed() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsNextGameAndGuildIsNotSubscribed");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		doNothing().when(spyCommandListener).sendSubscribeFirstMessage(any(IChannel.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " nextgame");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(null);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(spyCommandListener).sendSubscribeFirstMessage(mockChannel);
+		verify(spyCommandListener, times(1)).sendSubscribeFirstMessage(any(IChannel.class));
+		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsNextGame() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsNextGame");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " nextgame");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
+		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
+		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel, "The next game is:\n" + GAME_DETAILS);
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndGuildIsNotSubscribed() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsScoreAndGuildIsNotSubscribed");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		doNothing().when(spyCommandListener).sendSubscribeFirstMessage(any(IChannel.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(null);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+
+		verify(spyCommandListener).sendSubscribeFirstMessage(mockChannel);
+		verify(spyCommandListener, times(1)).sendSubscribeFirstMessage(any(IChannel.class));
+		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndChannelIsNotGameDayChannel() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsScoreAndChannelIsNotGameDayChannel");
+		String latestGameChannel = "<#LatestGameChannel>";
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
+		when(mockGameScheduler.getGameByChannelName(anyString())).thenReturn(null);
+		doReturn(latestGameChannel).when(spyCommandListener).getLatestGameChannel(mockGuild, TEAM);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel, 
+				"Please run this command in a  Game Day Channel.\nLatest game channel: " + latestGameChannel);
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasNotStarted() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasNotStarted");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
+		when(mockGameScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel, "The game hasn't started yet. **0** - **0**");
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasStarted() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsScoreAndGameHasStarted");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " score");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
+		when(mockGameScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
+		when(mockGame.getStatus()).thenReturn(GameStatus.LIVE);
+		String scoreMessage = "Score Message";
+		when(mockGame.getScoreMessage()).thenReturn(scoreMessage);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
+		assertTrue(captorResponse.getValue().contains(scoreMessage));
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndGuildIsNotSubscribed() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndGuildIsNotSubscribed");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		doNothing().when(spyCommandListener).sendSubscribeFirstMessage(any(IChannel.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(null);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+
+		verify(spyCommandListener).sendSubscribeFirstMessage(mockChannel);
+		verify(spyCommandListener, times(1)).sendSubscribeFirstMessage(any(IChannel.class));
+		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndChannelIsNotGameDayChannel() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndChannelIsNotGameDayChannel");
+		String latestGameChannel = "<#LatestGameChannel>";
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		doReturn(latestGameChannel).when(spyCommandListener).getLatestGameChannel(mockGuild, TEAM);
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
+		when(mockGameScheduler.getGameByChannelName(anyString())).thenReturn(null);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel,
+				"Please run this command in a  Game Day Channel.\nLatest game channel: " + latestGameChannel);
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasNotStarted() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasNotStarted");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
+		when(mockGameScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(mockChannel, "The game hasn't started yet.");
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	@Test
+	@PrepareForTest(CommandListener.class)
+	public void replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasStarted() {
+		LOGGER.info("replyToCommandShouldSendMessageWhenCommandIsGoalsAndGameHasStarted");
+		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " goals");
+		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
+		when(mockGameScheduler.getGameByChannelName(anyString())).thenReturn(mockGame);
+		when(mockGame.getStatus()).thenReturn(GameStatus.LIVE);
+		String scoreMessage = "Score Message";
+		when(mockGame.getScoreMessage()).thenReturn(scoreMessage);
+		String goalMessage = "Goal Message";
+		when(mockGame.getGoalsMessage()).thenReturn(goalMessage);
+
+		boolean result = spyCommandListener.replyToCommand(mockMessage);
+
+		assertTrue(result);
+		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
+		assertTrue(captorResponse.getValue().contains(scoreMessage));
+		assertTrue(captorResponse.getValue().contains(goalMessage));
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -358,6 +570,7 @@ public class CommandListenerTest {
 
 		assertFalse(result);
 		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -369,6 +582,19 @@ public class CommandListenerTest {
 
 		assertFalse(result);
 		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	// sendSubscribeFirstMessage
+	@Test
+	public void sendSubscribeFirstMessageShouldInvokeDiscordManager() {
+		LOGGER.info("sendSubscribeFirstMessageShouldInvokeDiscordManager");
+		commandListener.sendSubscribeFirstMessage(mockChannel);
+
+		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
+		String response = captorResponse.getValue();
+		assertTrue(response.contains("`@NHLBot subscribe [team]`"));
+		assertTrue(response.contains("`@NHLBot subscribe help`"));
 	}
 
 	// replyToMention
@@ -396,6 +622,8 @@ public class CommandListenerTest {
 		verifyStatic(never());
 		BotPhrases.isLovely(anyString());
 		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -418,6 +646,7 @@ public class CommandListenerTest {
 		verifyStatic(never());
 		BotPhrases.isLovely(anyString());
 		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -445,6 +674,8 @@ public class CommandListenerTest {
 		verifyStatic(never());
 		BotPhrases.isLovely(anyString());
 		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -473,6 +704,8 @@ public class CommandListenerTest {
 		verifyStatic(never());
 		BotPhrases.isLovely(anyString());
 		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -502,6 +735,8 @@ public class CommandListenerTest {
 		verifyStatic();
 		BotPhrases.isLovely(anyString());
 		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	@Test
@@ -528,6 +763,7 @@ public class CommandListenerTest {
 		verifyStatic();
 		BotPhrases.isLovely(anyString());
 		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
 	// isBotCommand
@@ -647,7 +883,7 @@ public class CommandListenerTest {
 	@Test
 	public void getLatestGameChannelShouldReturnChannelNameOfCurrentGame() {
 		LOGGER.info("getLatestGameChannelShouldReturnChannelNameOfCurrentGame");
-		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(mockGame);
+		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockGame);
 		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Collections.emptyList());
 
 		String result = commandListener.getLatestGameChannel(mockGuild, TEAM);
@@ -658,7 +894,7 @@ public class CommandListenerTest {
 	@Test
 	public void getLatestGameChannelShouldReturnChannelMentionOfCurrentGame() {
 		LOGGER.info("getLatestGameChannelShouldReturnChannelMentionOfCurrentGame");
-		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(mockGame);
+		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockGame);
 		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Arrays.asList(mockChannel));
 		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
 
@@ -670,8 +906,8 @@ public class CommandListenerTest {
 	@Test
 	public void getLatestGameChannelShouldReturnChannelNameOfLastGame() {
 		LOGGER.info("getLatestGameChannelShouldReturnChannelNameOfLastGame");
-		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(null);
-		when(mockScheduler.getLastGame(TEAM)).thenReturn(mockGame);
+		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(null);
+		when(mockGameScheduler.getLastGame(TEAM)).thenReturn(mockGame);
 		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Collections.emptyList());
 
 		String result = commandListener.getLatestGameChannel(mockGuild, TEAM);
@@ -682,8 +918,8 @@ public class CommandListenerTest {
 	@Test
 	public void getLatestGameChannelShouldReturnChannelMentionOfLastGame() {
 		LOGGER.info("getLatestGameChannelShouldReturnChannelMentionOfLastGame");
-		when(mockScheduler.getCurrentGame(TEAM)).thenReturn(null);
-		when(mockScheduler.getLastGame(TEAM)).thenReturn(mockGame);
+		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(null);
+		when(mockGameScheduler.getLastGame(TEAM)).thenReturn(mockGame);
 		when(mockGuild.getChannelsByName(CHANNEL_NAME.toLowerCase())).thenReturn(Arrays.asList(mockChannel));
 		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
 

@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,7 +33,7 @@ public class GameEventTest {
 	private static final int IDX = 2;
 	private static final String NHLDATE = "NHLDate";
 	@Mock
-	private static LocalDateTime DATE;
+	private static ZonedDateTime DATE;
 	private static final GameEventType TYPE = GameEventType.GOAL;
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 	private static final GamePeriod PERIOD = new GamePeriod(1, Type.REGULAR, "1st");

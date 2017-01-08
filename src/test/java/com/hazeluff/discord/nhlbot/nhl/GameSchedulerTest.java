@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.nhl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -16,7 +17,8 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.net.URI;
-import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,6 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.DiscordManager;
+import com.hazeluff.discord.nhlbot.bot.GameChannelsManager;
+import com.hazeluff.discord.nhlbot.bot.NHLBot;
+import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -43,7 +48,13 @@ import sx.blah.discord.handle.obj.IGuild;
 public class GameSchedulerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameSchedulerTest.class);
 	@Mock
+	NHLBot mockNHLBot;
+	@Mock
 	DiscordManager mockDiscordManager;
+	@Mock
+	GuildPreferencesManager mockGuildPreferencesManager;
+	@Mock
+	GameChannelsManager mockGameChannelsManager;
 	@Mock
 	Game mockGame1, mockGame2, mockGame3, mockGame4, mockGame5, mockGame6;
 	@Mock
@@ -56,21 +67,25 @@ public class GameSchedulerTest {
 	private GameScheduler gameScheduler;
 	private GameScheduler spyGameScheduler;
 
-	private static final LocalDateTime gameDate1 = LocalDateTime.of(2016, 10, 01, 0, 0, 0);
-	private static final LocalDateTime gameDate2 = LocalDateTime.of(2016, 10, 02, 0, 0, 0);
-	private static final LocalDateTime gameDate3 = LocalDateTime.of(2016, 10, 03, 0, 0, 0);
+	private static final ZonedDateTime gameDate1 = ZonedDateTime.of(2016, 10, 01, 0, 0, 0, 0, ZoneOffset.UTC);
+	private static final ZonedDateTime gameDate2 = ZonedDateTime.of(2016, 10, 02, 0, 0, 0, 0, ZoneOffset.UTC);
+	private static final ZonedDateTime gameDate3 = ZonedDateTime.of(2016, 10, 03, 0, 0, 0, 0, ZoneOffset.UTC);
 	private static final String GAME_CHANNEL_NAME1 = "GameChannelName1";
 	private static final String GAME_CHANNEL_NAME2 = "GameChannelName2";
 	private static final String GAME_CHANNEL_NAME3 = "GameChannelName3";
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
+	private static final Team TEAM2 = Team.EDMONTON_OILERS;
 	private List<Game> GAMES;
 	private List<GameTracker> GAME_TRACKERS;
-	private Map<Team, List<IGuild>> TEAM_SUBSCRIPTIONS;
 	private Map<Team, List<Game>> TEAM_LATEST_GAMES;
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Before
 	public void setup() throws Exception {
+		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
+		when(mockNHLBot.getGuildPreferencesManager()).thenReturn(mockGuildPreferencesManager);
+		when(mockNHLBot.getGameChannelsManager()).thenReturn(mockGameChannelsManager);
+
 		when(mockGame1.getDate()).thenReturn(gameDate1);
 		when(mockGame2.getDate()).thenReturn(gameDate2);
 		when(mockGame3.getDate()).thenReturn(gameDate3);
@@ -86,23 +101,21 @@ public class GameSchedulerTest {
 		when(mockGuild.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2, mockChannel3));
 		GAMES = Arrays.asList(mockGame1, mockGame2, mockGame3);
 		GAME_TRACKERS = new ArrayList(Arrays.asList(mockGameTracker1, mockGameTracker2, mockGameTracker3));
-		TEAM_SUBSCRIPTIONS = new HashMap<>();
-		TEAM_SUBSCRIPTIONS.put(TEAM, Arrays.asList(mockGuild));
 		TEAM_LATEST_GAMES = new HashMap<>();
 		TEAM_LATEST_GAMES.put(TEAM, new ArrayList<Game>());
-		gameScheduler = new GameScheduler(mockDiscordManager, GAMES, GAME_TRACKERS, TEAM_SUBSCRIPTIONS,
-				TEAM_LATEST_GAMES);
+		TEAM_LATEST_GAMES.put(TEAM2, new ArrayList<Game>());
+		gameScheduler = new GameScheduler(mockNHLBot, GAMES, GAME_TRACKERS, TEAM_LATEST_GAMES);
 		spyGameScheduler = spy(gameScheduler);
 
-		doReturn(mockGameTracker1).when(spyGameScheduler).getGameTracker(mockGame1);
-		doReturn(mockGameTracker2).when(spyGameScheduler).getGameTracker(mockGame2);
-		doReturn(mockGameTracker3).when(spyGameScheduler).getGameTracker(mockGame3);
+		doReturn(mockGameTracker1).when(spyGameScheduler).createGameTracker(mockGame1);
+		doReturn(mockGameTracker2).when(spyGameScheduler).createGameTracker(mockGame2);
+		doReturn(mockGameTracker3).when(spyGameScheduler).createGameTracker(mockGame3);
 	}
 	
 	@Test
 	@PrepareForTest({ HttpUtils.class, GameScheduler.class })
-	public void constructorShouldAddAllGamesInOrder() throws Exception {
-		LOGGER.info("constructorShouldAddAllGamesInOrder");
+	public void initGamesShouldAddAllGamesInOrder() throws Exception {
+		LOGGER.info("initGamesShouldAddAllGamesInOrder");
 		String strJSONSchedule = "{"
 				+ "dates:["
 					+ "{"
@@ -126,8 +139,7 @@ public class GameSchedulerTest {
 		mockStatic(HttpUtils.class);
 		when(HttpUtils.get(any(URI.class))).thenReturn(strJSONSchedule);
 		whenNew(Game.class).withAnyArguments().thenReturn(mockGame1, mockGame3, mockGame2);
-
-		GameScheduler gameScheduler = new GameScheduler(mockDiscordManager);
+		gameScheduler.initGames();
 
 		assertEquals(Arrays.asList(mockGame1, mockGame2, mockGame3), gameScheduler.getGames());
 	}
@@ -135,16 +147,19 @@ public class GameSchedulerTest {
 	@Test
 	public void runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams() {
 		LOGGER.info("runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams");
-		doReturn(true).when(spyGameScheduler).isStop();
+		doNothing().when(spyGameScheduler).initGames();
 		doNothing().when(spyGameScheduler).initTeamLatestGamesLists();
-		doNothing().when(spyGameScheduler).startTrackers();
-		doNothing().when(spyGameScheduler).cleanupOldChannels();
+		doNothing().when(spyGameScheduler).createChannels();
+		doNothing().when(spyGameScheduler).createTrackers();
+		doReturn(true).when(spyGameScheduler).isStop();
 
 		spyGameScheduler.run();
 
+		verify(spyGameScheduler).initGames();
 		verify(spyGameScheduler).initTeamLatestGamesLists();
-		verify(spyGameScheduler).startTrackers();
-		verify(spyGameScheduler).cleanupOldChannels();
+		verify(spyGameScheduler).createChannels();
+		verify(spyGameScheduler).createTrackers();
+		verify(mockGameChannelsManager).deleteOldChannels();
 	}
 
 	@Test
@@ -152,9 +167,10 @@ public class GameSchedulerTest {
 	public void runShouldLoopAndInvokeMethods() {
 		LOGGER.info("runShouldLoopAndInvokeMethods");
 		mockStatic(Utils.class);
+		doNothing().when(spyGameScheduler).initGames();
 		doNothing().when(spyGameScheduler).initTeamLatestGamesLists();
-		doNothing().when(spyGameScheduler).startTrackers();
-		doNothing().when(spyGameScheduler).cleanupOldChannels();
+		doNothing().when(spyGameScheduler).createChannels();
+		doNothing().when(spyGameScheduler).createTrackers();
 		doReturn(false).doReturn(false).doReturn(true).when(spyGameScheduler).isStop();
 
 		spyGameScheduler.run();
@@ -172,10 +188,13 @@ public class GameSchedulerTest {
 		LOGGER.info("initTeamLatestGamesListShouldAddLastGameAndCurrentGame");
 		doReturn(mockGame1).when(spyGameScheduler).getLastGame(TEAM);
 		doReturn(mockGame2).when(spyGameScheduler).getCurrentGame(TEAM);
+		doReturn(mockGame3).when(spyGameScheduler).getLastGame(TEAM2);
+		doReturn(mockGame4).when(spyGameScheduler).getCurrentGame(TEAM2);
 
 		spyGameScheduler.initTeamLatestGamesLists();
 		
 		assertEquals(Arrays.asList(mockGame1, mockGame2), spyGameScheduler.getLatestGames(TEAM));
+		assertEquals(Arrays.asList(mockGame3, mockGame4), spyGameScheduler.getLatestGames(TEAM2));
 	}
 
 	@Test
@@ -183,153 +202,75 @@ public class GameSchedulerTest {
 		LOGGER.info("initTeamLatestGamesListShouldAddLastGameAndNextGame");
 		doReturn(mockGame1).when(spyGameScheduler).getLastGame(TEAM);
 		doReturn(null).when(spyGameScheduler).getCurrentGame(TEAM);
-		doReturn(mockGame3).when(spyGameScheduler).getNextGame(TEAM);
+		doReturn(mockGame2).when(spyGameScheduler).getNextGame(TEAM);
+		doReturn(mockGame3).when(spyGameScheduler).getLastGame(TEAM2);
+		doReturn(null).when(spyGameScheduler).getCurrentGame(TEAM2);
+		doReturn(mockGame4).when(spyGameScheduler).getNextGame(TEAM2);
 
 		spyGameScheduler.initTeamLatestGamesLists();
 
-		assertEquals(Arrays.asList(mockGame1, mockGame3), spyGameScheduler.getLatestGames(TEAM));
-	}
-
-	@Test
-	public void startTrackersShouldStartTrackersWhenGameIsNotEnded() {
-		LOGGER.info("startTrackersShouldStartTrackersIfGameIsNotEnded");
-		when(mockGame1.isEnded()).thenReturn(true);
-		when(mockGame2.isEnded()).thenReturn(true);
-		when(mockGame3.isEnded()).thenReturn(false);
-		TEAM_LATEST_GAMES.get(TEAM).addAll(GAMES);
-		gameScheduler = new GameScheduler(null, GAMES, new ArrayList<>(),
-				TEAM_SUBSCRIPTIONS, TEAM_LATEST_GAMES);
-		spyGameScheduler = spy(gameScheduler);
-		doReturn(mockGameTracker1).when(spyGameScheduler).getGameTracker(mockGame1);
-		doReturn(mockGameTracker2).when(spyGameScheduler).getGameTracker(mockGame2);
-		doReturn(mockGameTracker3).when(spyGameScheduler).getGameTracker(mockGame3);
-
-		spyGameScheduler.startTrackers();
-
-		verify(spyGameScheduler).getGameTracker(mockGame1);
-		verify(spyGameScheduler).getGameTracker(mockGame2);
-		verify(spyGameScheduler).getGameTracker(mockGame3);
-		verify(mockGameTracker1, never()).start();
-		verify(mockGameTracker2, never()).start();
-		verify(mockGameTracker3).start();
-		assertEquals(Arrays.asList(mockGameTracker3), spyGameScheduler.getGameTrackers());
-	}
-
-	@Test
-	public void startTrackersShouldNotStartTrackersWhenTrackerIsInList() {
-		LOGGER.info("startTrackersShouldNotStartTrackersWhenTrackerIsInList");
-		when(mockGame1.isEnded()).thenReturn(true);
-		when(mockGame2.isEnded()).thenReturn(true);
-		when(mockGame3.isEnded()).thenReturn(false);
-		TEAM_LATEST_GAMES.get(TEAM).addAll(GAMES);
-		gameScheduler = new GameScheduler(null, GAMES, Arrays.asList(mockGameTracker3),
-				TEAM_SUBSCRIPTIONS, TEAM_LATEST_GAMES);
-		spyGameScheduler = spy(gameScheduler);
-		doReturn(mockGameTracker1).when(spyGameScheduler).getGameTracker(mockGame1);
-		doReturn(mockGameTracker2).when(spyGameScheduler).getGameTracker(mockGame2);
-		doReturn(mockGameTracker3).when(spyGameScheduler).getGameTracker(mockGame3);
-
-		spyGameScheduler.startTrackers();
-
-		verify(spyGameScheduler).getGameTracker(mockGame1);
-		verify(spyGameScheduler).getGameTracker(mockGame2);
-		verify(spyGameScheduler).getGameTracker(mockGame3);
-		verify(mockGameTracker1, never()).start();
-		verify(mockGameTracker2, never()).start();
-		verify(mockGameTracker3, never()).start();
-	}
-
-	@Test
-	public void removeOldChannelsShouldDeleteChannelAppropriately() {
-		LOGGER.info("removeOldChannelsShouldDeleteChannelAppropriately");
-		when(mockChannel1.getName()).thenReturn("not" + GAME_CHANNEL_NAME1);
-		when(mockChannel2.getName()).thenReturn(GAME_CHANNEL_NAME2);
-		when(mockChannel3.getName()).thenReturn(GAME_CHANNEL_NAME3);
-		when(mockGame1.containsTeam(any(Team.class))).thenReturn(true);
-		when(mockGame2.containsTeam(any(Team.class))).thenReturn(true);
-		when(mockGame3.containsTeam(any(Team.class))).thenReturn(true);
-		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1, mockGame2));
-		gameScheduler = new GameScheduler(mockDiscordManager, GAMES, Arrays.asList(mockGameTracker3),
-				TEAM_SUBSCRIPTIONS, TEAM_LATEST_GAMES);
-		spyGameScheduler = spy(gameScheduler);
-
-		spyGameScheduler.cleanupOldChannels();
-
-		verify(mockDiscordManager, never()).deleteChannel(mockChannel1);
-		verify(mockDiscordManager, never()).deleteChannel(mockChannel2);
-		verify(mockDiscordManager).deleteChannel(mockChannel3);
-	}
-
-	@Test
-	public void removeFinishedTrackersShouldRemoveFinishedTrackersAndAddTrackerForNextGame() {
-		LOGGER.info("removeFinishedTrackersShouldRemoveFinishedTrackersAndAddTrackerForNextGame");
-		when(mockGameTracker1.isFinished()).thenReturn(true);
-		when(mockGameTracker2.isFinished()).thenReturn(false);
-		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1, mockGame2));
-		gameScheduler = new GameScheduler(null, null,
-				new ArrayList<>(Arrays.asList(mockGameTracker1, mockGameTracker2)), TEAM_SUBSCRIPTIONS,
-				TEAM_LATEST_GAMES);
-		spyGameScheduler = spy(gameScheduler);
-		doReturn(mockGame3).when(spyGameScheduler).getNextGame(TEAM);
-		doReturn(mockGameTracker3).when(spyGameScheduler).getGameTracker(mockGame3);
-
-		spyGameScheduler.removeFinishedTrackers();
-
-		assertEquals(Arrays.asList(mockGameTracker2, mockGameTracker3), spyGameScheduler.getGameTrackers());
-		assertEquals(Arrays.asList(mockGame1, mockGame2, mockGame3), spyGameScheduler.getLatestGames(TEAM));
-	}
-
-	@Test
-	public void removeFinishedTrackersShouldNotAddTrackerWhenTrackerAlreadyExists() {
-		LOGGER.info("removeFinishedTrackersShouldNotAddTrackerWhenTrackerAlreadyExists");
-		when(mockGameTracker1.isFinished()).thenReturn(true);
-		when(mockGameTracker2.isFinished()).thenReturn(false);
-		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1));
-		gameScheduler = new GameScheduler(null, null,
-				new ArrayList<>(Arrays.asList(mockGameTracker1, mockGameTracker2)), TEAM_SUBSCRIPTIONS,
-				TEAM_LATEST_GAMES);
-		spyGameScheduler = spy(gameScheduler);
-		doReturn(mockGame2).when(spyGameScheduler).getNextGame(TEAM);
-		doReturn(mockGameTracker2).when(spyGameScheduler).getGameTracker(mockGame2);
-
-		spyGameScheduler.removeFinishedTrackers();
-
-		assertEquals(Arrays.asList(mockGameTracker2), spyGameScheduler.getGameTrackers());
 		assertEquals(Arrays.asList(mockGame1, mockGame2), spyGameScheduler.getLatestGames(TEAM));
+		assertEquals(Arrays.asList(mockGame3, mockGame4), spyGameScheduler.getLatestGames(TEAM2));
 	}
 
 	@Test
-	public void removeOldGameShouldRemoveOldChannelsWithTheSameName() {
-		LOGGER.info("removeOldGameShouldRemoveOldChannelsWithTheSameName");
-		when(mockChannel1.getName()).thenReturn(GAME_CHANNEL_NAME1);
-		when(mockChannel2.getName()).thenReturn(GAME_CHANNEL_NAME2);
-		when(mockChannel3.getName()).thenReturn(GAME_CHANNEL_NAME3);
-		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1, mockGame2, mockGame3));
-		GameScheduler gameScheduler = new GameScheduler(mockDiscordManager, null, null, TEAM_SUBSCRIPTIONS,
-				TEAM_LATEST_GAMES);
+	public void createTrackersShouldInvokeCreateGameTrackerForEachGameInList() {
+		LOGGER.info("createTrackersShouldInvokeCreateGameTrackerForEachGameInList");
+		when(mockGame1.isEnded()).thenReturn(true);
+		when(mockGame2.isEnded()).thenReturn(true);
+		when(mockGame3.isEnded()).thenReturn(false);
+		TEAM_LATEST_GAMES.get(TEAM).addAll(GAMES);
+		gameScheduler = new GameScheduler(null, GAMES, Arrays.asList(mockGameTracker3), TEAM_LATEST_GAMES);
+		spyGameScheduler = spy(gameScheduler);
+		doReturn(mockGameTracker1).when(spyGameScheduler).createGameTracker(mockGame1);
+		doReturn(mockGameTracker2).when(spyGameScheduler).createGameTracker(mockGame2);
+		doReturn(mockGameTracker3).when(spyGameScheduler).createGameTracker(mockGame3);
 
-		gameScheduler.removeOldGames();
+		spyGameScheduler.createTrackers();
 
-		verify(mockDiscordManager).deleteChannel(mockChannel1);
-		verify(mockDiscordManager, never()).deleteChannel(mockChannel2);
-		verify(mockDiscordManager, never()).deleteChannel(mockChannel3);
+		verify(spyGameScheduler).createGameTracker(mockGame1);
+		verify(spyGameScheduler).createGameTracker(mockGame2);
+		verify(spyGameScheduler).createGameTracker(mockGame3);
 	}
 
 	@Test
-	public void removeOldGameShouldNotRemoveOldChannelsWithoutTheSameName() {
-		LOGGER.info("removeOldGameShouldNotRemoveOldChannelsWithoutTheSameName");
-		when(mockChannel1.getName()).thenReturn("not" + GAME_CHANNEL_NAME1);
-		when(mockChannel2.getName()).thenReturn(GAME_CHANNEL_NAME2);
-		when(mockChannel3.getName()).thenReturn(GAME_CHANNEL_NAME3);
-		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1, mockGame2, mockGame3));
-		GameScheduler gameScheduler = new GameScheduler(mockDiscordManager, null, null, TEAM_SUBSCRIPTIONS,
+	public void removeFinishedTrackersShouldRemoveFinishedTrackersAndAddGameToLatestGamesAndCreateChannels() {
+		LOGGER.info("removeFinishedTrackersShouldRemoveFinishedTrackersAndAddGameToLatestGamesAndCreateChannels");
+		when(mockGameTracker1.isFinished()).thenReturn(true);
+		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1));
+		TEAM_LATEST_GAMES.get(TEAM2).addAll(Arrays.asList(mockGame1));
+		gameScheduler = new GameScheduler(mockNHLBot, null, new ArrayList<>(Arrays.asList(mockGameTracker1)),
 				TEAM_LATEST_GAMES);
+		spyGameScheduler = spy(gameScheduler);
+		when(mockGame1.getTeams()).thenReturn(Arrays.asList(TEAM, TEAM2));
+		doReturn(mockGame2).when(spyGameScheduler).getNextGame(TEAM);
+		doReturn(mockGame3).when(spyGameScheduler).getNextGame(TEAM2);
+		doReturn(mockGameTracker2).when(spyGameScheduler).createGameTracker(mockGame2);
+		doReturn(mockGameTracker3).when(spyGameScheduler).createGameTracker(mockGame3);
+
+		spyGameScheduler.removeFinishedTrackers();
+
+		verify(spyGameScheduler).createGameTracker(mockGame2);
+		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM);
+		verify(spyGameScheduler).createGameTracker(mockGame3);
+		verify(mockGameChannelsManager).createChannels(mockGame3, TEAM2);
+		assertEquals(Arrays.asList(mockGame1, mockGame2), spyGameScheduler.getLatestGames(TEAM));
+		assertEquals(Arrays.asList(mockGame1, mockGame3), spyGameScheduler.getLatestGames(TEAM2));
+	}
+
+	@Test
+	public void removeOldGameShouldRemoveChannelsUntilCorrectGamesRemain() {
+		LOGGER.info("removeOldGameShouldRemoveChannelsUntilCorrectGamesRemain");
+		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1, mockGame2, mockGame3, mockGame4));
+		GameScheduler gameScheduler = new GameScheduler(mockNHLBot, null, null, TEAM_LATEST_GAMES);
 
 		gameScheduler.removeOldGames();
 
-		verify(mockDiscordManager, never()).deleteChannel(mockChannel1);
-		verify(mockDiscordManager, never()).deleteChannel(mockChannel2);
-		verify(mockDiscordManager, never()).deleteChannel(mockChannel3);
+		verify(mockGameChannelsManager).removeChannels(mockGame1);
+		verify(mockGameChannelsManager).removeChannels(mockGame2);
+		verify(mockGameChannelsManager, never()).removeChannels(mockGame3);
+		verify(mockGameChannelsManager, never()).removeChannels(mockGame4);
+		assertEquals(Arrays.asList(mockGame3, mockGame4), gameScheduler.getLatestGames(TEAM));
 	}
 
 	@Test
@@ -347,7 +288,7 @@ public class GameSchedulerTest {
 		when(mockGame4.getStatus()).thenReturn(GameStatus.LIVE);
 		when(mockGame5.getStatus()).thenReturn(GameStatus.PREVIEW);
 		when(mockGame6.getStatus()).thenReturn(GameStatus.PREVIEW);
-		GameScheduler gameScheduler = new GameScheduler(null, games, null, null, null);
+		GameScheduler gameScheduler = new GameScheduler(null, games, null, null);
 		
 		assertEquals(mockGame5, gameScheduler.getFutureGame(TEAM, 0));
 		assertEquals(mockGame6, gameScheduler.getFutureGame(TEAM, 1));
@@ -378,7 +319,7 @@ public class GameSchedulerTest {
 		when(mockGame4.getStatus()).thenReturn(GameStatus.STARTED);
 		when(mockGame5.getStatus()).thenReturn(GameStatus.LIVE);
 		when(mockGame6.getStatus()).thenReturn(GameStatus.PREVIEW);
-		GameScheduler gameScheduler = new GameScheduler(null, games, null, null, null);
+		GameScheduler gameScheduler = new GameScheduler(null, games, null, null);
 
 		assertEquals(mockGame3, gameScheduler.getPreviousGame(TEAM, 0));
 		assertEquals(mockGame2, gameScheduler.getPreviousGame(TEAM, 1));
@@ -405,7 +346,7 @@ public class GameSchedulerTest {
 		when(mockGame2.getStatus()).thenReturn(GameStatus.FINAL);
 		when(mockGame3.getStatus()).thenReturn(GameStatus.STARTED);
 		when(mockGame4.getStatus()).thenReturn(GameStatus.PREVIEW);
-		GameScheduler gameScheduler = new GameScheduler(null, games, null, null, null);
+		GameScheduler gameScheduler = new GameScheduler(null, games, null, null);
 
 		assertEquals(mockGame3, gameScheduler.getCurrentGame(TEAM));
 	}
@@ -421,21 +362,9 @@ public class GameSchedulerTest {
 		when(mockGame2.getStatus()).thenReturn(GameStatus.FINAL);
 		when(mockGame3.getStatus()).thenReturn(GameStatus.LIVE);
 		when(mockGame4.getStatus()).thenReturn(GameStatus.PREVIEW);
-		GameScheduler gameScheduler = new GameScheduler(null, games, null, null, null);
+		GameScheduler gameScheduler = new GameScheduler(null, games, null, null);
 
 		assertEquals(mockGame3, gameScheduler.getCurrentGame(TEAM));
-	}
-
-	@Test
-	public void subscribeShouldAddGuildToTeamSubscriptions() {
-		LOGGER.info("subscribeShouldAddGuildToTeamSubscriptions");
-		Map<Team, List<IGuild>> teamSubscriptions = new HashMap<>();
-		teamSubscriptions.put(TEAM, new ArrayList<>());
-		GameScheduler gameScheduler = new GameScheduler(null, null, null, teamSubscriptions, null);
-
-		gameScheduler.subscribe(TEAM, mockGuild);
-
-		assertEquals(Arrays.asList(mockGuild), gameScheduler.getSubscribedGuilds(TEAM));
 	}
 
 	@Test
@@ -452,24 +381,77 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	public void getGameTrackerShouldReturnExistingGameTracker() {
-		LOGGER.info("getGameTrackerShouldReturnExistingGameTracker");
+	public void createGameTrackerShouldReturnExistingGameTracker() {
+		LOGGER.info("createGameTrackerShouldReturnExistingGameTracker");
 		when(mockGame1.equals(mockGame1)).thenReturn(true);
 		when(mockGame2.equals(mockGame2)).thenReturn(true);
 		when(mockGame3.equals(mockGame3)).thenReturn(true);
 
-		assertEquals(mockGameTracker1, gameScheduler.getGameTracker(mockGame1));
-		assertEquals(mockGameTracker2, gameScheduler.getGameTracker(mockGame2));
-		assertEquals(mockGameTracker3, gameScheduler.getGameTracker(mockGame3));
+		GameScheduler gameScheduler = new GameScheduler(mockNHLBot, null,
+				Arrays.asList(mockGameTracker1, mockGameTracker2, mockGameTracker3), null);
+
+		assertEquals(mockGameTracker1, gameScheduler.createGameTracker(mockGame1));
+		assertEquals(mockGameTracker2, gameScheduler.createGameTracker(mockGame2));
+		assertEquals(mockGameTracker3, gameScheduler.createGameTracker(mockGame3));
 	}
 
 	@Test
 	@PrepareForTest(GameScheduler.class)
-	public void getGameTrackerShouldReturnNewGameTrackerWhenGameDoesNotExist() throws Exception {
+	public void createGameTrackerShouldReturnNewGameTrackerAndAddToGameTrackersListWhenGameDoesNotExistAndIsNotEnded()
+			throws Exception {
+		LOGGER.info(
+				"createGameTrackerShouldReturnNewGameTrackerAndAddToGameTrackersListWhenGameDoesNotExistAndIsNotEnded");
 		Game newGame = mock(Game.class);
 		GameTracker newGameTracker = mock(GameTracker.class);
-		whenNew(GameTracker.class).withArguments(mockDiscordManager, gameScheduler, newGame).thenReturn(newGameTracker);
+		whenNew(GameTracker.class).withArguments(mockGameChannelsManager, newGame).thenReturn(newGameTracker);
+		when(newGame.isEnded()).thenReturn(false);
 
-		assertEquals(newGameTracker, gameScheduler.getGameTracker(newGame));
+		GameScheduler gameScheduler = new GameScheduler(mockNHLBot, null, new ArrayList<>(), null);
+
+		GameTracker result = gameScheduler.createGameTracker(newGame);
+
+		assertEquals(newGameTracker, result);
+		verify(newGameTracker).start();
+		assertEquals(Arrays.asList(newGameTracker), gameScheduler.getGameTrackers());
+	}
+
+	@Test
+	@PrepareForTest(GameScheduler.class)
+	public void createGameTrackerShouldReturnNewGameTrackerAndNotAddToGameTrackersListWhenGameDoesNotExistAndIsEnded()
+			throws Exception {
+		LOGGER.info(
+				"createGameTrackerShouldReturnNewGameTrackerAndNotAddToGameTrackersListWhenGameDoesNotExistAndIsEnded");
+		Game newGame = mock(Game.class);
+		GameTracker newGameTracker = mock(GameTracker.class);
+		whenNew(GameTracker.class).withArguments(mockGameChannelsManager, newGame).thenReturn(newGameTracker);
+		when(newGame.isEnded()).thenReturn(true);
+
+		GameScheduler gameScheduler = new GameScheduler(mockNHLBot, null, new ArrayList<>(), null);
+
+		GameTracker result = gameScheduler.createGameTracker(newGame);
+
+		assertEquals(newGameTracker, result);
+		verify(newGameTracker, never()).start();
+		assertTrue(gameScheduler.getGameTrackers().isEmpty());
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void createChannelsShouldCreateChannels() {
+
+		GameScheduler gameScheduler = new GameScheduler(mockNHLBot, null, null, new HashMap<Team, List<Game>>() {{
+				for (Team team : Team.values()) {
+					put(team, new ArrayList<>());
+				}
+				put(TEAM, Arrays.asList(mockGame1, mockGame2));
+				put(TEAM2, Arrays.asList(mockGame3, mockGame4));
+		}});
+
+		gameScheduler.createChannels();
+
+		verify(mockGameChannelsManager).createChannels(mockGame1, TEAM);
+		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM);
+		verify(mockGameChannelsManager).createChannels(mockGame3, TEAM2);
+		verify(mockGameChannelsManager).createChannels(mockGame4, TEAM2);
 	}
 }

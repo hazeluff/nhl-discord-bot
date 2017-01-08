@@ -1,7 +1,7 @@
 package com.hazeluff.discord.nhlbot.utils;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -12,9 +12,9 @@ public class DateUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DateUtils.class);
 	private static final DateTimeFormatter NHL_API_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
-	public static LocalDateTime parseNHLDate(String date) {
+	public static ZonedDateTime parseNHLDate(String date) {
 		try {
-			return LocalDateTime.parse(date.replaceAll("Z", "+0000"), NHL_API_FORMAT);
+			return ZonedDateTime.parse(date.replaceAll("Z", "+0000"), NHL_API_FORMAT);
 		} catch (DateTimeParseException e) {
 			LOGGER.error("Could not parse date [" + date + "]", e);
 			return null;
@@ -28,7 +28,7 @@ public class DateUtils {
 	 * @param date2
 	 * @return time difference in ms
 	 */
-	public static long diffMs(LocalDateTime date1, LocalDateTime date2) {
+	public static long diffMs(ZonedDateTime date1, ZonedDateTime date2) {
 		return Duration.between(date1, date2).getSeconds() * 1000;
 	}
 }

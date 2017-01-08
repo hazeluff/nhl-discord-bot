@@ -1,6 +1,6 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +13,7 @@ import com.hazeluff.discord.nhlbot.utils.DateUtils;
 public class GameEvent {
 	private final int id;
 	private int idx;
-	private LocalDateTime date;
+	private ZonedDateTime date;
 	private final GameEventType type;
 	private final Team team;
 	private final String periodTime;
@@ -45,7 +45,7 @@ public class GameEvent {
 		players.removeIf(player -> player.getRole() == EventRole.GOALIE);
 	}
 
-	GameEvent(int id, int idx, LocalDateTime date, GameEventType type, Team team, String periodTime, GamePeriod period,
+	GameEvent(int id, int idx, ZonedDateTime date, GameEventType type, Team team, String periodTime, GamePeriod period,
 			List<Player> players, GameEventStrength strength) {
 		this.id = id;
 		this.idx = idx;
@@ -86,7 +86,7 @@ public class GameEvent {
 		return strength;
 	}
 
-	public LocalDateTime getDate() {
+	public ZonedDateTime getDate() {
 		return date;
 	}
 

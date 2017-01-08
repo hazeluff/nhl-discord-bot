@@ -1,7 +1,4 @@
 # discord-nhlbot
-# Fuck Messier
-
-![NHLBot](https://cdn.discordapp.com/attachments/239331036364931073/239335602191990784/unknown.png)
 
 ## Add bot:
 
@@ -21,9 +18,10 @@ Production: https://discordapp.com/oauth2/authorize?client_id=257345858515894272
 | Combined             | 0x00016C10 | 93200 |
 
 ## Game Day Channel
-- [x] Maintain two game channels. Remove old channels
+- [x] Automatically generate channels for individual games
 - [x] Give warnings before the game starts (60/30/10 minutes before).
 - [x] Display messages for when goals are scored.
+- [x] Display summaries of games.
 - [x] Special messages for when canucks score.
 - [ ] Bot messages during gameplay to cheer on team.
 

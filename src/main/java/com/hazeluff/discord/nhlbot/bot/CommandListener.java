@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
+import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
@@ -20,6 +21,7 @@ import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.Permissions;
 
 /**
  * Listens for MessageReceivedEvents and will process the messages for commands.
@@ -38,11 +40,13 @@ public class CommandListener {
 
 	private final DiscordManager discordManager;
 	private final GameScheduler gameScheduler;
+	private final GuildPreferencesManager guildPreferencesManager;
 	private final NHLBot nhlBot;
 
 	public CommandListener(NHLBot nhlBot) {
-		discordManager = nhlBot.getDiscordManager();
+		this.discordManager = nhlBot.getDiscordManager();
 		this.gameScheduler = nhlBot.getGameScheduler();
+		this.guildPreferencesManager = nhlBot.getGuildPreferencesManager();
 		this.nhlBot = nhlBot;
 	}
 
@@ -95,59 +99,140 @@ public class CommandListener {
 				// fuckmessier
 				discordManager.sendMessage(channel, "FUCK MESSIER");
 				return true;
-			} else if (arguments[1].equalsIgnoreCase("nextgame")) {
-				// nextgame
-				Game nextGame = gameScheduler.getNextGame(Team.VANCOUVER_CANUCKS);
-				discordManager.sendMessage(channel, "The next game is:\n" + nextGame.getDetailsMessage());
-				return true;
-			} else if (arguments[1].equalsIgnoreCase("score")) {
-				// score
-				Game game = gameScheduler.getGameByChannelName(channel.getName());
-				if (game == null) {
-					discordManager.sendMessage(channel,
-							String.format("Please run this command in a  Game Day Channel.\nLatest game channel: %s",
-									getLatestGameChannel(channel.getGuild(), Team.VANCOUVER_CANUCKS)));
-				} else if (game.getStatus() == GameStatus.PREVIEW) {
-					discordManager.sendMessage(channel, "The game hasn't started yet. **0** - **0**");
-				} else {
-					discordManager.sendMessage(channel, game.getScoreMessage());
-				}
-				return true;
-			} else if (arguments[1].equalsIgnoreCase("goals")) {
-				// goals
-				Game game = gameScheduler.getGameByChannelName(channel.getName());
-				if (game == null) {
-					discordManager.sendMessage(channel,
-							String.format("Please run this command in a  Game Day Channel.\nLatest game channel: %s",
-									getLatestGameChannel(channel.getGuild(), Team.VANCOUVER_CANUCKS)));
-				} else if (game.getStatus() == GameStatus.PREVIEW) {
-					discordManager.sendMessage(channel, "The game hasn't started yet.");
-				} else {
-					discordManager.sendMessage(channel,
-							String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
-				}
-				return true;
-			} else if (arguments[1].equalsIgnoreCase("help")) {
+			}
+
+			if (arguments[1].equalsIgnoreCase("help")) {
 				// help
 				discordManager.sendMessage(channel,
-						"Here are a list of commands:\n" + "`nextgame` - Displays information of the next game.\n"
+						"Here are a list of commands:\n\n" + "`subscribe [team]` - Subscribes you to games of a team. "
+								+ "[team] is the three letter code of your team. **(+)**\n"
+								+ "`nextgame` - Displays information of the next game.\n"
 								+ "`score` - Displays the score of the game. "
 								+ "You must be in a 'Game Day Channel' to use this command.\n"
 								+ "`goals` - Displays the goals of the game. "
 								+ "You must be in a 'Game Day Channel' to use this command.\n"
-								+ "`about` - Displays information about me.\n");
+								+ "`about` - Displays information about me.\n\n"
+								+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
+								+ "`@NHLBot [command] help`");
 				return true;
-			} else if (arguments[1].equalsIgnoreCase("about")) {
+			}
+
+			if (arguments[1].equalsIgnoreCase("about")) {
 				// about
 				discordManager.sendMessage(channel,
 						String.format("Version: %s\nWritten by %s\nCheckout my GitHub: %s\nContact me: %s",
-						Config.VERSION, Config.HAZELUFF_MENTION, Config.GIT_URL, Config.HAZELUFF_EMAIL));
+								Config.VERSION, Config.HAZELUFF_MENTION, Config.GIT_URL, Config.HAZELUFF_EMAIL));
+				return true;
+			}
+
+			if (arguments[1].equalsIgnoreCase("subscribe")) {
+				// subscribe
+				if (message.getAuthor().getRolesForGuild(message.getGuild()).stream()
+						.anyMatch(role -> role.getPermissions().stream()
+								.anyMatch(permission -> permission == Permissions.ADMINISTRATOR))) {
+					if (arguments.length < 3) {
+						discordManager.sendMessage(channel,
+								"You must specify an argument for what team you want to subscribe to. "
+										+ "`@NHLBot subscribe [team]`");
+					} else if (arguments[2].equalsIgnoreCase("help")) {
+						StringBuilder response = new StringBuilder(
+								"Subscribed to any of the following teams by typing `@NHLBot subscribe [team]`, "
+								+ "where [team] is the one of the three letter codes for your team below: ")
+										.append("```");
+						for (Team team : Team.values()) {
+							response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
+						}
+						response.append("```");
+						discordManager.sendMessage(channel, response.toString());
+					} else if (Team.isValid(arguments[2])) {
+						Team team = Team.parse(arguments[2]);
+						guildPreferencesManager.subscribe(message.getGuild().getID(), team);
+						discordManager.sendMessage(channel,
+								"You are now subscribed to games of the **" + team.getFullName() + "**!");
+					} else {
+						discordManager.sendMessage(channel, "[" + arguments[2] + "] is not a valid team code. "
+								+ "Use `@NHLBot subscribe help` to get a full list of team");
+					}
+
+				} else {
+					discordManager.sendMessage(channel, "You must be an admin to subscribe the guild to a team.");
+				}
+				return true;
+			}
+
+			if (arguments[1].equalsIgnoreCase("nextgame")) {
+				// nextgame
+				Team preferredTeam = guildPreferencesManager.getTeam(message.getGuild().getID());
+				if (preferredTeam == null) {
+					sendSubscribeFirstMessage(channel);
+				} else {
+					Game nextGame = gameScheduler.getNextGame(preferredTeam);
+					discordManager.sendMessage(channel,
+							"The next game is:\n" + nextGame.getDetailsMessage(preferredTeam.getTimeZone()));
+				}
+				return true;
+			}
+
+			if (arguments[1].equalsIgnoreCase("score")) {
+				// score
+				Team preferredTeam = guildPreferencesManager.getTeam(message.getGuild().getID());
+				if (preferredTeam == null) {
+					sendSubscribeFirstMessage(channel);
+				} else {
+					Game game = gameScheduler.getGameByChannelName(channel.getName());
+					if (game == null) {
+						discordManager.sendMessage(channel,
+								String.format(
+										"Please run this command in a  Game Day Channel.\nLatest game channel: %s",
+										getLatestGameChannel(channel.getGuild(), preferredTeam)));
+					} else if (game.getStatus() == GameStatus.PREVIEW) {
+						discordManager.sendMessage(channel, "The game hasn't started yet. **0** - **0**");
+					} else {
+						discordManager.sendMessage(channel, game.getScoreMessage());
+					}
+				}
+				return true;
+			}
+
+			if (arguments[1].equalsIgnoreCase("goals")) {
+				// goals
+				Team preferredTeam = guildPreferencesManager.getTeam(message.getGuild().getID());
+				if (preferredTeam == null) {
+					sendSubscribeFirstMessage(channel);
+				} else {
+					Game game = gameScheduler.getGameByChannelName(channel.getName());
+					if (game == null) {
+						discordManager.sendMessage(channel,
+								String.format(
+										"Please run this command in a  Game Day Channel.\nLatest game channel: %s",
+										getLatestGameChannel(channel.getGuild(), preferredTeam)));
+					} else if (game.getStatus() == GameStatus.PREVIEW) {
+						discordManager.sendMessage(channel, "The game hasn't started yet.");
+					} else {
+						discordManager.sendMessage(channel,
+								String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
+					}
+				}
 				return true;
 			}
 
 		}
 
 		return false;
+	}
+
+	/**
+	 * Sends a message to tell users to subscribe the guild to the guild first.
+	 * 
+	 * @param channel
+	 *            channel to send message to
+	 */
+	void sendSubscribeFirstMessage(IChannel channel) {
+		discordManager.sendMessage(channel,
+				"Please have your admin first subscribe your guild "
+						+ "to a team by using the command `@NHLBot subscribe [team]`, "
+						+ "where [team] is the 3 letter code for your team.\n"
+						+ "To see a list of [team] codes use command `@NHLBot subscribe help`");
 	}
 
 	/**

@@ -21,7 +21,7 @@ import sx.blah.discord.util.RateLimitException;
 public class DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DiscordManager.class);
 
-	public IDiscordClient client;
+	private final IDiscordClient client;
 
 	public DiscordManager(IDiscordClient client) {
 		this.client = client;

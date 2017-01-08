@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum GameStatus {
-	PREVIEW(new int[] { 1 }, "Pre-game"), 
+	PREVIEW(new int[] { 1, 9 }, "Pre-game"), // 9 = Postponed
 	STARTED(new int[] { 2, 4 }, "Started"), // I have no idea what these codes translate to
 	LIVE(new int[] { 3 }, "LIVE"),
 	FINAL(new int[] { 5, 6, 7 }, "Final");

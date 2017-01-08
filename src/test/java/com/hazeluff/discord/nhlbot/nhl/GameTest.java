@@ -18,9 +18,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,8 +55,9 @@ public class GameTest {
 	private static final Team HOME_TEAM = Team.FLORIDA_PANTHERS;
 	private static final int HOME_SCORE = 9;
 	private static final int STATUS_CODE = 3;
+	private static final ZoneId TIME_ZONE = ZoneId.of("Canada/Pacific");
 	private static final GameStatus STATUS = GameStatus.parse(STATUS_CODE);
-	private static final LocalDateTime DATE = LocalDateTime.of(2000, 12, 31, 12, 56);
+	private static final ZonedDateTime DATE = ZonedDateTime.of(2000, 12, 31, 12, 56, 42, 100, ZoneOffset.UTC);
 	private static final List<GameEvent> EVENTS = new ArrayList<>();
 	private static final List<GameEvent> NEW_EVENTS = new ArrayList<>();
 	private static final List<GameEvent> UPDATED_EVENTS = new ArrayList<>();
@@ -177,23 +178,23 @@ public class GameTest {
 	@Test
 	public void getDetailsMessageShouldReturnFormattedString() {
 		LOGGER.info("getDetailsMessageShouldReturnFormattedString");
-		String result = game.getDetailsMessage();
+		String result = game.getDetailsMessage(TIME_ZONE);
 
 		assertTrue(result.contains(AWAY_TEAM.getFullName()));
 		assertTrue(result.contains(HOME_TEAM.getFullName()));
-		assertTrue(result.contains(game.getTime(ZoneId.of("Canada/Pacific"))));
-		assertTrue(result.contains(game.getNiceDate(ZoneId.of("Canada/Pacific"))));
+		assertTrue(result.contains(game.getTime(TIME_ZONE)));
+		assertTrue(result.contains(game.getNiceDate(TIME_ZONE)));
 	}
 
 	@Test
 	public void getScoreMessageShouldReturnFormattedString() {
 		LOGGER.info("getScoreMessageShouldReturnFormattedString");
-		String result = game.getDetailsMessage();
+		String result = game.getDetailsMessage(TIME_ZONE);
 
 		assertTrue(result.contains(AWAY_TEAM.getName()));
 		assertTrue(result.contains(HOME_TEAM.getName()));
-		assertTrue(result.contains(game.getTime(ZoneId.of("Canada/Pacific"))));
-		assertTrue(result.contains(game.getNiceDate(ZoneId.of("Canada/Pacific"))));
+		assertTrue(result.contains(game.getTime(TIME_ZONE)));
+		assertTrue(result.contains(game.getNiceDate(TIME_ZONE)));
 	}
 
 	@Test
@@ -249,9 +250,9 @@ public class GameTest {
 		LOGGER.info("dateComparatorShouldCompareDates");
 		Game game1 = mock(Game.class);
 		Game game2 = mock(Game.class);
-		LocalDateTime date1 = LocalDateTime.ofEpochSecond(1, 0, ZoneOffset.UTC);
-		LocalDateTime date2 = LocalDateTime.ofEpochSecond(1, 0, ZoneOffset.UTC);
-		LocalDateTime date3 = LocalDateTime.ofEpochSecond(2, 0, ZoneOffset.UTC);
+		ZonedDateTime date1 = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		ZonedDateTime date2 = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		ZonedDateTime date3 = ZonedDateTime.of(0, 1, 1, 0, 0, 2, 0, ZoneOffset.UTC);
 		
 		Comparator<Game> comparator = Game.getDateComparator();
 		
@@ -265,20 +266,6 @@ public class GameTest {
 		when(game2.getDate()).thenReturn(date2);
 		assertEquals(0, comparator.compare(game2, game1));
 		assertEquals(0, comparator.compare(game1, game2));
-	}
-
-	@Test
-	public void isOnDateShouldCompareIfDatesAreEqual() {
-		LOGGER.info("isOnDateShouldCompareIfDatesAreEqual");
-		LocalDateTime date1 = LocalDateTime.ofEpochSecond(1483142400l, 0, ZoneOffset.UTC);
-		LocalDateTime date2 = LocalDateTime.ofEpochSecond(1483185600l, 0, ZoneOffset.UTC); // date1 + 12hr
-		LocalDateTime date3 = LocalDateTime.ofEpochSecond(1483228800l, 0, ZoneOffset.UTC); // date1 + 1day
-		Game game1 = new Game(date1, GAME_PK, AWAY_TEAM, HOME_TEAM, AWAY_SCORE, HOME_SCORE, STATUS, EVENTS, NEW_EVENTS,
-				UPDATED_EVENTS, REMOVED_EVENTS);
-
-		assertTrue(game1.isOnDate(date1));
-		assertTrue(game1.isOnDate(date2));
-		assertFalse(game1.isOnDate(date3));
 	}
 
 	@Test

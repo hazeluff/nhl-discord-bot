@@ -1,7 +1,6 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
 import java.net.URISyntaxException;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,7 +24,7 @@ import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 public class Game {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
 
-	private final LocalDateTime date;
+	private final ZonedDateTime date;
 	private final int gamePk;
 	private final Team awayTeam;
 	private final Team homeTeam;
@@ -37,7 +36,7 @@ public class Game {
 	private final List<GameEvent> updatedEvents = new ArrayList<>();
 	private final List<GameEvent> removedEvents = new ArrayList<>();
 
-	Game(LocalDateTime date, int gamePk, Team awayTeam, Team homeTeam, int awayScore, int homeScore,
+	Game(ZonedDateTime date, int gamePk, Team awayTeam, Team homeTeam, int awayScore, int homeScore,
 			GameStatus status, List<GameEvent> events, List<GameEvent> newEvents, List<GameEvent> updatedEvents,
 			List<GameEvent> removedEvents) {
 		this.date = date;
@@ -66,7 +65,7 @@ public class Game {
 		updatedEvents.clear();
 	}
 
-	public LocalDateTime getDate() {
+	public ZonedDateTime getDate() {
 		return date;
 	}
 
@@ -78,7 +77,7 @@ public class Game {
 	 * @return the date in the format "YY-MM-DD"
 	 */
 	public String getShortDate(ZoneId zone) {
-		return ZonedDateTime.of(date, ZoneId.of("UTC")).withZoneSameInstant(zone)
+		return date.withZoneSameInstant(zone)
 				.format(DateTimeFormatter.ofPattern("yy-MM-dd"));
 	}
 
@@ -90,7 +89,7 @@ public class Game {
 	 * @return the date in the format "EEEE dd MMM yyyy"
 	 */
 	public String getNiceDate(ZoneId zone) {
-		return ZonedDateTime.of(date, ZoneId.of("UTC")).withZoneSameInstant(zone)
+		return date.withZoneSameInstant(zone)
 				.format(DateTimeFormatter.ofPattern("EEEE d/MMM/yyyy"));
 	}
 
@@ -102,7 +101,7 @@ public class Game {
 	 * @return the time in the format "HH:mm aaa"
 	 */
 	public String getTime(ZoneId zone) {
-		return ZonedDateTime.of(date, ZoneId.of("UTC")).withZoneSameInstant(zone)
+		return date.withZoneSameInstant(zone)
 				.format(DateTimeFormatter.ofPattern("H:mm z"));
 	}
 
@@ -162,23 +161,25 @@ public class Game {
 		String channelName = String.format("%.3s_vs_%.3s_%s",
 				homeTeam.getCode(),
 				awayTeam.getCode(),
-				getShortDate(ZoneId.of("Canada/Pacific")));
+				getShortDate(ZoneId.of("America/New_York")));
 		return channelName.toString();
 	}
 
 	/**
-	 * Gets the message that NHLBot will respond with when queried about
-	 * this game
+	 * Gets the message that NHLBot will respond with when queried about this game
+	 * 
+	 * @param timeZone
+	 *            the time zone to localize to
 	 * 
 	 * @return message in the format: "The next game is:\n<br>
 	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
 	 */
-	public String getDetailsMessage() {
+	public String getDetailsMessage(ZoneId timeZone) {
 		String message = String.format("**%s** vs **%s** at **%s** on **%s**",
 				homeTeam.getFullName(),
 				awayTeam.getFullName(),
-				getTime(ZoneId.of("Canada/Pacific")),
-				getNiceDate(ZoneId.of("Canada/Pacific")));
+				getTime(timeZone),
+				getNiceDate(timeZone));
 		return message.toString();
 	}
 
@@ -274,10 +275,6 @@ public class Game {
 				return (g1.getDate().compareTo(g2.getDate()));
 			}
 		};
-	}
-
-	public boolean isOnDate(LocalDateTime date) {
-		return this.getDate().toLocalDate().equals(date.toLocalDate());
 	}
 
 	/**
