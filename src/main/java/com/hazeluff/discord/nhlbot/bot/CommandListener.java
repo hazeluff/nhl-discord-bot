@@ -91,10 +91,8 @@ public class CommandListener {
 	 */
 	boolean replyToCommand(IMessage message) {
 		IChannel channel = message.getChannel();
-		String strMessage = message.getContent();
-		if (isBotCommand(message)) {
-			String[] arguments = strMessage.split("\\s+");
-
+		String[] arguments = getBotCommand(message);
+		if (arguments.length > 1) {
 			if (arguments[1].equalsIgnoreCase("fuckmessier")) {
 				// fuckmessier
 				discordManager.sendMessage(channel, "FUCK MESSIER");
@@ -132,7 +130,7 @@ public class CommandListener {
 								.anyMatch(permission -> permission == Permissions.ADMINISTRATOR))) {
 					if (arguments.length < 3) {
 						discordManager.sendMessage(channel,
-								"You must specify an argument for what team you want to subscribe to. "
+								"You must specify a parameter for what team you want to subscribe to. "
 										+ "`@NHLBot subscribe [team]`");
 					} else if (arguments[2].equalsIgnoreCase("help")) {
 						StringBuilder response = new StringBuilder(
@@ -279,23 +277,40 @@ public class CommandListener {
 	}
 
 	/**
-	 * Determines if NHLBot is mentioned at the start of the message.
+	 * Returns an array of strings that represent the command input.
 	 * 
 	 * @param strMessage
 	 *            message to determine if NHLBot is mentioned in
 	 * @return true, if NHLBot is mentioned; false, otherwise.
 	 */
-	boolean isBotCommand(IMessage message) {
+	String[] getBotCommand(IMessage message) {
 		String messageContent = message.getContent();
-		return messageContent.startsWith(nhlBot.getMentionId())
-				|| messageContent.startsWith(nhlBot.getNicknameMentionId());
+		if(messageContent.startsWith(nhlBot.getMentionId())
+				|| messageContent.startsWith(nhlBot.getNicknameMentionId())) {
+			return messageContent.split("\\s+");
+		}		
+		return new String[0];
 	}
-	
+
 	/**
-	 * Determines if NHLBot is mentioned in the message
+	 * Determines if the specified message is a NHLBot command.
 	 * 
 	 * @param message
-	 * @return
+	 *            message to determine if it is a NHLBot command.
+	 * @return true, if NHLBot is mentioned.<br>
+	 *         false, otherwise.
+	 */
+	boolean isBotCommand(IMessage message) {
+		return getBotCommand(message).length > 0;
+	}
+
+	/**
+	 * Determines if NHLBot is mentioned in the message.
+	 * 
+	 * @param message
+	 *            message to determine if NHLBot is mentioned
+	 * @return true, if NHL Bot is mentioned.<br>
+	 *         false, otherwise.
 	 */
 	boolean isBotMentioned(IMessage message) {
 		String messageContent = message.getContent();
