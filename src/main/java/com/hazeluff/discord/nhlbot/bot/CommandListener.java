@@ -9,9 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
@@ -27,9 +25,6 @@ import sx.blah.discord.handle.obj.Permissions;
  * Listens for MessageReceivedEvents and will process the messages for commands.
  * 
  * Commands need to be in format '@NHLBot command'.
- * 
- * @author hazeluff
- *
  */
 public class CommandListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListener.class);
@@ -38,15 +33,9 @@ public class CommandListener {
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
 
-	private final DiscordManager discordManager;
-	private final GameScheduler gameScheduler;
-	private final GuildPreferencesManager guildPreferencesManager;
 	private final NHLBot nhlBot;
 
 	public CommandListener(NHLBot nhlBot) {
-		this.discordManager = nhlBot.getDiscordManager();
-		this.gameScheduler = nhlBot.getGameScheduler();
-		this.guildPreferencesManager = nhlBot.getGuildPreferencesManager();
 		this.nhlBot = nhlBot;
 	}
 
@@ -69,7 +58,7 @@ public class CommandListener {
 		}
 		
 		if (isBotCommand(message)) {
-			discordManager.sendMessage(message.getChannel(),
+			nhlBot.getDiscordManager().sendMessage(message.getChannel(),
 					"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
 			return;
 		}
@@ -95,13 +84,13 @@ public class CommandListener {
 		if (arguments.length > 1) {
 			if (arguments[1].equalsIgnoreCase("fuckmessier")) {
 				// fuckmessier
-				discordManager.sendMessage(channel, "FUCK MESSIER");
+				nhlBot.getDiscordManager().sendMessage(channel, "FUCK MESSIER");
 				return true;
 			}
 
 			if (arguments[1].equalsIgnoreCase("help")) {
 				// help
-				discordManager.sendMessage(channel,
+				nhlBot.getDiscordManager().sendMessage(channel,
 						"Here are a list of commands:\n\n" + "`subscribe [team]` - Subscribes you to games of a team. "
 								+ "[team] is the three letter code of your team. **(+)**\n"
 								+ "`nextgame` - Displays information of the next game.\n"
@@ -117,7 +106,7 @@ public class CommandListener {
 
 			if (arguments[1].equalsIgnoreCase("about")) {
 				// about
-				discordManager.sendMessage(channel,
+				nhlBot.getDiscordManager().sendMessage(channel,
 						String.format("Version: %s\nWritten by %s\nCheckout my GitHub: %s\nContact me: %s",
 								Config.VERSION, Config.HAZELUFF_MENTION, Config.GIT_URL, Config.HAZELUFF_EMAIL));
 				return true;
@@ -129,7 +118,7 @@ public class CommandListener {
 						.anyMatch(role -> role.getPermissions().stream()
 								.anyMatch(permission -> permission == Permissions.ADMINISTRATOR))) {
 					if (arguments.length < 3) {
-						discordManager.sendMessage(channel,
+						nhlBot.getDiscordManager().sendMessage(channel,
 								"You must specify a parameter for what team you want to subscribe to. "
 										+ "`@NHLBot subscribe [team]`");
 					} else if (arguments[2].equalsIgnoreCase("help")) {
@@ -141,31 +130,34 @@ public class CommandListener {
 							response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
 						}
 						response.append("```");
-						discordManager.sendMessage(channel, response.toString());
+						nhlBot.getDiscordManager().sendMessage(channel, response.toString());
 					} else if (Team.isValid(arguments[2])) {
 						Team team = Team.parse(arguments[2]);
-						guildPreferencesManager.subscribe(message.getGuild().getID(), team);
-						discordManager.sendMessage(channel,
+						nhlBot.getGuildPreferencesManager().subscribe(message.getGuild().getID(), team);
+						nhlBot.getGameScheduler().initChannels(message.getGuild());
+						nhlBot.getDiscordManager().sendMessage(channel,
 								"You are now subscribed to games of the **" + team.getFullName() + "**!");
 					} else {
-						discordManager.sendMessage(channel, "[" + arguments[2] + "] is not a valid team code. "
+						nhlBot.getDiscordManager().sendMessage(channel,
+								"[" + arguments[2] + "] is not a valid team code. "
 								+ "Use `@NHLBot subscribe help` to get a full list of team");
 					}
 
 				} else {
-					discordManager.sendMessage(channel, "You must be an admin to subscribe the guild to a team.");
+					nhlBot.getDiscordManager().sendMessage(channel,
+							"You must be an admin to subscribe the guild to a team.");
 				}
 				return true;
 			}
 
 			if (arguments[1].equalsIgnoreCase("nextgame")) {
 				// nextgame
-				Team preferredTeam = guildPreferencesManager.getTeam(message.getGuild().getID());
+				Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(message.getGuild().getID());
 				if (preferredTeam == null) {
 					sendSubscribeFirstMessage(channel);
 				} else {
-					Game nextGame = gameScheduler.getNextGame(preferredTeam);
-					discordManager.sendMessage(channel,
+					Game nextGame = nhlBot.getGameScheduler().getNextGame(preferredTeam);
+					nhlBot.getDiscordManager().sendMessage(channel,
 							"The next game is:\n" + nextGame.getDetailsMessage(preferredTeam.getTimeZone()));
 				}
 				return true;
@@ -173,20 +165,20 @@ public class CommandListener {
 
 			if (arguments[1].equalsIgnoreCase("score")) {
 				// score
-				Team preferredTeam = guildPreferencesManager.getTeam(message.getGuild().getID());
+				Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(message.getGuild().getID());
 				if (preferredTeam == null) {
 					sendSubscribeFirstMessage(channel);
 				} else {
-					Game game = gameScheduler.getGameByChannelName(channel.getName());
+					Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
 					if (game == null) {
-						discordManager.sendMessage(channel,
+						nhlBot.getDiscordManager().sendMessage(channel,
 								String.format(
 										"Please run this command in a  Game Day Channel.\nLatest game channel: %s",
 										getLatestGameChannel(channel.getGuild(), preferredTeam)));
 					} else if (game.getStatus() == GameStatus.PREVIEW) {
-						discordManager.sendMessage(channel, "The game hasn't started yet. **0** - **0**");
+						nhlBot.getDiscordManager().sendMessage(channel, "The game hasn't started yet. **0** - **0**");
 					} else {
-						discordManager.sendMessage(channel, game.getScoreMessage());
+						nhlBot.getDiscordManager().sendMessage(channel, game.getScoreMessage());
 					}
 				}
 				return true;
@@ -194,20 +186,20 @@ public class CommandListener {
 
 			if (arguments[1].equalsIgnoreCase("goals")) {
 				// goals
-				Team preferredTeam = guildPreferencesManager.getTeam(message.getGuild().getID());
+				Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(message.getGuild().getID());
 				if (preferredTeam == null) {
 					sendSubscribeFirstMessage(channel);
 				} else {
-					Game game = gameScheduler.getGameByChannelName(channel.getName());
+					Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
 					if (game == null) {
-						discordManager.sendMessage(channel,
+						nhlBot.getDiscordManager().sendMessage(channel,
 								String.format(
 										"Please run this command in a  Game Day Channel.\nLatest game channel: %s",
 										getLatestGameChannel(channel.getGuild(), preferredTeam)));
 					} else if (game.getStatus() == GameStatus.PREVIEW) {
-						discordManager.sendMessage(channel, "The game hasn't started yet.");
+						nhlBot.getDiscordManager().sendMessage(channel, "The game hasn't started yet.");
 					} else {
-						discordManager.sendMessage(channel,
+						nhlBot.getDiscordManager().sendMessage(channel,
 								String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
 					}
 				}
@@ -219,6 +211,7 @@ public class CommandListener {
 		return false;
 	}
 
+
 	/**
 	 * Sends a message to tell users to subscribe the guild to the guild first.
 	 * 
@@ -226,7 +219,7 @@ public class CommandListener {
 	 *            channel to send message to
 	 */
 	void sendSubscribeFirstMessage(IChannel channel) {
-		discordManager.sendMessage(channel,
+		nhlBot.getDiscordManager().sendMessage(channel,
 				"Please have your admin first subscribe your guild "
 						+ "to a team by using the command `@NHLBot subscribe [team]`, "
 						+ "where [team] is the 3 letter code for your team.\n"
@@ -267,7 +260,7 @@ public class CommandListener {
 			}
 
 			if (response != null) {
-				discordManager.sendMessage(message.getChannel(),
+				nhlBot.getDiscordManager().sendMessage(message.getChannel(),
 						String.format("<@%s> %s", message.getAuthor().getID(), response));
 				return true;
 			}
@@ -340,7 +333,7 @@ public class CommandListener {
 			counter.removeIf(time -> currentTime - time > FUCK_MESSIER_COUNT_LIFESPAN);
 			if (counter.size() >= 5) {
 				counter.clear();
-				discordManager.sendMessage(channel, "FUCK MESSIER");
+				nhlBot.getDiscordManager().sendMessage(channel, "FUCK MESSIER");
 				return true;
 			}
 		}
@@ -349,9 +342,9 @@ public class CommandListener {
 
 
 	String getLatestGameChannel(IGuild guild, Team team) {
-		Game game = gameScheduler.getCurrentGame(team);
+		Game game = nhlBot.getGameScheduler().getCurrentGame(team);
 		if (game == null) {
-			game = gameScheduler.getLastGame(team);
+			game = nhlBot.getGameScheduler().getLastGame(team);
 		}
 		String channelName = game.getChannelName().toLowerCase();
 		List<IChannel> channels = guild.getChannelsByName(channelName);

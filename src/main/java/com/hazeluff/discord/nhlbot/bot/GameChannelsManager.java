@@ -83,7 +83,15 @@ public class GameChannelsManager {
 		}
 	}
 
-	void createChannel(Game game, IGuild guild) {
+	/**
+	 * Creates channels, in the guild, for the game.
+	 * 
+	 * @param game
+	 *            game to create channels for
+	 * @param guild
+	 *            guild to create channels in
+	 */
+	public void createChannel(Game game, IGuild guild) {
 		String channelName = game.getChannelName();
 		Predicate<IChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
@@ -98,34 +106,6 @@ public class GameChannelsManager {
 		} else {
 			LOGGER.warn("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
 			gameChannels.get(game.getGamePk()).add(guild.getChannels().stream().filter(channelMatcher).findAny().get());
-		}
-	}
-
-	/**
-	 * Remove all old channels for all guilds subscribed. Channels are old if they are not in the list of latest games
-	 * for the team subscribed to. Only channels written in the format that represents a game channel will be removed.
-	 * 
-	 * @param team
-	 * @param latestGames
-	 *            games where the channels should not be deleted for
-	 */
-	public void deleteOldChannels() {
-		LOGGER.info("Cleaning up old channels.");
-		List<Game> games = nhlBot.getGameScheduler().getGames();
-		for (Team team : Team.values()) {
-			List<Game> latestGames = nhlBot.getGameScheduler().getLatestGames(team);
-			List<Game> inactiveGames = games.stream()
-					.filter(game -> game.containsTeam(team))
-					.filter(game -> !latestGames.contains(game))
-					.collect(Collectors.toList());
-			for (IGuild guild : nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team)) {
-				for (IChannel channel : guild.getChannels()) {
-					if (inactiveGames.stream()
-							.anyMatch(game -> channel.getName().equalsIgnoreCase(game.getChannelName()))) {
-						nhlBot.getDiscordManager().deleteChannel(channel);
-					}
-				}
-			}
 		}
 	}
 
@@ -336,6 +316,7 @@ public class GameChannelsManager {
 	 *            game to remove channels of
 	 */
 	public void removeChannels(Game game) {
+		LOGGER.info("Removing channels for game [" + game + "]");
 		for (Team team : game.getTeams()) {
 			for (IGuild guild : nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team)) {
 				for (IChannel channel : guild.getChannels()) {
@@ -350,6 +331,31 @@ public class GameChannelsManager {
 		gameChannels.remove(game.getGamePk());
 		eventMessages.remove(game.getGamePk());
 		endOfGameMessages.remove(game.getGamePk());
+	}
+
+	/**
+	 * Removes the specified channel from Maps in this class. Also deletes the channel in Discord.
+	 * 
+	 * @param game
+	 *            game the channel represents
+	 * @param channel
+	 *            channel to remove
+	 */
+	public void removeChannel(Game game, IChannel channel) {
+		LOGGER.info("Removing channel [" + channel.getName() + "] for game [" + game.getGamePk() + "]");
+		if (gameChannels.containsKey(game.getGamePk())) {
+			gameChannels.get(game.getGamePk()).removeIf(gameChannel -> gameChannel.getID().equals(channel.getID()));
+		}
+		if (eventMessages.containsKey(game.getGamePk())) {
+			eventMessages.get(game.getGamePk()).forEach((eventId,
+					messages) -> messages.removeIf(message -> message.getChannel().getID().equals(channel.getID())));
+		}
+		if (endOfGameMessages.containsKey(game.getGamePk())) {
+			endOfGameMessages.get(game.getGamePk()).forEach((team, messages) -> messages
+					.removeIf(message -> message.getChannel().getID().equals(channel.getID())));
+		}
+
+		nhlBot.getDiscordManager().deleteChannel(channel);
 	}
 
 	/**

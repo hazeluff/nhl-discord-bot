@@ -73,6 +73,11 @@ public class GameChannelsManagerTest {
 	private static final String AWAY_END_OF_GAME_MESSAGE = "AwayEndOfGameMessage";
 	private static final int EVENT_ID = 10000;
 	private static final int GAME_PK = 10001;
+	private static final int GAME_PK2 = 10002;
+	private static final String CHANNEL_ID = RandomStringUtils.randomNumeric(10);
+	private static final String CHANNEL_ID2 = RandomStringUtils.randomNumeric(10);
+	private static final String HOME_CHANNEL_ID = RandomStringUtils.randomNumeric(10);
+	private static final String AWAY_CHANNEL_ID = RandomStringUtils.randomNumeric(10);
 
 	@Mock
 	private NHLBot mockNHLBot;
@@ -89,9 +94,9 @@ public class GameChannelsManagerTest {
 	@Mock
 	private IGuild mockHomeGuild, mockAwayGuild;
 	@Mock
-	private IChannel mockChannel, mockHomeChannel1, mockHomeChannel2, mockAwayChannel1, mockAwayChannel2;
+	private IChannel mockChannel, mockChannel2, mockHomeChannel1, mockHomeChannel2, mockAwayChannel1, mockAwayChannel2;
 	@Mock
-	private IMessage mockMessage;
+	private IMessage mockMessage, mockMessage2;
 
 	@Captor
 	private ArgumentCaptor<String> captorString;
@@ -127,8 +132,12 @@ public class GameChannelsManagerTest {
 		when(mockAwayChannel1.getName()).thenReturn(CHANNEL1_NAME);
 		when(mockHomeChannel2.getName()).thenReturn(CHANNEL2_NAME);
 		when(mockAwayChannel2.getName()).thenReturn(CHANNEL2_NAME);
+		when(mockHomeChannel1.getID()).thenReturn(HOME_CHANNEL_ID);
+		when(mockAwayChannel1.getID()).thenReturn(AWAY_CHANNEL_ID);
 		when(mockGameEvent.getId()).thenReturn(EVENT_ID);
 		when(mockGameEvent.getPlayers()).thenReturn(Arrays.asList(PLAYER, PLAYER2, PLAYER3));
+		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+		when(mockChannel2.getID()).thenReturn(CHANNEL_ID2);
 
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, new HashMap<>(), new HashMap<>(), new HashMap<>());
 		spyGameChannelsManager = spy(gameChannelsManager);
@@ -218,47 +227,6 @@ public class GameChannelsManagerTest {
 		verify(mockDiscordManager, never()).pinMessage(any(IChannel.class), any(IMessage.class));
 		gameChannels = gameChannelsManager.getGameChannels();
 		assertTrue(gameChannels.get(GAME_PK).contains(mockHomeChannel1));
-	}
-
-	@Test
-	public void deleteOldChannelsShouldDeleteChannelsThatAreOld() {
-		LOGGER.info("deleteOldChannelsShouldDeleteChannelsThatAreOld");
-		List<Game> games = Arrays.asList(mock(Game.class), mock(Game.class));
-		when(games.get(0).containsTeam(HOME_TEAM)).thenReturn(true);
-		when(games.get(1).containsTeam(HOME_TEAM)).thenReturn(true);
-		when(games.get(0).containsTeam(AWAY_TEAM)).thenReturn(true);
-		when(games.get(1).containsTeam(AWAY_TEAM)).thenReturn(true);
-		when(games.get(0).getChannelName()).thenReturn(CHANNEL1_NAME);
-		when(games.get(1).getChannelName()).thenReturn(CHANNEL2_NAME);
-		when(mockGameScheduler.getLatestGames(HOME_TEAM)).thenReturn(Arrays.asList(games.get(1)));
-		when(mockGameScheduler.getLatestGames(AWAY_TEAM)).thenReturn(Arrays.asList(games.get(0)));
-		when(mockGameScheduler.getGames()).thenReturn(games);
-
-		gameChannelsManager.deleteOldChannels();
-
-		verify(mockDiscordManager).deleteChannel(mockHomeChannel1);
-		verify(mockDiscordManager, never()).deleteChannel(mockHomeChannel2);
-		verify(mockDiscordManager, never()).deleteChannel(mockAwayChannel1);
-		verify(mockDiscordManager).deleteChannel(mockAwayChannel2);
-	}
-
-	@Test
-	public void deleteOldChannelsShouldNotDeleteChannelsThatAreOfDifferentNames() {
-		LOGGER.info("deleteOldChannelsShouldNotDeleteChannelsThatAreOfDifferentNames");
-		List<Game> games = Arrays.asList(mock(Game.class), mock(Game.class));
-		when(games.get(0).containsTeam(HOME_TEAM)).thenReturn(true);
-		when(games.get(1).containsTeam(HOME_TEAM)).thenReturn(true);
-		when(games.get(0).containsTeam(AWAY_TEAM)).thenReturn(true);
-		when(games.get(1).containsTeam(AWAY_TEAM)).thenReturn(true);
-		when(mockGameScheduler.getLatestGames(HOME_TEAM)).thenReturn(Collections.emptyList());
-		when(mockGameScheduler.getLatestGames(AWAY_TEAM)).thenReturn(Collections.emptyList());
-		when(mockGameScheduler.getGames()).thenReturn(games);
-		when(games.get(0).getChannelName()).thenReturn("not" + CHANNEL1_NAME);
-		when(games.get(1).getChannelName()).thenReturn("not" + CHANNEL2_NAME);
-
-		gameChannelsManager.deleteOldChannels();
-
-		verify(mockDiscordManager, never()).deleteChannel(any(IChannel.class));
 	}
 
 	@Test
@@ -615,5 +583,88 @@ public class GameChannelsManagerTest {
 		assertFalse(gameChannelsManager.getGameChannels().containsKey(GAME_PK));
 		assertFalse(gameChannelsManager.getEventMessages().containsKey(GAME_PK));
 		assertFalse(gameChannelsManager.getEndOfGameMessages().containsKey(GAME_PK));
+	}
+	
+	@Test
+	public void removeChannelsShouldRemoveGameChannels() {
+		LOGGER.info("removeChannelsShouldRemoveGameChannels");
+		Map<Integer, List<IChannel>> gameChannels = new HashMap<>();
+		gameChannels.put(GAME_PK, new ArrayList<>(Arrays.asList(mockChannel, mockChannel2)));
+		gameChannels.put(GAME_PK2, Collections.emptyList());
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, new HashMap<>(), new HashMap<>());
+		
+		gameChannelsManager.removeChannel(mockGame, mockChannel);
+
+		Map<Integer, List<IChannel>> expectedGameChannels = new HashMap<>();
+		expectedGameChannels.put(GAME_PK, Arrays.asList(mockChannel2));
+		expectedGameChannels.put(GAME_PK2, Collections.emptyList());
+		assertEquals(expectedGameChannels, gameChannelsManager.getGameChannels());
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void removeChannelsShouldRemoveEventMessages() {
+		LOGGER.info("removeChannelsShouldRemoveEventMessages");
+		Map<Integer, Map<Integer, List<IMessage>>> eventMessages = new HashMap<>();
+		eventMessages.put(GAME_PK, new HashMap<Integer, List<IMessage>>() {{
+				put(EVENT_ID, new ArrayList<>(Arrays.asList(mockMessage, mockMessage2)));
+			}});
+		eventMessages.put(GAME_PK2, new HashMap<>());
+		when(mockMessage.getChannel()).thenReturn(mockChannel);
+		when(mockMessage2.getChannel()).thenReturn(mockChannel2);
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, new HashMap<>(), eventMessages, new HashMap<>());
+
+		gameChannelsManager.removeChannel(mockGame, mockChannel);
+
+		Map<Integer, Map<Integer, List<IMessage>>> expectedEventMessages = new HashMap<>();
+		Map<Integer, List<IMessage>> expectedEventMessages1 = new HashMap<>();
+		expectedEventMessages1.put(EVENT_ID, Arrays.asList(mockMessage2));
+		expectedEventMessages.put(GAME_PK, expectedEventMessages1);
+		expectedEventMessages.put(GAME_PK2, new HashMap<>());
+		assertEquals(expectedEventMessages, gameChannelsManager.getEventMessages());
+	}
+
+	@Test
+	public void removeChannelsShouldRemoveEndOfGameMessages() {
+		LOGGER.info("removeChannelsShouldRemoveEndOfGameMessages");
+		Map<Integer, Map<Team, List<IMessage>>> endOfGameMessages = new HashMap<>();
+		Map<Team, List<IMessage>> teamEndOfGameMessages = new HashMap<>();
+		IMessage mockHomeEndOfGameMessage = mock(IMessage.class);
+		when(mockHomeEndOfGameMessage.getID()).thenReturn(CHANNEL_ID);
+		IMessage mockHomeEndOfGameMessage2 = mock(IMessage.class);
+		when(mockHomeEndOfGameMessage2.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
+		IMessage mockAwayEndOfGameMessage = mock(IMessage.class);
+		when(mockAwayEndOfGameMessage.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
+		IMessage mockAwayEndOfGameMessage2 = mock(IMessage.class);
+		when(mockAwayEndOfGameMessage2.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
+		teamEndOfGameMessages.put(HOME_TEAM,
+				new ArrayList<>(Arrays.asList(mockHomeEndOfGameMessage, mockHomeEndOfGameMessage2)));
+		teamEndOfGameMessages.put(AWAY_TEAM,
+				new ArrayList<>(Arrays.asList(mockAwayEndOfGameMessage, mockAwayEndOfGameMessage2)));
+		endOfGameMessages.put(GAME_PK, teamEndOfGameMessages);
+		when(endOfGameMessages.get(GAME_PK).get(HOME_TEAM).get(0).getChannel()).thenReturn(mockChannel);
+		when(endOfGameMessages.get(GAME_PK).get(HOME_TEAM).get(1).getChannel()).thenReturn(mockHomeChannel1);
+		when(endOfGameMessages.get(GAME_PK).get(AWAY_TEAM).get(0).getChannel()).thenReturn(mockChannel2);
+		when(endOfGameMessages.get(GAME_PK).get(AWAY_TEAM).get(1).getChannel()).thenReturn(mockAwayChannel1);
+		endOfGameMessages.put(GAME_PK2, new HashMap<>());
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, new HashMap<>(), new HashMap<>(), endOfGameMessages);
+
+		gameChannelsManager.removeChannel(mockGame, mockChannel);
+
+		Map<Team, List<IMessage>> expectedTeamEndOfGameMessages = new HashMap<>();
+		expectedTeamEndOfGameMessages.put(HOME_TEAM, Arrays.asList(mockHomeEndOfGameMessage2));
+		expectedTeamEndOfGameMessages.put(AWAY_TEAM, Arrays.asList(mock(IMessage.class), mock(IMessage.class)));
+		Map<Integer, Map<Team, List<IMessage>>> expectedEndOfGameMessages = new HashMap<>();
+		expectedEndOfGameMessages.put(GAME_PK, teamEndOfGameMessages);
+		expectedEndOfGameMessages.put(GAME_PK2, new HashMap<>());
+		assertEquals(expectedEndOfGameMessages, gameChannelsManager.getEndOfGameMessages());
+	}
+
+	@Test
+	public void removeChannelShouldInvokeDiscordManager() {
+		LOGGER.info("removeChannelShouldInvokeDiscordManager");
+		gameChannelsManager.removeChannel(mockGame, mockChannel);
+
+		verify(mockDiscordManager).deleteChannel(mockChannel);
 	}
 }

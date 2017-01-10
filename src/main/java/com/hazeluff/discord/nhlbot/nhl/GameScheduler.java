@@ -22,13 +22,10 @@ import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
+import sx.blah.discord.handle.obj.IGuild;
+
 /**
- * Class must be finished initalizing (Contructor) before other methods can be
- * used. Methods will throw {@link NHLGameSchedulerException} if not fully
- * initialized.
- * 
- * @author hazeluff
- *
+ * This class is used to start GameTrackers for games and to maintain the channels in discord for those games.
  */
 public class GameScheduler extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
@@ -40,8 +37,8 @@ public class GameScheduler extends Thread {
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
 	private List<Game> games;
-	private List<GameTracker> gameTrackers = new ArrayList<>(); // TODO Change to HashMap<Game, GameTracker>
-	private Map<Team, List<Game>> teamLatestGames = new HashMap<>();
+	private List<GameTracker> gameTrackers = new ArrayList<>(); // TODO Change to HashMap<Integer(GamePk), GameTracker>
+	private Map<Team, List<Game>> teamActiveGames = new HashMap<>();
 
 	private boolean stop = false;
 
@@ -59,7 +56,7 @@ public class GameScheduler extends Thread {
 		this.nhlBot = nhlBot;
 		this.games = games;
 		this.gameTrackers = gameTrackers;
-		this.teamLatestGames = teamLatestGames;
+		this.teamActiveGames = teamLatestGames;
 	}
 
 	public GameScheduler(NHLBot nhlBot) {
@@ -78,29 +75,80 @@ public class GameScheduler extends Thread {
 		initTeamLatestGamesLists();
 		createChannels();
 		createTrackers();
-		nhlBot.getGameChannelsManager().deleteOldChannels();
+		deleteInactiveChannels();
 
 		// Maintain them
 		while (!isStop()) {
 			// Remove all finished games
 			removeFinishedTrackers();
 
-			// Remove the old game in the list of latest games
-			removeOldGames();
+			// Remove the inactive games from the list of latest games
+			removeInactiveGames();
 
 			LOGGER.info("Checking for finished games after [" + UPDATE_RATE + "]");
 			Utils.sleep(UPDATE_RATE);
 		}
 	}
 
+	/**
+	 * Creates channels for all active games.
+	 */
 	void createChannels() {
 		LOGGER.info("Creating channels for latest games.");
 		for (Team team : Team.values()) {
-			for (Game game : teamLatestGames.get(team)) {
+			for (Game game : teamActiveGames.get(team)) {
 				nhlBot.getGameChannelsManager().createChannels(game, team);
 			}
 		}
 	}
+
+	/**
+	 * Remove all inactive channels for all guilds subscribed. Channels are inactive if they are not in the list of
+	 * latest games for the team subscribed to. Only channels written in the format that represents a game channel will
+	 * be removed.
+	 */
+	public void deleteInactiveChannels() {
+		LOGGER.info("Cleaning up old channels.");
+		for (Team team : Team.values()) {
+			List<Game> inactiveGames = getInactiveGames(team);
+			nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
+				guild.getChannels().forEach(channel -> {
+					inactiveGames.forEach(game -> {
+						if(channel.getName().equalsIgnoreCase(game.getChannelName())) {
+							nhlBot.getGameChannelsManager().removeChannel(game, channel);
+						}
+					});
+				});
+			});
+		}
+	}
+
+	/**
+	 * Initializes the channels of guild in Discord. Removes all channels that have names in the format of a game
+	 * channel and creates channels for the latest games of the current team the guild is subscribed to.
+	 * 
+	 * @param guild
+	 *            guild to initialize channels for
+	 */
+	public void initChannels(IGuild guild) {
+		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
+		Team team = nhlBot.getGuildPreferencesManager().getTeam(guild.getID());
+		
+		// Remove all game channels
+		games.forEach(game -> {
+			guild.getChannels().forEach(channel -> {
+				if (game.getChannelName().equalsIgnoreCase(channel.getName())) {
+					nhlBot.getGameChannelsManager().removeChannel(game, channel);
+				}
+			});
+		});
+
+		// Create game channels of latest game for current subscribed team
+		for (Game game : teamActiveGames.get(team)) {
+			nhlBot.getGameChannelsManager().createChannel(game, guild);
+		}
+	}
+
 
 	/**
 	 * Gets game information from NHL API and initializes creates Game objects for them.
@@ -108,7 +156,7 @@ public class GameScheduler extends Thread {
 	public void initGames() {
 		LOGGER.info("Initializing");
 		for (Team team : Team.values()) {
-			teamLatestGames.put(team, new ArrayList<Game>());
+			teamActiveGames.put(team, new ArrayList<Game>());
 		}
 
 		// Retrieve schedule/game information from NHL API
@@ -159,7 +207,7 @@ public class GameScheduler extends Thread {
 	 */
 	void initTeamLatestGamesLists() {
 		LOGGER.info("Initializing games for teams.");
-		for (Entry<Team, List<Game>> entry : teamLatestGames.entrySet()) {
+		for (Entry<Team, List<Game>> entry : teamActiveGames.entrySet()) {
 			Team team = entry.getKey();
 			List<Game> list = entry.getValue();
 			list.add(getLastGame(team));
@@ -180,7 +228,7 @@ public class GameScheduler extends Thread {
 	 */
 	void createTrackers() {
 		LOGGER.info("Creating trackers.");
-		for (List<Game> latestGames : teamLatestGames.values()) {
+		for (List<Game> latestGames : teamActiveGames.values()) {
 			for (Game game : latestGames) {
 				createGameTracker(game);
 			}
@@ -201,7 +249,7 @@ public class GameScheduler extends Thread {
 				Game finishedGame = gameTracker.getGame();
 				LOGGER.info("Game is finished: " + finishedGame);
 				for (Team team : finishedGame.getTeams()) {
-					List<Game> latestGames = teamLatestGames.get(team);
+					List<Game> latestGames = teamActiveGames.get(team);
 					// Add the next game to the list of latest games
 					Game nextGame = getNextGame(team);
 					latestGames.add(nextGame);
@@ -222,11 +270,11 @@ public class GameScheduler extends Thread {
 	}
 
 	/**
-	 * Removes the out of date games from a team's "latest games". Also removes their respective channels in Discord.
+	 * Removes the inactive games from a team's "latest games". Also removes their respective channels in Discord.
 	 */
-	void removeOldGames() {
+	void removeInactiveGames() {
 		LOGGER.info("Finding out-of-date games to remove...");
-		for (Entry<Team, List<Game>> entry : teamLatestGames.entrySet()) {
+		for (Entry<Team, List<Game>> entry : teamActiveGames.entrySet()) {
 			Team team = entry.getKey();
 			List<Game> latestGames = entry.getValue();
 			while (latestGames.size() > 2) {
@@ -374,13 +422,27 @@ public class GameScheduler extends Thread {
 		}
 		return newGameTracker;
 	}
+	
+	/**
+	 * Gets a list games for a given team. An inactive game is one that is not in the teamLatestGames map/list.
+	 * 
+	 * @param team
+	 *            team to get inactive games of
+	 * @return list of inactive games
+	 */
+	List<Game> getInactiveGames(Team team) {
+		return games.stream()
+		.filter(game -> game.containsTeam(team))
+		.filter(game -> !teamActiveGames.get(team).contains(game))
+		.collect(Collectors.toList());
+	}
 
 	public List<Game> getGames() {
 		return new ArrayList<>(games);
 	}
 
-	public List<Game> getLatestGames(Team team) {
-		return new ArrayList<>(teamLatestGames.get(team));
+	public List<Game> getActiveGames(Team team) {
+		return new ArrayList<>(teamActiveGames.get(team));
 	}
 
 	List<GameTracker> getGameTrackers() {

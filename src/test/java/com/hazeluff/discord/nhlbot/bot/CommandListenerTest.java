@@ -37,6 +37,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
+import com.hazeluff.discord.nhlbot.bot.BotPhrases;
+import com.hazeluff.discord.nhlbot.bot.CommandListener;
+import com.hazeluff.discord.nhlbot.bot.DiscordManager;
+import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
@@ -262,6 +266,8 @@ public class CommandListenerTest {
 		assertTrue(captorResponse.getValue().contains(Config.GIT_URL));
 		assertTrue(captorResponse.getValue().contains(Config.HAZELUFF_EMAIL));
 		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(mockGuildPreferencesManager, never()).subscribe(GUILD_ID, TEAM);
+		verify(mockGameScheduler, never()).initChannels(mockGuild);
 		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
@@ -282,6 +288,8 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertTrue(result);
+		verify(mockGuildPreferencesManager).subscribe(GUILD_ID, TEAM);
+		verify(mockGameScheduler).initChannels(mockGuild);
 		verify(mockDiscordManager).sendMessage(mockChannel,
 				"You are now subscribed to games of the **" + TEAM.getFullName() + "**!");
 		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
@@ -308,6 +316,8 @@ public class CommandListenerTest {
 		verify(mockDiscordManager).sendMessage(mockChannel,
 				"[asdf] is not a valid team code. Use `@NHLBot subscribe help` to get a full list of team");
 		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(mockGuildPreferencesManager, never()).subscribe(GUILD_ID, TEAM);
+		verify(mockGameScheduler, never()).initChannels(mockGuild);
 		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
@@ -335,6 +345,8 @@ public class CommandListenerTest {
 			assertTrue(response.contains(team.getCode() + " - " + team.getFullName()));
 		}
 		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(mockGuildPreferencesManager, never()).subscribe(GUILD_ID, TEAM);
+		verify(mockGameScheduler, never()).initChannels(mockGuild);
 		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
@@ -358,6 +370,8 @@ public class CommandListenerTest {
 		verify(mockDiscordManager).sendMessage(mockChannel,
 				"You must specify a parameter for what team you want to subscribe to. `@NHLBot subscribe [team]`");
 		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(mockGuildPreferencesManager, never()).subscribe(GUILD_ID, TEAM);
+		verify(mockGameScheduler, never()).initChannels(mockGuild);
 		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
@@ -380,6 +394,8 @@ public class CommandListenerTest {
 		verify(mockDiscordManager).sendMessage(mockChannel,
 				"You must be an admin to subscribe the guild to a team.");
 		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(mockGuildPreferencesManager, never()).subscribe(GUILD_ID, TEAM);
+		verify(mockGameScheduler, never()).initChannels(mockGuild);
 		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
 	}
 
