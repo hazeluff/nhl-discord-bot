@@ -6,4 +6,4 @@ Ask questions or have a look at the bot that is added to the server.
 
 ## Add bot:
 
-###[Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=93200)
+### [Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=93200)
