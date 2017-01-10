@@ -21,7 +21,6 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
@@ -37,10 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
-import com.hazeluff.discord.nhlbot.bot.BotPhrases;
-import com.hazeluff.discord.nhlbot.bot.CommandListener;
-import com.hazeluff.discord.nhlbot.bot.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
@@ -65,6 +60,7 @@ public class CommandListenerTest {
 	private static final String BOT_MENTION_ID = "<@" + BOT_ID + ">";
 	private static final String BOT_NICKNAME_MENTION_ID = "<@!" + BOT_ID + ">";
 	private static final String AUTHOR_USER_ID = RandomStringUtils.randomNumeric(10);
+	private static final String OWNER_USER_ID = RandomStringUtils.randomNumeric(10);
 	private static final String MESSAGE_CONTENT = "Message Content";
 	private static final String GAME_DETAILS = "Details";
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
@@ -89,7 +85,7 @@ public class CommandListenerTest {
 	@Mock
 	private IMessage mockMessage;
 	@Mock
-	private IUser mockAuthorUser;
+	private IUser mockAuthorUser, mockOwnerUser;
 	@Mock
 	private IChannel mockChannel;
 	@Mock
@@ -114,14 +110,16 @@ public class CommandListenerTest {
 		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
 		when(mockChannel.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
-		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
-		when(mockAuthorUser.getID()).thenReturn(AUTHOR_USER_ID);
 		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
 		when(mockNHLBot.getId()).thenReturn(BOT_ID);
 		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
 		when(mockNHLBot.getNicknameMentionId()).thenReturn(BOT_NICKNAME_MENTION_ID);
 		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
 		when(mockGuild.getID()).thenReturn(GUILD_ID);
+		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
+		when(mockAuthorUser.getID()).thenReturn(AUTHOR_USER_ID);
+		when(mockGuild.getOwner()).thenReturn(mockOwnerUser);
+		when(mockOwnerUser.getID()).thenReturn(OWNER_USER_ID);
 		commandListener = new CommandListener(mockNHLBot);
 		spyCommandListener = spy(commandListener);
 	}
@@ -277,13 +275,8 @@ public class CommandListenerTest {
 		doReturn(new String[] { BOT_MENTION_ID, "subscribe", TEAM.getCode() }).when(spyCommandListener)
 				.getBotCommand(any(IMessage.class));
 		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
-		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);		
-		when(mockAuthorUser.getRolesForGuild(mockGuild))
-				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
+		doReturn(true).when(spyCommandListener).hasPermission(mockMessage);
 
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
@@ -303,12 +296,7 @@ public class CommandListenerTest {
 				.getBotCommand(any(IMessage.class));
 		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
 		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
-		when(mockAuthorUser.getRolesForGuild(mockGuild))
-				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+		doReturn(true).when(spyCommandListener).hasPermission(mockMessage);
 
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
@@ -328,12 +316,7 @@ public class CommandListenerTest {
 				.getBotCommand(any(IMessage.class));
 		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
 		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
-		when(mockAuthorUser.getRolesForGuild(mockGuild))
-				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+		doReturn(true).when(spyCommandListener).hasPermission(mockMessage);
 
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
@@ -357,12 +340,7 @@ public class CommandListenerTest {
 				.getBotCommand(any(IMessage.class));
 		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
 		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
-		when(mockAuthorUser.getRolesForGuild(mockGuild))
-				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+		doReturn(true).when(spyCommandListener).hasPermission(mockMessage);
 
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
@@ -382,12 +360,8 @@ public class CommandListenerTest {
 				.getBotCommand(any(IMessage.class));
 		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
 		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(GAME_DETAILS);
-		when(mockAuthorUser.getRolesForGuild(mockGuild))
-				.thenReturn(Arrays.asList(mock(IRole.class)));
-		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
-				.thenReturn(EnumSet.allOf(Permissions.class).stream()
-						.filter(permission -> permission != Permissions.ADMINISTRATOR)
-						.collect(Collectors.toCollection(() -> EnumSet.noneOf(Permissions.class))));
+		doReturn(false).when(spyCommandListener).hasPermission(mockMessage);
+
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertTrue(result);
@@ -597,6 +571,48 @@ public class CommandListenerTest {
 		assertFalse(result);
 		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
 		verify(spyCommandListener, never()).sendSubscribeFirstMessage(any(IChannel.class));
+	}
+
+	// hasPermission
+	@Test
+	public void hasPermissionShouldReturnTrueWhenUserHasAdminPermission() {
+		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
+		when(mockAuthorUser.getID()).thenReturn(AUTHOR_USER_ID);
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class), mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(1).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+
+		boolean result = commandListener.hasPermission(mockMessage);
+
+		assertTrue(result);
+	}
+
+	@Test
+	public void hasPermissionShouldReturnTrueWhenUserIsOwnerOfGuild() {
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+		when(mockOwnerUser.getID()).thenReturn(AUTHOR_USER_ID);
+
+		boolean result = commandListener.hasPermission(mockMessage);
+
+		assertTrue(result);
+	}
+
+	@Test
+	public void hasPermissionShouldReturnFalseWhenUserDoesNotHaveAdminPermissionAndIsNotOwnerOfGuild() {
+		when(mockAuthorUser.getRolesForGuild(mockGuild))
+				.thenReturn(Arrays.asList(mock(IRole.class)));
+		when(mockAuthorUser.getRolesForGuild(mockGuild).get(0).getPermissions())
+				.thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+
+		boolean result = commandListener.hasPermission(mockMessage);
+
+		assertFalse(result);
 	}
 
 	// sendSubscribeFirstMessage

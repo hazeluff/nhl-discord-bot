@@ -114,9 +114,7 @@ public class CommandListener {
 
 			if (arguments[1].equalsIgnoreCase("subscribe")) {
 				// subscribe
-				if (message.getAuthor().getRolesForGuild(message.getGuild()).stream()
-						.anyMatch(role -> role.getPermissions().stream()
-								.anyMatch(permission -> permission == Permissions.ADMINISTRATOR))) {
+				if (hasPermission(message)) {
 					if (arguments.length < 3) {
 						nhlBot.getDiscordManager().sendMessage(channel,
 								"You must specify a parameter for what team you want to subscribe to. "
@@ -211,6 +209,14 @@ public class CommandListener {
 		return false;
 	}
 
+	boolean hasPermission(IMessage message) {
+		return message.getAuthor()
+		.getRolesForGuild(message.getGuild())
+		.stream()
+		.anyMatch(role -> role.getPermissions().stream()
+				.anyMatch(permission -> permission == Permissions.ADMINISTRATOR))
+		|| message.getGuild().getOwner().getID().equals(message.getAuthor().getID());
+	}
 
 	/**
 	 * Sends a message to tell users to subscribe the guild to the guild first.
