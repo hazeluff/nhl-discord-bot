@@ -3,6 +3,7 @@
 ## Discord/Demo
 
 [Join the Discord server](https://discord.gg/VVHe6d3)
+
 Ask questions or have a look at the bot that is added to the server.
 
 ## Add bot:
