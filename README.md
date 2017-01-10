@@ -1,5 +1,9 @@
 # discord-nhlbot
 
+## Demo
+
+https://discord.gg/XcfZWnP
+
 ## Add bot:
 
 Develop: https://discordapp.com/oauth2/authorize?client_id=257345572162371588&scope=bot&permissions=93200
