@@ -2,7 +2,7 @@
 
 ## Demo
 
-https://discord.gg/XcfZWnP
+https://discord.gg/VVHe6d3
 
 ## Add bot:
 
