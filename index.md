@@ -1,4 +1,4 @@
-## Discord/Demo
+## Discord Server / Demo
 
 ### [Join the Discord server](https://discord.gg/VVHe6d3)
 
