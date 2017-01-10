@@ -28,6 +28,7 @@ Production: https://discordapp.com/oauth2/authorize?client_id=257345858515894272
 ## Commands
 `@NHLBot [command]`
 - `fuckmessier` Fuck Messier.
+- `subscribe [team]` Subscribes your guild to the team specified by [team]. [team] is the 3 letter code representing the team you want to subscribe to. This must be done by a user with admin priveledges on the server/guild. 
 - `nextgame` Replies with information about the next game.
 - `about` Displays information about bot/author.
 - `help` Display list of commands.
