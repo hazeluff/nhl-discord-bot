@@ -94,18 +94,23 @@ public class GameChannelsManager {
 	public void createChannel(Game game, IGuild guild) {
 		String channelName = game.getChannelName();
 		Predicate<IChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
-		if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
-			IChannel channel = nhlBot.getDiscordManager().createChannel(guild, channelName);
-			String guildId = guild.getID();
-			nhlBot.getDiscordManager().changeTopic(channel,
-					nhlBot.getGuildPreferencesManager().getTeam(guildId).getCheer());
-			ZoneId timeZone = nhlBot.getGuildPreferencesManager().getTeam(guildId).getTimeZone();
-			IMessage message = nhlBot.getDiscordManager().sendMessage(channel, game.getDetailsMessage(timeZone));
-			nhlBot.getDiscordManager().pinMessage(channel, message);
-			gameChannels.get(game.getGamePk()).add(channel);
+		if (gameChannels.containsKey(game.getGamePk())) {
+			if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
+				IChannel channel = nhlBot.getDiscordManager().createChannel(guild, channelName);
+				String guildId = guild.getID();
+				nhlBot.getDiscordManager().changeTopic(channel,
+						nhlBot.getGuildPreferencesManager().getTeam(guildId).getCheer());
+				ZoneId timeZone = nhlBot.getGuildPreferencesManager().getTeam(guildId).getTimeZone();
+				IMessage message = nhlBot.getDiscordManager().sendMessage(channel, game.getDetailsMessage(timeZone));
+				nhlBot.getDiscordManager().pinMessage(channel, message);
+				gameChannels.get(game.getGamePk()).add(channel);
+			} else {
+				LOGGER.warn("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
+				gameChannels.get(game.getGamePk())
+						.add(guild.getChannels().stream().filter(channelMatcher).findAny().get());
+			}
 		} else {
-			LOGGER.warn("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
-			gameChannels.get(game.getGamePk()).add(guild.getChannels().stream().filter(channelMatcher).findAny().get());
+			LOGGER.warn("No channels exist for the game.");
 		}
 	}
 

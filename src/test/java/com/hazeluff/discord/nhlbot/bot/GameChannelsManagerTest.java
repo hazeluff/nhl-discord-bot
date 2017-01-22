@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
@@ -227,6 +228,17 @@ public class GameChannelsManagerTest {
 		verify(mockDiscordManager, never()).pinMessage(any(IChannel.class), any(IMessage.class));
 		gameChannels = gameChannelsManager.getGameChannels();
 		assertTrue(gameChannels.get(GAME_PK).contains(mockHomeChannel1));
+	}
+	
+	@Test
+	public void createChannelShouldDoNothingIfKeyDoesNotExist() {
+		LOGGER.info("createChannelShouldDoNothingIfKeyDoesNotExist");
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, new HashMap<>(), null, null);
+
+		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+		
+		verifyNoMoreInteractions(mockDiscordManager);
+		assertFalse(gameChannelsManager.getGameChannels().containsKey(GAME_PK));
 	}
 
 	@Test
