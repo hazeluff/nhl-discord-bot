@@ -37,11 +37,11 @@ public class DiscordManager {
 	 * @return IMessage of sent message
 	 */
 	public IMessage sendMessage(IChannel channel, String message) {
-		LOGGER.info("Sending message [" + channel.getName() + "][" + message + "]");
+		LOGGER.debug("Sending message [" + channel.getName() + "][" + message + "]");
 		try {
 			return new MessageBuilder(client).withChannel(channel).withContent(message).send();
 		} catch (RateLimitException | DiscordException | MissingPermissionsException e) {
-			LOGGER.error("Could not send message [" + message + "] to [" + channel.getName() + "]", e);
+			LOGGER.warn("Could not send message [" + message + "] to [" + channel + "]", e);
 			return null;
 		}
 	}
@@ -76,7 +76,7 @@ public class DiscordManager {
 	 * @return
 	 */
 	public IMessage updateMessage(IMessage message, String newMessage) {
-		LOGGER.info("Updating message [" + message.getContent() + "][" + newMessage + "]");
+		LOGGER.debug("Updating message [" + message.getContent() + "][" + newMessage + "]");
 		try {
 			if (!message.getContent().equals(newMessage)) {
 				return message.edit(newMessage);
@@ -84,7 +84,7 @@ public class DiscordManager {
 				LOGGER.warn("No change to the message [" + message.getContent() + "]");
 			}
 		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
-			LOGGER.error("Could not edit message [" + message.getContent() + "] to [" + newMessage + "]", e);
+			LOGGER.warn("Could not edit message [" + message + "] to [" + newMessage + "]", e);
 		}
 		return message;
 	}
@@ -116,7 +116,7 @@ public class DiscordManager {
 		try {
 			message.delete();
 		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
-			LOGGER.error("Could not delete message [" + message.getContent() + "]", e);
+			LOGGER.warn("Could not delete message [" + message + "]", e);
 		}
 	}
 
@@ -138,11 +138,11 @@ public class DiscordManager {
 	 * @return List<IMessage> of messages in the channel
 	 */
 	public List<IMessage> getPinnedMessages(IChannel channel) {
-		LOGGER.info("Getting pinned messages in channel [" + channel.getName() + "]");
+		LOGGER.debug("Getting pinned messages in channel [" + channel + "]");
 		try {
 			return channel.getPinnedMessages();
 		} catch (RateLimitException | DiscordException e) {
-			LOGGER.error("Could not get pinned messages for channel [" + channel.getName() + "]", e);
+			LOGGER.warn("Could not get pinned messages for channel [" + channel + "]", e);
 			return new ArrayList<>();
 		}
 
@@ -155,11 +155,11 @@ public class DiscordManager {
 	 *            channel to delete
 	 */
 	public void deleteChannel(IChannel channel) {
-		LOGGER.info("Deleting channel [" + channel.getName() + "]");
+		LOGGER.debug("Deleting channel [" + channel.getName() + "]");
 		try {
 			channel.delete();
 		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
-			LOGGER.error("Could not delete channel [" + channel.getName() + "]", e);
+			LOGGER.warn("Could not delete channel [" + channel + "]", e);
 		}
 	}
 
@@ -173,11 +173,11 @@ public class DiscordManager {
 	 * @return IChannel that was created
 	 */
 	public IChannel createChannel(IGuild guild, String channelName) {
-		LOGGER.info("Creating channel [" + channelName + "] in [" + guild.getName() + "]");
+		LOGGER.debug("Creating channel [" + channelName + "] in [" + guild.getName() + "]");
 		try {
 			return guild.createChannel(channelName);
 		} catch (DiscordException | MissingPermissionsException | RateLimitException e) {
-			LOGGER.error("Could not create channel [" + channelName + "] in [" + guild.getName() + "]", e);
+			LOGGER.warn("Could not create channel [" + channelName + "] in [" + guild.getName() + "]", e);
 			return null;
 		}
 	}
@@ -191,11 +191,11 @@ public class DiscordManager {
 	 *            topic to change to
 	 */
 	public void changeTopic(IChannel channel, String topic) {
-		LOGGER.info("Changing topic in [" + channel.getName() + "] to [" + topic + "]");
+		LOGGER.debug("Changing topic in [" + channel.getName() + "] to [" + topic + "]");
 		try {
 			channel.changeTopic(topic);
 		} catch (RateLimitException | DiscordException | MissingPermissionsException e) {
-			LOGGER.error("Could not change topic of channel [" + channel.getName() + "] to [" + topic + "]", e);
+			LOGGER.warn("Could not change topic of channel [" + channel + "] to [" + topic + "]", e);
 		}
 	}
 
@@ -208,11 +208,11 @@ public class DiscordManager {
 	 *            existing message in Discord
 	 */
 	public void pinMessage(IChannel channel, IMessage message) {
-		LOGGER.info("Pinning message [" + message.getContent() + "] to [" + channel.getName() + "]");
+		LOGGER.debug("Pinning message [" + message.getContent() + "] to [" + channel.getName() + "]");
 		try {
 			channel.pin(message);
 		} catch (RateLimitException | DiscordException | MissingPermissionsException e) {
-			LOGGER.error("Could not pin message  [" + message.getContent() + "] to channel [" + channel.getName() + "]",
+			LOGGER.warn("Could not pin message  [" + message + "] to channel [" + channel + "]",
 					e);
 		}
 	}

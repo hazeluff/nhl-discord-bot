@@ -1,25 +1,29 @@
 package com.hazeluff.discord.nhlbot.bot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.Config;
-import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameStatus;
-import com.hazeluff.discord.nhlbot.nhl.Team;
+import com.hazeluff.discord.nhlbot.bot.command.AboutCommand;
+import com.hazeluff.discord.nhlbot.bot.command.Command;
+import com.hazeluff.discord.nhlbot.bot.command.FuckMessierCommand;
+import com.hazeluff.discord.nhlbot.bot.command.GoalsCommand;
+import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
+import com.hazeluff.discord.nhlbot.bot.command.NextGameCommand;
+import com.hazeluff.discord.nhlbot.bot.command.ScoreCommand;
+import com.hazeluff.discord.nhlbot.bot.command.SubscribeCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.Permissions;
 
 /**
  * Listens for MessageReceivedEvents and will process the messages for commands.
@@ -32,17 +36,31 @@ public class CommandListener {
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
+	private List<Command> commands;
 
 	private final NHLBot nhlBot;
 
 	public CommandListener(NHLBot nhlBot) {
 		this.nhlBot = nhlBot;
+		commands = new ArrayList<>();
+		commands.add(new FuckMessierCommand(nhlBot));
+		commands.add(new HelpCommand(nhlBot));
+		commands.add(new AboutCommand(nhlBot));
+		commands.add(new SubscribeCommand(nhlBot));
+		commands.add(new NextGameCommand(nhlBot));
+		commands.add(new ScoreCommand(nhlBot));
+		commands.add(new GoalsCommand(nhlBot));
+	}
+
+	CommandListener(NHLBot nhlBot, List<Command> commands) {
+		this.nhlBot = nhlBot;
+		this.commands = commands;
 	}
 
 	@EventSubscriber
 	public void onReceivedMessageEvent(MessageReceivedEvent event) {
 		IMessage message = event.getMessage();
-		LOGGER.info(String.format("[%s][%s][%s][%s]",
+		LOGGER.trace(String.format("[%s][%s][%s][%s]",
 				message.getChannel().getGuild().getName(),
 				message.getChannel().getName(),
 				message.getAuthor().getName(),
@@ -79,157 +97,22 @@ public class CommandListener {
 	 *         false, otherwise
 	 */
 	boolean replyToCommand(IMessage message) {
-		IChannel channel = message.getChannel();
 		String[] arguments = getBotCommand(message);
 		if (arguments.length > 1) {
-			if (arguments[1].equalsIgnoreCase("fuckmessier")) {
-				// fuckmessier
-				nhlBot.getDiscordManager().sendMessage(channel, "FUCK MESSIER");
+			LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
+					message.getChannel().getName(), message.getAuthor().getName(),
+					"Command:" + Arrays.toString(arguments)));
+			Optional<Command> matchedCommand = commands
+					.stream()
+					.filter(command -> command.isAccept(arguments))
+					.findFirst();
+			if (matchedCommand.isPresent()) {
+				matchedCommand.get().replyTo(message, arguments);
 				return true;
 			}
-
-			if (arguments[1].equalsIgnoreCase("help")) {
-				// help
-				nhlBot.getDiscordManager().sendMessage(channel,
-						"Here are a list of commands:\n\n" + "`subscribe [team]` - Subscribes you to games of a team. "
-								+ "[team] is the three letter code of your team. **(+)**\n"
-								+ "`nextgame` - Displays information of the next game.\n"
-								+ "`score` - Displays the score of the game. "
-								+ "You must be in a 'Game Day Channel' to use this command.\n"
-								+ "`goals` - Displays the goals of the game. "
-								+ "You must be in a 'Game Day Channel' to use this command.\n"
-								+ "`about` - Displays information about me.\n\n"
-								+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
-								+ "`@NHLBot [command] help`");
-				return true;
-			}
-
-			if (arguments[1].equalsIgnoreCase("about")) {
-				// about
-				nhlBot.getDiscordManager().sendMessage(channel,
-						String.format("Version: %s\nWritten by %s\nCheckout my GitHub: %s\nContact me: %s",
-								Config.VERSION, Config.HAZELUFF_MENTION, Config.GIT_URL, Config.HAZELUFF_EMAIL));
-				return true;
-			}
-
-			if (arguments[1].equalsIgnoreCase("subscribe")) {
-				// subscribe
-				if (hasPermission(message)) {
-					if (arguments.length < 3) {
-						nhlBot.getDiscordManager().sendMessage(channel,
-								"You must specify a parameter for what team you want to subscribe to. "
-										+ "`@NHLBot subscribe [team]`");
-					} else if (arguments[2].equalsIgnoreCase("help")) {
-						StringBuilder response = new StringBuilder(
-								"Subscribed to any of the following teams by typing `@NHLBot subscribe [team]`, "
-								+ "where [team] is the one of the three letter codes for your team below: ")
-										.append("```");
-						for (Team team : Team.values()) {
-							response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
-						}
-						response.append("```");
-						nhlBot.getDiscordManager().sendMessage(channel, response.toString());
-					} else if (Team.isValid(arguments[2])) {
-						Team team = Team.parse(arguments[2]);
-						nhlBot.getGuildPreferencesManager().subscribe(message.getGuild().getID(), team);
-						nhlBot.getGameScheduler().initChannels(message.getGuild());
-						nhlBot.getDiscordManager().sendMessage(channel,
-								"You are now subscribed to games of the **" + team.getFullName() + "**!");
-					} else {
-						nhlBot.getDiscordManager().sendMessage(channel,
-								"[" + arguments[2] + "] is not a valid team code. "
-								+ "Use `@NHLBot subscribe help` to get a full list of team");
-					}
-
-				} else {
-					nhlBot.getDiscordManager().sendMessage(channel,
-							"You must be an admin to subscribe the guild to a team.");
-				}
-				return true;
-			}
-
-			if (arguments[1].equalsIgnoreCase("nextgame")) {
-				// nextgame
-				Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(message.getGuild().getID());
-				if (preferredTeam == null) {
-					sendSubscribeFirstMessage(channel);
-				} else {
-					Game nextGame = nhlBot.getGameScheduler().getNextGame(preferredTeam);
-					nhlBot.getDiscordManager().sendMessage(channel,
-							"The next game is:\n" + nextGame.getDetailsMessage(preferredTeam.getTimeZone()));
-				}
-				return true;
-			}
-
-			if (arguments[1].equalsIgnoreCase("score")) {
-				// score
-				Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(message.getGuild().getID());
-				if (preferredTeam == null) {
-					sendSubscribeFirstMessage(channel);
-				} else {
-					Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
-					if (game == null) {
-						nhlBot.getDiscordManager().sendMessage(channel,
-								String.format(
-										"Please run this command in a  Game Day Channel.\nLatest game channel: %s",
-										getLatestGameChannel(channel.getGuild(), preferredTeam)));
-					} else if (game.getStatus() == GameStatus.PREVIEW) {
-						nhlBot.getDiscordManager().sendMessage(channel, "The game hasn't started yet. **0** - **0**");
-					} else {
-						nhlBot.getDiscordManager().sendMessage(channel, game.getScoreMessage());
-					}
-				}
-				return true;
-			}
-
-			if (arguments[1].equalsIgnoreCase("goals")) {
-				// goals
-				Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(message.getGuild().getID());
-				if (preferredTeam == null) {
-					sendSubscribeFirstMessage(channel);
-				} else {
-					Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
-					if (game == null) {
-						nhlBot.getDiscordManager().sendMessage(channel,
-								String.format(
-										"Please run this command in a  Game Day Channel.\nLatest game channel: %s",
-										getLatestGameChannel(channel.getGuild(), preferredTeam)));
-					} else if (game.getStatus() == GameStatus.PREVIEW) {
-						nhlBot.getDiscordManager().sendMessage(channel, "The game hasn't started yet.");
-					} else {
-						nhlBot.getDiscordManager().sendMessage(channel,
-								String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
-					}
-				}
-				return true;
-			}
-
 		}
 
 		return false;
-	}
-
-	boolean hasPermission(IMessage message) {
-		return message.getAuthor()
-		.getRolesForGuild(message.getGuild())
-		.stream()
-		.anyMatch(role -> role.getPermissions().stream()
-				.anyMatch(permission -> permission == Permissions.ADMINISTRATOR))
-		|| message.getGuild().getOwner().getID().equals(message.getAuthor().getID());
-	}
-
-	/**
-	 * Sends a message to tell users to subscribe the guild to the guild first.
-	 * 
-	 * @param channel
-	 *            channel to send message to
-	 */
-	void sendSubscribeFirstMessage(IChannel channel) {
-		nhlBot.getDiscordManager().sendMessage(channel,
-				"Please have your admin first subscribe your guild "
-						+ "to a team by using the command `@NHLBot subscribe [team]`, "
-						+ "where [team] is the 3 letter code for your team.\n"
-						+ "To see a list of [team] codes use command `@NHLBot subscribe help`");
 	}
 
 	/**
@@ -242,6 +125,8 @@ public class CommandListener {
 	 */
 	boolean replyToMention(IMessage message) {
 		if (isBotMentioned(message)) {
+			LOGGER.info(String.format("Received Mention:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
+					message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
 			String strMessage = message.getContent();
 			
 			String response = null;
@@ -344,21 +229,5 @@ public class CommandListener {
 			}
 		}
 		return false;
-	}
-
-
-	String getLatestGameChannel(IGuild guild, Team team) {
-		Game game = nhlBot.getGameScheduler().getCurrentGame(team);
-		if (game == null) {
-			game = nhlBot.getGameScheduler().getLastGame(team);
-		}
-		String channelName = game.getChannelName().toLowerCase();
-		List<IChannel> channels = guild.getChannelsByName(channelName);
-		if (!channels.isEmpty()) {
-			channelName = "<#" + channels.get(0).getID() + ">";
-		} else {
-			channelName = "#" + channelName;
-		}
-		return channelName;
 	}
 }
