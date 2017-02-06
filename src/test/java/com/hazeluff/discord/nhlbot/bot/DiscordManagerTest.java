@@ -29,8 +29,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.DiscordManager;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -293,6 +291,17 @@ public class DiscordManagerTest {
 			throws RateLimitException, DiscordException {
 		LOGGER.info("getPinnedMessagesShouldReturnEmptyListWhenDiscordExceptionIsThrown");
 		doThrow(DiscordException.class).when(mockChannel).getPinnedMessages();
+
+		List<IMessage> result = discordManager.getPinnedMessages(mockChannel);
+
+		assertTrue(result.isEmpty());
+	}
+
+	@Test
+	public void getPinnedMessagesShouldReturnEmptyListWhenNullPointerExceptionIsThrown()
+			throws RateLimitException, DiscordException {
+		LOGGER.info("getPinnedMessagesShouldReturnEmptyListWhenNullPointerExceptionIsThrown");
+		doThrow(NullPointerException.class).when(mockChannel).getPinnedMessages();
 
 		List<IMessage> result = discordManager.getPinnedMessages(mockChannel);
 

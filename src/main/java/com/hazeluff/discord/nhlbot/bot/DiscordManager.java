@@ -141,7 +141,7 @@ public class DiscordManager {
 		LOGGER.debug("Getting pinned messages in channel [" + channel + "]");
 		try {
 			return channel.getPinnedMessages();
-		} catch (RateLimitException | DiscordException e) {
+		} catch (RateLimitException | DiscordException | NullPointerException e) {
 			LOGGER.warn("Could not get pinned messages for channel [" + channel + "]", e);
 			return new ArrayList<>();
 		}
