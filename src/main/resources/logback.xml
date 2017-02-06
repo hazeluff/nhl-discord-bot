@@ -32,7 +32,7 @@
       </encoder>
     </appender>    
     
-    <logger name="com.hazeluff.discord.nhlbot" level="debug" additivity="false">
+    <logger name="com.hazeluff.discord.nhlbot" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="File"/>
     </logger>
