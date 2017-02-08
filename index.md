@@ -15,7 +15,7 @@ Ask questions or have a look at the bot that is added to the server.
 - [x] Display messages for when goals are scored.
 - [x] Display summaries of games.
 - [x] Special messages for when canucks score.
-- [ ] Bot messages during gameplay to cheer on team.
+- [ ] Send messages during gameplay to cheer on team.
 
 ## Commands
 
