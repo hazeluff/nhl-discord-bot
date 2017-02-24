@@ -126,6 +126,18 @@ public class DiscordManagerTest {
 
 	@Test
 	@PrepareForTest(DiscordManager.class)
+	public void sendMessageShouldReturnNullWhenNullPointerExceptionIsThrown() throws Exception {
+		LOGGER.info("sendMessageShouldReturnNullWhenNullPointerExceptionIsThrown");
+		whenNew(MessageBuilder.class).withArguments(mockClient).thenReturn(mockMessageBuilder);
+		doThrow(NullPointerException.class).when(mockMessageBuilder).send();
+
+		IMessage result = discordManager.sendMessage(mockChannel, MESSAGE);
+
+		assertNull(result);
+	}
+
+	@Test
+	@PrepareForTest(DiscordManager.class)
 	public void sendMessagesShouldReturnListOfIMessage() {
 		LOGGER.info("sendMessagesShouldReturnListOfIMessage");
 		doReturn(mockMessage).when(spyDiscordManager).sendMessage(mockChannel, MESSAGE);
@@ -196,6 +208,15 @@ public class DiscordManagerTest {
 			throws MissingPermissionsException, RateLimitException, DiscordException {
 		LOGGER.info("updateMessageShouldDoNothingWhenIMessageEditThrowsDiscordException");
 		doThrow(DiscordException.class).when(mockMessage).edit(NEW_MESSAGE);
+
+		discordManager.updateMessage(mockMessage, NEW_MESSAGE);
+	}
+
+	@Test
+	public void updateMessageShouldDoNothingWhenIMessageEditThrowsNullPointerException()
+			throws MissingPermissionsException, RateLimitException, DiscordException {
+		LOGGER.info("updateMessageShouldDoNothingWhenIMessageEditThrowsNullPointerException");
+		doThrow(NullPointerException.class).when(mockMessage).edit(NEW_MESSAGE);
 
 		discordManager.updateMessage(mockMessage, NEW_MESSAGE);
 	}
@@ -389,6 +410,17 @@ public class DiscordManagerTest {
 	}
 
 	@Test
+	public void createChannelShouldReturnNullWhenNullPointerExceptionIsThrown()
+			throws DiscordException, MissingPermissionsException, RateLimitException {
+		LOGGER.info("createChannelShouldReturnNullWhenNullPointerExceptionIsThrown");
+		doThrow(NullPointerException.class).when(mockGuild).createChannel(CHANNEL_NAME);
+
+		IChannel result = discordManager.createChannel(mockGuild, CHANNEL_NAME);
+
+		assertNull(result);
+	}
+
+	@Test
 	public void changeTopicShouldInvokeIChannelChangeTopic()
 			throws RateLimitException, DiscordException, MissingPermissionsException {
 		LOGGER.info("changeTopicShouldInvokeIChannelChangeTopic");
@@ -456,6 +488,15 @@ public class DiscordManagerTest {
 			throws RateLimitException, DiscordException, MissingPermissionsException {
 		LOGGER.info("pinMessageShouldNotThrowExceptionWhenMissingPermissionsExceptionIsThrown");
 		doThrow(MissingPermissionsException.class).when(mockChannel).pin(mockMessage);
+
+		discordManager.pinMessage(mockChannel, mockMessage);
+	}
+
+	@Test
+	public void pinMessageShouldNotThrowExceptionWhenNullPointerExceptionIsThrown()
+			throws RateLimitException, DiscordException, MissingPermissionsException {
+		LOGGER.info("pinMessageShouldNotThrowExceptionWhenNullPointerExceptionIsThrown");
+		doThrow(NullPointerException.class).when(mockChannel).pin(mockMessage);
 
 		discordManager.pinMessage(mockChannel, mockMessage);
 	}

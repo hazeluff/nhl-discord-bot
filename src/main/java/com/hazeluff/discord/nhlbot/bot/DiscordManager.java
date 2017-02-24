@@ -40,8 +40,8 @@ public class DiscordManager {
 		LOGGER.debug("Sending message [" + channel.getName() + "][" + message + "]");
 		try {
 			return new MessageBuilder(client).withChannel(channel).withContent(message).send();
-		} catch (RateLimitException | DiscordException | MissingPermissionsException e) {
-			LOGGER.warn("Could not send message [" + message + "] to [" + channel + "]", e);
+		} catch (RateLimitException | DiscordException | MissingPermissionsException | NullPointerException e) {
+			LOGGER.error("Could not send message [" + message + "] to [" + channel + "]", e);
 			return null;
 		}
 	}
@@ -81,10 +81,10 @@ public class DiscordManager {
 			if (!message.getContent().equals(newMessage)) {
 				return message.edit(newMessage);
 			} else {
-				LOGGER.warn("No change to the message [" + message.getContent() + "]");
+				LOGGER.error("No change to the message [" + message.getContent() + "]");
 			}
-		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
-			LOGGER.warn("Could not edit message [" + message + "] to [" + newMessage + "]", e);
+		} catch (MissingPermissionsException | RateLimitException | DiscordException | NullPointerException e) {
+			LOGGER.error("Could not edit message [" + message + "] to [" + newMessage + "]", e);
 		}
 		return message;
 	}
@@ -115,8 +115,8 @@ public class DiscordManager {
 	public void deleteMessage(IMessage message) {
 		try {
 			message.delete();
-		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
-			LOGGER.warn("Could not delete message [" + message + "]", e);
+		} catch (MissingPermissionsException | RateLimitException | DiscordException | NullPointerException e) {
+			LOGGER.error("Could not delete message [" + message + "]", e);
 		}
 	}
 
@@ -142,7 +142,7 @@ public class DiscordManager {
 		try {
 			return channel.getPinnedMessages();
 		} catch (RateLimitException | DiscordException | NullPointerException e) {
-			LOGGER.warn("Could not get pinned messages for channel [" + channel + "]", e);
+			LOGGER.error("Could not get pinned messages for channel [" + channel + "]", e);
 			return new ArrayList<>();
 		}
 
@@ -158,8 +158,8 @@ public class DiscordManager {
 		LOGGER.debug("Deleting channel [" + channel.getName() + "]");
 		try {
 			channel.delete();
-		} catch (MissingPermissionsException | RateLimitException | DiscordException e) {
-			LOGGER.warn("Could not delete channel [" + channel + "]", e);
+		} catch (MissingPermissionsException | RateLimitException | DiscordException | NullPointerException e) {
+			LOGGER.error("Could not delete channel [" + channel + "]", e);
 		}
 	}
 
@@ -176,8 +176,8 @@ public class DiscordManager {
 		LOGGER.debug("Creating channel [" + channelName + "] in [" + guild.getName() + "]");
 		try {
 			return guild.createChannel(channelName);
-		} catch (DiscordException | MissingPermissionsException | RateLimitException e) {
-			LOGGER.warn("Could not create channel [" + channelName + "] in [" + guild.getName() + "]", e);
+		} catch (DiscordException | MissingPermissionsException | RateLimitException | NullPointerException e) {
+			LOGGER.error("Could not create channel [" + channelName + "] in [" + guild.getName() + "]", e);
 			return null;
 		}
 	}
@@ -194,8 +194,8 @@ public class DiscordManager {
 		LOGGER.debug("Changing topic in [" + channel.getName() + "] to [" + topic + "]");
 		try {
 			channel.changeTopic(topic);
-		} catch (RateLimitException | DiscordException | MissingPermissionsException e) {
-			LOGGER.warn("Could not change topic of channel [" + channel + "] to [" + topic + "]", e);
+		} catch (RateLimitException | DiscordException | MissingPermissionsException | NullPointerException e) {
+			LOGGER.error("Could not change topic of channel [" + channel + "] to [" + topic + "]", e);
 		}
 	}
 
@@ -211,8 +211,8 @@ public class DiscordManager {
 		LOGGER.debug("Pinning message [" + message.getContent() + "] to [" + channel.getName() + "]");
 		try {
 			channel.pin(message);
-		} catch (RateLimitException | DiscordException | MissingPermissionsException e) {
-			LOGGER.warn("Could not pin message  [" + message + "] to channel [" + channel + "]",
+		} catch (RateLimitException | DiscordException | MissingPermissionsException | NullPointerException e) {
+			LOGGER.error("Could not pin message  [" + message + "] to channel [" + channel + "]",
 					e);
 		}
 	}
