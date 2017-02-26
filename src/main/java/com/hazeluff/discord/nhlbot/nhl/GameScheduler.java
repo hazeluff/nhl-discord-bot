@@ -95,9 +95,9 @@ public class GameScheduler extends Thread {
 	 */
 	void createChannels() {
 		LOGGER.info("Creating channels for latest games.");
-		for (Team team : Team.values()) {
-			for (Game game : teamActiveGames.get(team)) {
-				nhlBot.getGameChannelsManager().createChannels(game, team);
+		for (List<Game> games : teamActiveGames.values()) {
+			for (Game game : games) {
+				nhlBot.getGameChannelsManager().createChannels(game);
 			}
 		}
 	}
@@ -241,7 +241,7 @@ public class GameScheduler extends Thread {
 	 */
 	void removeFinishedTrackers() {
 		LOGGER.info("Removing GameTrackers of ended games...");
-		Map<Team, Game> newGames = new HashMap<>();
+		Set<Game> newGames = new HashSet<>();
 		gameTrackers.removeIf(gameTracker -> {
 			if (gameTracker.isFinished()) {
 				// If game is finished, update latest games for each team involved in the game of the
@@ -253,7 +253,7 @@ public class GameScheduler extends Thread {
 					// Add the next game to the list of latest games
 					Game nextGame = getNextGame(team);
 					latestGames.add(nextGame);
-					newGames.put(team, nextGame);
+					newGames.add(nextGame);
 				}
 
 				return true;
@@ -263,9 +263,9 @@ public class GameScheduler extends Thread {
 		});
 		
 		// Create a GameTracker for the new game
-		newGames.forEach((team, newGame) -> {
+		newGames.forEach(newGame -> {
 			createGameTracker(newGame);
-			nhlBot.getGameChannelsManager().createChannels(newGame, team);
+			nhlBot.getGameChannelsManager().createChannels(newGame);
 		});
 	}
 
@@ -273,7 +273,7 @@ public class GameScheduler extends Thread {
 	 * Removes the inactive games from a team's "latest games". Also removes their respective channels in Discord.
 	 */
 	void removeInactiveGames() {
-		LOGGER.info("Finding out-of-date games to remove...");
+		LOGGER.info("Removing inactive games.");
 		for (Entry<Team, List<Game>> entry : teamActiveGames.entrySet()) {
 			Team team = entry.getKey();
 			List<Game> latestGames = entry.getValue();
@@ -281,8 +281,8 @@ public class GameScheduler extends Thread {
 				// Remove the oldest game
 				Game oldestGame = latestGames.get(0);
 				LOGGER.info("Removing oldest game [" + oldestGame + "] for team [" + team + "]");
-				nhlBot.getGameChannelsManager().removeChannels(oldestGame);
 				latestGames.remove(0);
+				nhlBot.getGameChannelsManager().removeChannels(oldestGame, team);
 			}
 		}
 	}

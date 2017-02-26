@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -260,9 +261,9 @@ public class GameSchedulerTest {
 		spyGameScheduler.removeFinishedTrackers();
 
 		verify(spyGameScheduler).createGameTracker(mockGame2);
-		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM);
+		verify(mockGameChannelsManager).createChannels(mockGame2);
 		verify(spyGameScheduler).createGameTracker(mockGame3);
-		verify(mockGameChannelsManager).createChannels(mockGame3, TEAM2);
+		verify(mockGameChannelsManager).createChannels(mockGame3);
 		assertEquals(Arrays.asList(mockGame1, mockGame2), spyGameScheduler.getActiveGames(TEAM));
 		assertEquals(Arrays.asList(mockGame1, mockGame3), spyGameScheduler.getActiveGames(TEAM2));
 	}
@@ -271,14 +272,17 @@ public class GameSchedulerTest {
 	public void removeInactiveGamesShouldRemoveChannelsUntilCorrectGamesRemain() {
 		LOGGER.info("removeInactiveGamesShouldRemoveChannelsUntilCorrectGamesRemain");
 		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1, mockGame2, mockGame3, mockGame4));
+		TEAM_LATEST_GAMES.get(TEAM2).addAll(Arrays.asList(mockGame1, mockGame2, mockGame3, mockGame4));
 		GameScheduler gameScheduler = new GameScheduler(mockNHLBot, null, null, TEAM_LATEST_GAMES);
 
 		gameScheduler.removeInactiveGames();
 
-		verify(mockGameChannelsManager).removeChannels(mockGame1);
-		verify(mockGameChannelsManager).removeChannels(mockGame2);
-		verify(mockGameChannelsManager, never()).removeChannels(mockGame3);
-		verify(mockGameChannelsManager, never()).removeChannels(mockGame4);
+		verify(mockGameChannelsManager).removeChannels(mockGame1, TEAM);
+		verify(mockGameChannelsManager).removeChannels(mockGame2, TEAM);
+		verify(mockGameChannelsManager).removeChannels(mockGame1, TEAM2);
+		verify(mockGameChannelsManager).removeChannels(mockGame2, TEAM2);
+		verify(mockGameChannelsManager, never()).removeChannels(eq(mockGame3), any(Team.class));
+		verify(mockGameChannelsManager, never()).removeChannels(eq(mockGame4), any(Team.class));
 		assertEquals(Arrays.asList(mockGame3, mockGame4), gameScheduler.getActiveGames(TEAM));
 	}
 
@@ -455,10 +459,10 @@ public class GameSchedulerTest {
 
 		gameScheduler.createChannels();
 
-		verify(mockGameChannelsManager).createChannels(mockGame1, TEAM);
-		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM);
-		verify(mockGameChannelsManager).createChannels(mockGame3, TEAM2);
-		verify(mockGameChannelsManager).createChannels(mockGame4, TEAM2);
+		verify(mockGameChannelsManager).createChannels(mockGame1);
+		verify(mockGameChannelsManager).createChannels(mockGame2);
+		verify(mockGameChannelsManager).createChannels(mockGame3);
+		verify(mockGameChannelsManager).createChannels(mockGame4);
 	}
 
 	@Test
