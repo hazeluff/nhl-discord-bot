@@ -627,6 +627,47 @@ public class GameChannelsManagerTest {
 
 	@SuppressWarnings("serial")
 	@Test
+	public void removeChannelsShouldDeleteChannels() {
+		LOGGER.info("removeChannelsShouldDeleteChannelsAndRemoveGameFromMaps");
+		when(mockGame.getChannelName()).thenReturn(CHANNEL1_NAME);
+		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<Integer, Map<Team, List<IChannel>>>() {{
+				put(GAME_PK, new HashMap<Team, List<IChannel>>() {{
+					put(HOME_TEAM, new ArrayList<>());
+					put(AWAY_TEAM, new ArrayList<>());
+				}});
+		}};
+		Map<Integer, Map<Team, Map<Integer, List<IMessage>>>> eventMessages = 
+			new HashMap<Integer, Map<Team, Map<Integer, List<IMessage>>>>() {{
+				put(GAME_PK, new HashMap<Team, Map<Integer, List<IMessage>>>() {{
+					put(HOME_TEAM, new HashMap<>());
+					put(AWAY_TEAM, new HashMap<>());
+				}});
+		}};
+		Map<Integer, Map<Team, List<IMessage>>> endOfGameMessages = 
+			new HashMap<Integer, Map<Team, List<IMessage>>>() {{
+				put(GAME_PK, new HashMap<Team, List<IMessage>>(){{
+					put(HOME_TEAM, new ArrayList<>());
+					put(AWAY_TEAM, new ArrayList<>());
+				}});
+		}};
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, eventMessages, endOfGameMessages);
+
+		gameChannelsManager.removeChannels(mockGame, HOME_TEAM);
+
+		verify(mockDiscordManager).deleteChannel(mockHomeChannel1);
+		verify(mockDiscordManager, never()).deleteChannel(mockHomeChannel2);
+		verify(mockDiscordManager, never()).deleteChannel(mockAwayChannel1);
+		verify(mockDiscordManager, never()).deleteChannel(mockAwayChannel2);
+		assertFalse(gameChannelsManager.getGameChannels().get(GAME_PK).containsKey(HOME_TEAM));
+		assertTrue(gameChannelsManager.getGameChannels().get(GAME_PK).containsKey(AWAY_TEAM));
+		assertFalse(gameChannelsManager.getEventMessages().get(GAME_PK).containsKey(HOME_TEAM));
+		assertTrue(gameChannelsManager.getEventMessages().get(GAME_PK).containsKey(AWAY_TEAM));
+		assertFalse(gameChannelsManager.getEndOfGameMessages().get(GAME_PK).containsKey(HOME_TEAM));
+		assertTrue(gameChannelsManager.getEndOfGameMessages().get(GAME_PK).containsKey(AWAY_TEAM));
+	}
+
+	@SuppressWarnings("serial")
+	@Test
 	public void removeChannelsShouldDeleteChannelsAndRemoveGameFromMaps() {
 		LOGGER.info("removeChannelsShouldDeleteChannelsAndRemoveGameFromMaps");
 		when(mockGame.getChannelName()).thenReturn(CHANNEL1_NAME);
