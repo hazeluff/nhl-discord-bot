@@ -10,7 +10,7 @@
 
 SERVICE_NAME=NHLBot
 INSTALL_DIR=/opt/nhlbot
-PATH_TO_JAR=$INSTALL_DIR/nhlbot
+PATH_TO_JAR=$INSTALL_DIR/builds/nhlbot
 PID_PATH_NAME=/tmp/nhlbot-pid
 BOT_KEY=<BotKey>
 case $1 in
