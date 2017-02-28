@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,31 +71,32 @@ public class GameChannelsManager {
 	 * @param game
 	 * @param team
 	 */
-	public void createChannels(Game game) {
+	public void createChannels(Game game, Team team) {
 		LOGGER.info("Creating channels for game [" + game + "]");
+		
 		if (!gameChannels.containsKey(game.getGamePk())) {
 			gameChannels.put(game.getGamePk(), new HashMap<>());
-			for (Team team : game.getTeams()) {
-				gameChannels.get(game.getGamePk()).put(team, new ArrayList<>());
-			}
 		}
-		if (!eventMessages.containsKey(game.getGamePk())) {
-			eventMessages.put(game.getGamePk(), new HashMap<>());
-			for (Team team : game.getTeams()) {
-				eventMessages.get(game.getGamePk()).put(team, new HashMap<>());
-			}
-		}
-		if (!endOfGameMessages.containsKey(game.getGamePk())) {
-			endOfGameMessages.put(game.getGamePk(), new HashMap<>());
-			for (Team team : game.getTeams()) {
-				endOfGameMessages.get(game.getGamePk()).put(team, new ArrayList<>());
-			}
+		if (!gameChannels.get(game.getGamePk()).containsKey(team)) {
+			gameChannels.get(game.getGamePk()).put(team, new ArrayList<>());
 		}
 
-		for (Team team : game.getTeams()) {
-			for (IGuild guild : nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team)) {
-				createChannel(game, guild);
-			}
+		if (!eventMessages.containsKey(game.getGamePk())) {
+			eventMessages.put(game.getGamePk(), new HashMap<>());
+		}
+		if (!eventMessages.get(game.getGamePk()).containsKey(team)) {
+			eventMessages.get(game.getGamePk()).put(team, new HashMap<>());
+		}
+
+		if (!endOfGameMessages.containsKey(game.getGamePk())) {
+			endOfGameMessages.put(game.getGamePk(), new HashMap<>());
+		}
+		if (!endOfGameMessages.get(game.getGamePk()).containsKey(team)) {
+			endOfGameMessages.get(game.getGamePk()).put(team, new ArrayList<>());
+		}
+
+		for (IGuild guild : nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team)) {
+			createChannel(game, guild);
 		}
 	}
 
@@ -114,18 +114,20 @@ public class GameChannelsManager {
 		if (gameChannels.containsKey(game.getGamePk())) {
 			String guildId = guild.getID();
 			Team team = nhlBot.getGuildPreferencesManager().getTeam(guildId);
+			IChannel channel;
 			if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
-				IChannel channel = nhlBot.getDiscordManager().createChannel(guild, channelName);
-				nhlBot.getDiscordManager().changeTopic(channel,
-						nhlBot.getGuildPreferencesManager().getTeam(guildId).getCheer());
+				channel = nhlBot.getDiscordManager().createChannel(guild, channelName);
+				nhlBot.getDiscordManager().changeTopic(channel, team.getCheer());
 				ZoneId timeZone = team.getTimeZone();
 				IMessage message = nhlBot.getDiscordManager().sendMessage(channel, game.getDetailsMessage(timeZone));
 				nhlBot.getDiscordManager().pinMessage(channel, message);
-				gameChannels.get(game.getGamePk()).get(team).add(channel);
 			} else {
 				LOGGER.warn("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
-				gameChannels.get(game.getGamePk()).get(team)
-						.add(guild.getChannels().stream().filter(channelMatcher).findAny().get());
+				channel = guild.getChannels().stream().filter(channelMatcher).findAny().get();
+			}
+			if (!gameChannels.get(game.getGamePk()).get(team).stream()
+					.anyMatch(gameChannel -> gameChannel.getID() == channel.getID())) {
+				gameChannels.get(game.getGamePk()).get(team).add(channel);
 			}
 		} else {
 			LOGGER.warn("No channels exist for the game.");
@@ -161,10 +163,8 @@ public class GameChannelsManager {
 		LOGGER.info("Sending start message.");
 		if (gameChannels.containsKey(game.getGamePk())) {
 			for (Team team : game.getTeams()) {
-				for (IChannel channel : gameChannels.get(game.getGamePk()).get(team)) {
-					nhlBot.getDiscordManager().sendMessage(channel, "Game is about to start! "
-							+ nhlBot.getGuildPreferencesManager().getTeam(channel.getGuild().getID()).getCheer());
-				}
+				nhlBot.getDiscordManager().sendMessage(gameChannels.get(game.getGamePk()).get(team),
+						"Game is about to start! " + team.getCheer());
 			}
 		} else {
 			LOGGER.warn("No channels exist for the game.");
@@ -239,11 +239,9 @@ public class GameChannelsManager {
 		LOGGER.info("Sending end of game message for game.");
 		if (gameChannels.containsKey(game.getGamePk())) {
 			for (Team team : game.getTeams()) {
-				List<IChannel> channels = gameChannels.get(game.getGamePk()).get(team).stream().filter(
-						channel -> nhlBot.getGuildPreferencesManager().getTeam(channel.getGuild().getID()) == team)
-						.collect(Collectors.toList());
 				String endOfGameMessage = buildEndOfGameMessage(game, team);
-				List<IMessage> messages = nhlBot.getDiscordManager().sendMessage(channels, endOfGameMessage);
+				List<IMessage> messages = nhlBot.getDiscordManager()
+						.sendMessage(gameChannels.get(game.getGamePk()).get(team), endOfGameMessage);
 				endOfGameMessages.get(game.getGamePk()).put(team, messages);
 			}
 		} else {
@@ -275,9 +273,8 @@ public class GameChannelsManager {
 		LOGGER.info("Updating pinned message.");
 		if (gameChannels.containsKey(game.getGamePk())) {
 			for (Team team : game.getTeams()) {
+				ZoneId timeZone = team.getTimeZone();
 				for (IChannel channel : gameChannels.get(game.getGamePk()).get(team)) {
-					ZoneId timeZone = nhlBot.getGuildPreferencesManager().getTeam(channel.getGuild().getID())
-							.getTimeZone();
 					for (IMessage message : nhlBot.getDiscordManager().getPinnedMessages(channel)) {
 						if (nhlBot.getDiscordManager().isAuthorOfMessage(message)) {
 							StringBuilder strMessage = new StringBuilder();

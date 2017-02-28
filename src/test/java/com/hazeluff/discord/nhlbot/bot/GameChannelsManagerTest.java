@@ -157,44 +157,67 @@ public class GameChannelsManagerTest {
 		assertFalse(spyGameChannelsManager.getEventMessages().containsKey(mockGame.getGamePk()));
 		assertFalse(spyGameChannelsManager.getEndOfGameMessages().containsKey(mockGame.getGamePk()));
 
-		spyGameChannelsManager.createChannels(mockGame);
+		spyGameChannelsManager.createChannels(mockGame, HOME_TEAM);
 
 		assertTrue(spyGameChannelsManager.getGameChannels().containsKey(mockGame.getGamePk()));
+		assertTrue(spyGameChannelsManager.getGameChannels().get(mockGame.getGamePk()).containsKey(HOME_TEAM));
 		assertTrue(spyGameChannelsManager.getEventMessages().containsKey(mockGame.getGamePk()));
+		assertTrue(spyGameChannelsManager.getEventMessages().get(mockGame.getGamePk()).containsKey(HOME_TEAM));
 		assertTrue(spyGameChannelsManager.getEndOfGameMessages().containsKey(mockGame.getGamePk()));
+		assertTrue(spyGameChannelsManager.getEndOfGameMessages().get(mockGame.getGamePk()).containsKey(HOME_TEAM));
 
 		verify(spyGameChannelsManager).createChannel(mockGame, mockHomeGuild);
+
+		spyGameChannelsManager.createChannels(mockGame, AWAY_TEAM);
+
+		assertTrue(spyGameChannelsManager.getGameChannels().get(mockGame.getGamePk()).containsKey(HOME_TEAM));
+		assertTrue(spyGameChannelsManager.getGameChannels().get(mockGame.getGamePk()).containsKey(AWAY_TEAM));
+		assertTrue(spyGameChannelsManager.getEventMessages().get(mockGame.getGamePk()).containsKey(HOME_TEAM));
+		assertTrue(spyGameChannelsManager.getEventMessages().get(mockGame.getGamePk()).containsKey(AWAY_TEAM));
+		assertTrue(spyGameChannelsManager.getEndOfGameMessages().get(mockGame.getGamePk()).containsKey(HOME_TEAM));
+		assertTrue(spyGameChannelsManager.getEndOfGameMessages().get(mockGame.getGamePk()).containsKey(AWAY_TEAM));
 	}
 
 	@SuppressWarnings("serial")
 	@Test
-	public void createChannelsShouldNotPutNewListOrMapsWhenGameKeyAlreadyExists() {
-		LOGGER.info("createChannelsShouldNotPutNewListOrMapsWhenGameKeyAlreadyExists");
-		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<>();
-		gameChannels.put(GAME_PK, new HashMap<Team, List<IChannel>>() {{ 
-			put(HOME_TEAM, Arrays.asList(mockChannel));
-			put(AWAY_TEAM, Arrays.asList(mockChannel)); }});
-		Map<Integer, Map<Team, Map<Integer, List<IMessage>>>> eventMessages = new HashMap<>();
-		eventMessages.put(GAME_PK, new HashMap<Team, Map<Integer, List<IMessage>>>() {{
-			put(HOME_TEAM, new HashMap<Integer, List<IMessage>>() {{ put(EVENT_ID, Arrays.asList(mockMessage)); }});
-			put(AWAY_TEAM, new HashMap<Integer, List<IMessage>>() {{ put(EVENT_ID, Arrays.asList(mockMessage)); }});
-		}});
-		Map<Integer, Map<Team, List<IMessage>>> endOfGameMessages = new HashMap<>();
-		endOfGameMessages.put(GAME_PK, new HashMap<Team, List<IMessage>>() {{
-			put(HOME_TEAM, Arrays.asList(mock(IMessage.class)));
-			put(AWAY_TEAM, Arrays.asList(mock(IMessage.class)));
-		}});
+	public void createChannelsShouldNotPutKeyIfItAlreadyExists() {
+		LOGGER.info("createChannelsShouldAddGameKeysToMapsAndInvokeClasses");
+
+		List<IChannel> channels = Arrays.asList(mockHomeChannel1);
+		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<Integer, Map<Team, List<IChannel>>>() {{
+				put(mockGame.getGamePk(), new HashMap<Team, List<IChannel>>() {{
+						put(HOME_TEAM, channels);
+				}});
+		}};
 		
-		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, eventMessages, endOfGameMessages);
-		spyGameChannelsManager = spy(gameChannelsManager);
+		Map<Integer, List<IMessage>> eventMessages = new HashMap<Integer, List<IMessage>>() {{
+			put(EVENT_ID, Arrays.asList(mockMessage));
+		}};
+		Map<Integer, Map<Team, Map<Integer, List<IMessage>>>> gameEventMessages =
+				new HashMap<Integer, Map<Team, Map<Integer, List<IMessage>>>>() {{
+						put(mockGame.getGamePk(), new HashMap<Team, Map<Integer, List<IMessage>>>() {{
+								put(HOME_TEAM, eventMessages);
+						}});
+				}};
+
+		List<IMessage> endOfGameMessages = Arrays.asList(mockMessage2);
+		Map<Integer, Map<Team, List<IMessage>>> gameEndOfGameMessages =
+				new HashMap<Integer, Map<Team, List<IMessage>>>() {{
+						put(mockGame.getGamePk(), new HashMap<Team, List<IMessage>>() {{
+								put(HOME_TEAM, endOfGameMessages);
+						}});
+				}};
 		
+		spyGameChannelsManager = spy(
+				new GameChannelsManager(mockNHLBot, gameChannels, gameEventMessages, gameEndOfGameMessages));
 		doNothing().when(spyGameChannelsManager).createChannel(any(Game.class), any(IGuild.class));
 		
-		spyGameChannelsManager.createChannels(mockGame);
+		spyGameChannelsManager.createChannels(mockGame, HOME_TEAM);
 
-		assertEquals(gameChannels.get(GAME_PK), spyGameChannelsManager.getGameChannels().get(GAME_PK));
-		assertEquals(eventMessages.get(GAME_PK), spyGameChannelsManager.getEventMessages().get(GAME_PK));
-		assertEquals(endOfGameMessages.get(GAME_PK), spyGameChannelsManager.getEndOfGameMessages().get(GAME_PK));
+		assertEquals(channels, spyGameChannelsManager.getGameChannels().get(mockGame.getGamePk()).get(HOME_TEAM));
+		assertEquals(eventMessages, spyGameChannelsManager.getEventMessages().get(mockGame.getGamePk()).get(HOME_TEAM));
+		assertEquals(endOfGameMessages,
+				spyGameChannelsManager.getEndOfGameMessages().get(mockGame.getGamePk()).get(HOME_TEAM));
 	}
 
 	@SuppressWarnings("serial")
@@ -204,29 +227,22 @@ public class GameChannelsManagerTest {
 		String newChannelName = "New Channel Name";
 		when(mockGame.getChannelName()).thenReturn(newChannelName);
 		IChannel newHomeChannel = mock(IChannel.class);
-		IChannel newAwayChannel = mock(IChannel.class);
 		when(mockDiscordManager.createChannel(mockHomeGuild, newChannelName)).thenReturn(newHomeChannel);
-		when(mockDiscordManager.createChannel(mockAwayGuild, newChannelName)).thenReturn(newAwayChannel);
 		IMessage newHomeMessage = mock(IMessage.class);
-		IMessage newAwayMessage = mock(IMessage.class);
 		when(mockDiscordManager.sendMessage(newHomeChannel, HOME_DETAILS_MESSAGE)).thenReturn(newHomeMessage);
-		when(mockDiscordManager.sendMessage(newAwayChannel, AWAY_DETAILS_MESSAGE)).thenReturn(newAwayMessage);
 
 		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<>();
 		gameChannels.put(mockGame.getGamePk(), new HashMap<Team, List<IChannel>>() {{
-				put(HOME_TEAM, new ArrayList<>(Arrays.asList(newHomeChannel)));
-				put(AWAY_TEAM, new ArrayList<>(Arrays.asList(newAwayChannel)));
+				put(HOME_TEAM, new ArrayList<>());
+				put(AWAY_TEAM, new ArrayList<>());
 		}});
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
 
 		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
 
 		verify(mockDiscordManager).changeTopic(newHomeChannel, HOME_TEAM.getCheer());
-		verify(mockDiscordManager, never()).changeTopic(eq(newAwayChannel), anyString());
 		verify(mockDiscordManager).sendMessage(newHomeChannel, HOME_DETAILS_MESSAGE);
-		verify(mockDiscordManager, never()).sendMessage(eq(newAwayChannel), anyString());
 		verify(mockDiscordManager).pinMessage(newHomeChannel, newHomeMessage);
-		verify(mockDiscordManager, never()).pinMessage(eq(newAwayChannel), any(IMessage.class));
 	}
 
 	@SuppressWarnings("serial")
@@ -237,8 +253,8 @@ public class GameChannelsManagerTest {
 
 		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<>();
 		gameChannels.put(GAME_PK, new HashMap<Team, List<IChannel>>() {{
-			put(HOME_TEAM, new ArrayList<>());
-			put(AWAY_TEAM, new ArrayList<>());
+				put(HOME_TEAM, new ArrayList<>());
+				put(AWAY_TEAM, new ArrayList<>());
 		}});
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
 
@@ -252,6 +268,47 @@ public class GameChannelsManagerTest {
 		assertTrue(gameChannels.get(GAME_PK).get(AWAY_TEAM).isEmpty());
 	}
 	
+	@SuppressWarnings("serial")
+	@Test
+	public void createChannelShouldNotAddToGameChannelsIfAlreadyInGameChannelsAndChannelExistsInDiscord() {
+		LOGGER.info("createChannelShouldNotAddToGameChannelsIfAlreadyInGameChannelsAndChannelExistsInDiscord");
+		when(mockGame.getChannelName()).thenReturn(CHANNEL1_NAME);
+		when(mockDiscordManager.createChannel(mockHomeGuild, CHANNEL1_NAME)).thenReturn(mockHomeChannel1);
+		IMessage newHomeMessage = mock(IMessage.class);
+		when(mockDiscordManager.sendMessage(mockHomeChannel1, HOME_DETAILS_MESSAGE)).thenReturn(newHomeMessage);
+
+		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<>();
+		gameChannels.put(GAME_PK, new HashMap<Team, List<IChannel>>() {{
+				put(HOME_TEAM, Arrays.asList(mockHomeChannel1));
+			}});
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
+
+		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+
+		List<IChannel> channels = gameChannels.get(GAME_PK).get(HOME_TEAM);
+		assertEquals(1, channels.size());
+		assertTrue(channels.contains(mockHomeChannel1));
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void createChannelShouldNotAddToGameChannelsIfAlreadyInGameChannelsAndChannelDoesNotExistInDiscord() {
+		LOGGER.info("createChannelShouldNotAddToGameChannelsIfAlreadyInGameChannelsAndChannelDoesNotExistInDiscord");
+		when(mockGame.getChannelName()).thenReturn(CHANNEL1_NAME);
+
+		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<>();
+		gameChannels.put(GAME_PK, new HashMap<Team, List<IChannel>>() {{
+				put(HOME_TEAM, Arrays.asList(mockHomeChannel1));
+			}});
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
+
+		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+
+		List<IChannel> channels = gameChannels.get(GAME_PK).get(HOME_TEAM);
+		assertEquals(1, channels.size());
+		assertTrue(channels.contains(mockHomeChannel1));
+	}
+
 	@Test
 	public void createChannelShouldDoNothingIfKeyDoesNotExist() {
 		LOGGER.info("createChannelShouldDoNothingIfKeyDoesNotExist");
@@ -304,9 +361,9 @@ public class GameChannelsManagerTest {
 
 		gameChannelsManager.sendStartOfGameMessage(mockGame);
 		
-		verify(mockDiscordManager).sendMessage(eq(mockHomeChannel1), captorString.capture());
+		verify(mockDiscordManager).sendMessage(eq(Arrays.asList(mockHomeChannel1)), captorString.capture());
 		assertTrue(captorString.getValue().contains(HOME_TEAM.getCheer()));
-		verify(mockDiscordManager).sendMessage(eq(mockAwayChannel1), captorString.capture());
+		verify(mockDiscordManager).sendMessage(eq(Arrays.asList(mockAwayChannel1)), captorString.capture());
 		assertTrue(captorString.getValue().contains(AWAY_TEAM.getCheer()));
 	}
 

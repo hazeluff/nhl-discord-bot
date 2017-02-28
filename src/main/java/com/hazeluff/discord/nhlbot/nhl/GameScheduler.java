@@ -91,66 +91,6 @@ public class GameScheduler extends Thread {
 	}
 
 	/**
-	 * Creates channels for all active games.
-	 */
-	void createChannels() {
-		LOGGER.info("Creating channels for latest games.");
-		for (List<Game> games : teamActiveGames.values()) {
-			for (Game game : games) {
-				nhlBot.getGameChannelsManager().createChannels(game);
-			}
-		}
-	}
-
-	/**
-	 * Remove all inactive channels for all guilds subscribed. Channels are inactive if they are not in the list of
-	 * latest games for the team subscribed to. Only channels written in the format that represents a game channel will
-	 * be removed.
-	 */
-	public void deleteInactiveChannels() {
-		LOGGER.info("Cleaning up old channels.");
-		for (Team team : Team.values()) {
-			List<Game> inactiveGames = getInactiveGames(team);
-			nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
-				guild.getChannels().forEach(channel -> {
-					inactiveGames.forEach(game -> {
-						if(channel.getName().equalsIgnoreCase(game.getChannelName())) {
-							nhlBot.getGameChannelsManager().removeChannel(game, channel);
-						}
-					});
-				});
-			});
-		}
-	}
-
-	/**
-	 * Initializes the channels of guild in Discord. Removes all channels that have names in the format of a game
-	 * channel and creates channels for the latest games of the current team the guild is subscribed to.
-	 * 
-	 * @param guild
-	 *            guild to initialize channels for
-	 */
-	public void initChannels(IGuild guild) {
-		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
-		Team team = nhlBot.getGuildPreferencesManager().getTeam(guild.getID());
-		
-		// Remove all game channels
-		games.forEach(game -> {
-			guild.getChannels().forEach(channel -> {
-				if (game.getChannelName().equalsIgnoreCase(channel.getName())) {
-					nhlBot.getGameChannelsManager().removeChannel(game, channel);
-				}
-			});
-		});
-
-		// Create game channels of latest game for current subscribed team
-		for (Game game : teamActiveGames.get(team)) {
-			nhlBot.getGameChannelsManager().createChannel(game, guild);
-		}
-	}
-
-
-	/**
 	 * Gets game information from NHL API and initializes creates Game objects for them.
 	 */
 	public void initGames() {
@@ -189,15 +129,6 @@ public class GameScheduler extends Thread {
 	}
 
 	/**
-	 * Used for stubbing the loop of {@link #run()} for tests.
-	 * 
-	 * @return
-	 */
-	boolean isStop() {
-		return stop;
-	}
-
-	/**
 	 * Adds the latest games for the specified team to the provided list.
 	 * 
 	 * @param team
@@ -221,6 +152,15 @@ public class GameScheduler extends Thread {
 	}
 
 	/**
+	 * Creates channels for all active games.
+	 */
+	void createChannels() {
+		LOGGER.info("Creating channels for latest games.");
+		teamActiveGames.forEach(
+				(team, games) -> games.forEach(game -> nhlBot.getGameChannelsManager().createChannels(game, team)));
+	}
+
+	/**
 	 * Create GameTrackers for each game in the list if they are not ended.
 	 * 
 	 * @param list
@@ -236,12 +176,33 @@ public class GameScheduler extends Thread {
 	}
 
 	/**
+	 * Remove all inactive channels for all guilds subscribed. Channels are inactive if they are not in the list of
+	 * latest games for the team subscribed to. Only channels written in the format that represents a game channel will
+	 * be removed.
+	 */
+	public void deleteInactiveChannels() {
+		LOGGER.info("Cleaning up old channels.");
+		for (Team team : Team.values()) {
+			List<Game> inactiveGames = getInactiveGames(team);
+			nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
+				guild.getChannels().forEach(channel -> {
+					inactiveGames.forEach(game -> {
+						if (channel.getName().equalsIgnoreCase(game.getChannelName())) {
+							nhlBot.getGameChannelsManager().removeChannel(game, channel);
+						}
+					});
+				});
+			});
+		}
+	}
+
+	/**
 	 * Removes all finished GameTrackers from the list of "live" GameTrackers. Start new trackers for the next games of
 	 * the game in the finished GameTracker.
 	 */
 	void removeFinishedTrackers() {
 		LOGGER.info("Removing GameTrackers of ended games...");
-		Set<Game> newGames = new HashSet<>();
+		Map<Team, Game> newGames = new HashMap<>();
 		gameTrackers.removeIf(gameTracker -> {
 			if (gameTracker.isFinished()) {
 				// If game is finished, update latest games for each team involved in the game of the
@@ -253,7 +214,7 @@ public class GameScheduler extends Thread {
 					// Add the next game to the list of latest games
 					Game nextGame = getNextGame(team);
 					latestGames.add(nextGame);
-					newGames.add(nextGame);
+					newGames.put(team, nextGame);
 				}
 
 				return true;
@@ -263,10 +224,36 @@ public class GameScheduler extends Thread {
 		});
 		
 		// Create a GameTracker for the new game
-		newGames.forEach(newGame -> {
+		newGames.forEach((team, newGame) -> {
 			createGameTracker(newGame);
-			nhlBot.getGameChannelsManager().createChannels(newGame);
+			nhlBot.getGameChannelsManager().createChannels(newGame, team);
 		});
+	}
+
+	/**
+	 * Initializes the channels of guild in Discord. Removes all channels that have names in the format of a game
+	 * channel and creates channels for the latest games of the current team the guild is subscribed to.
+	 * 
+	 * @param guild
+	 *            guild to initialize channels for
+	 */
+	public void initChannels(IGuild guild) {
+		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
+		Team team = nhlBot.getGuildPreferencesManager().getTeam(guild.getID());
+
+		// Remove all game channels
+		games.forEach(game -> {
+			guild.getChannels().forEach(channel -> {
+				if (game.getChannelName().equalsIgnoreCase(channel.getName())) {
+					nhlBot.getGameChannelsManager().removeChannel(game, channel);
+				}
+			});
+		});
+
+		// Create game channels of latest game for current subscribed team
+		for (Game game : teamActiveGames.get(team)) {
+			nhlBot.getGameChannelsManager().createChannel(game, guild);
+		}
 	}
 
 	/**
@@ -435,6 +422,15 @@ public class GameScheduler extends Thread {
 		.filter(game -> game.containsTeam(team))
 		.filter(game -> !teamActiveGames.get(team).contains(game))
 		.collect(Collectors.toList());
+	}
+
+	/**
+	 * Used for stubbing the loop of {@link #run()} for tests.
+	 * 
+	 * @return
+	 */
+	boolean isStop() {
+		return stop;
 	}
 
 	public List<Game> getGames() {

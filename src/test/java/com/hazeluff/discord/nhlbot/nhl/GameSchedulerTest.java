@@ -261,11 +261,31 @@ public class GameSchedulerTest {
 		spyGameScheduler.removeFinishedTrackers();
 
 		verify(spyGameScheduler).createGameTracker(mockGame2);
-		verify(mockGameChannelsManager).createChannels(mockGame2);
+		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM);
 		verify(spyGameScheduler).createGameTracker(mockGame3);
-		verify(mockGameChannelsManager).createChannels(mockGame3);
+		verify(mockGameChannelsManager).createChannels(mockGame3, TEAM2);
 		assertEquals(Arrays.asList(mockGame1, mockGame2), spyGameScheduler.getActiveGames(TEAM));
 		assertEquals(Arrays.asList(mockGame1, mockGame3), spyGameScheduler.getActiveGames(TEAM2));
+	}
+
+	@Test
+	public void removeFinishedTrackersShouldOnlyCreateChannelsForDistinctGames() {
+		LOGGER.info("removeFinishedTrackersShouldRemoveFinishedTrackersAndAddGameToLatestGamesAndCreateChannels");
+		when(mockGameTracker1.isFinished()).thenReturn(true);
+		TEAM_LATEST_GAMES.get(TEAM).addAll(Arrays.asList(mockGame1));
+		TEAM_LATEST_GAMES.get(TEAM2).addAll(Arrays.asList(mockGame1));
+		gameScheduler = new GameScheduler(mockNHLBot, null, new ArrayList<>(Arrays.asList(mockGameTracker1)),
+				TEAM_LATEST_GAMES);
+		spyGameScheduler = spy(gameScheduler);
+		when(mockGame1.getTeams()).thenReturn(Arrays.asList(TEAM, TEAM2));
+		doReturn(mockGame2).when(spyGameScheduler).getNextGame(TEAM);
+		doReturn(mockGame2).when(spyGameScheduler).getNextGame(TEAM2);
+
+		spyGameScheduler.removeFinishedTrackers();
+
+		verify(spyGameScheduler, times(2)).createGameTracker(mockGame2);
+		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM);
+		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM2);
 	}
 
 	@Test
@@ -454,15 +474,15 @@ public class GameSchedulerTest {
 					put(team, new ArrayList<>());
 				}
 				put(TEAM, Arrays.asList(mockGame1, mockGame2));
-				put(TEAM2, Arrays.asList(mockGame3, mockGame4));
+				put(TEAM2, Arrays.asList(mockGame2, mockGame3));
 		}});
 
 		gameScheduler.createChannels();
 
-		verify(mockGameChannelsManager).createChannels(mockGame1);
-		verify(mockGameChannelsManager).createChannels(mockGame2);
-		verify(mockGameChannelsManager).createChannels(mockGame3);
-		verify(mockGameChannelsManager).createChannels(mockGame4);
+		verify(mockGameChannelsManager).createChannels(mockGame1, TEAM);
+		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM);
+		verify(mockGameChannelsManager).createChannels(mockGame2, TEAM2);
+		verify(mockGameChannelsManager).createChannels(mockGame3, TEAM2);
 	}
 
 	@Test
