@@ -184,24 +184,41 @@ public class CommandListenerTest {
 	@Test
 	public void replyToCommandShouldReturnFalseWhenArgumentsLengthIsOne() {
 		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsOne");
-		doReturn(new String[1]).when(spyCommandListener)
-				.getBotCommand(any(IMessage.class));
+		String[] arguments = new String[1];
+		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
+		commandListener = new CommandListener(mockNHLBot, commands);
+		spyCommandListener = spy(commandListener);
+		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
 
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		// TODO
+		verify(commands.get(0), never()).isAccept(any());
+		verify(commands.get(1), never()).isAccept(any());
+		verify(commands.get(2), never()).isAccept(any());
+		verify(commands.get(0), never()).replyTo(any(), any());
+		verify(commands.get(1), never()).replyTo(any(), any());
+		verify(commands.get(2), never()).replyTo(any(), any());
 	}
 
 	@Test
 	public void replyToCommandShouldReturnFalseWhenArgumentsLengthIsZero() {
 		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsZero");
-		doReturn(new String[0]).when(spyCommandListener).getBotCommand(any(IMessage.class));
+		String[] arguments = new String[0];
+		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
+		commandListener = new CommandListener(mockNHLBot, commands);
+		spyCommandListener = spy(commandListener);
+		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
 
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		// TODO
+		verify(commands.get(0), never()).isAccept(any());
+		verify(commands.get(1), never()).isAccept(any());
+		verify(commands.get(2), never()).isAccept(any());
+		verify(commands.get(0), never()).replyTo(any(), any());
+		verify(commands.get(1), never()).replyTo(any(), any());
+		verify(commands.get(2), never()).replyTo(any(), any());
 	}
 
 	@Test
@@ -414,6 +431,7 @@ public class CommandListenerTest {
 	public void getBotCommandShouldReturnSplitMessageWhenBotIsMentioned() {
 		LOGGER.info("getBotCommandShouldReturnSplitMessageWhenBotIsMentioned");
 		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + "  2  3");
+		when(mockMessage.getChannel().isPrivate()).thenReturn(false);
 		String[] result = commandListener.getBotCommand(mockMessage);
 
 		assertArrayEquals(new String[] { BOT_MENTION_ID, "2", "3" }, result);
@@ -423,6 +441,7 @@ public class CommandListenerTest {
 	public void getBotCommandShouldReturnSplitMessageWhenBotIsMentionedByNickname() {
 		LOGGER.info("getBotCommandShouldReturnSplitMessageWhenBotIsMentionedByNickname");
 		when(mockMessage.getContent()).thenReturn(BOT_NICKNAME_MENTION_ID + "  2  3");
+		when(mockMessage.getChannel().isPrivate()).thenReturn(false);
 		String[] result = commandListener.getBotCommand(mockMessage);
 
 		assertArrayEquals(new String[] { BOT_NICKNAME_MENTION_ID, "2", "3" }, result);
@@ -432,10 +451,10 @@ public class CommandListenerTest {
 	public void getBotCommandShouldReturnMessageInArrayWhenBotIsNotMentioned() {
 		LOGGER.info("getBotCommandShouldReturnMessageInArrayWhenBotIsNotMentioned");
 		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
+		when(mockMessage.getChannel().isPrivate()).thenReturn(false);
 		String[] result = commandListener.getBotCommand(mockMessage);
 
 		assertArrayEquals(new String[0], result);
-
 	}
 
 	// isBotCommand
