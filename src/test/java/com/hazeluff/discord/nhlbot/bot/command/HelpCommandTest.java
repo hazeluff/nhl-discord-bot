@@ -16,8 +16,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
+import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;

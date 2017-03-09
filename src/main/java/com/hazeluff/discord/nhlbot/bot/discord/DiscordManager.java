@@ -1,4 +1,4 @@
-package com.hazeluff.discord.nhlbot.bot;
+package com.hazeluff.discord.nhlbot.bot.discord;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +13,7 @@ import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RateLimitException;
+import sx.blah.discord.util.RequestBuffer;
 
 /**
  * Provides methods that interface with Discord. The methods provide error handling.
@@ -28,22 +28,62 @@ public class DiscordManager {
 	}
 
 	/**
+	 * Performs the given discord request and then returns the value of its return. Handles
+	 * {@link MissingPermissionsException} and {@link DiscordException}
+	 * 
+	 * @param request
+	 *            request to perform
+	 * @param exceptionMessage
+	 *            message to log if an exception is thrown
+	 * @param defaultReturn
+	 *            value to return if an exception is thrown
+	 * @return result of {@code action.perform()}
+	 */
+	<T> T performRequest(DiscordRequest<T> request, String exceptionLoggerMessage, T defaultReturn) {
+		return RequestBuffer.request(() -> {
+			try {
+				return request.perform();
+			} catch (MissingPermissionsException | DiscordException | NullPointerException e) {
+				LOGGER.warn(exceptionLoggerMessage, e);
+				return defaultReturn;
+			}
+		}).get();
+	}
+
+	/**
+	 * Performs the given discord request. Handles {@link MissingPermissionsException} and {@link DiscordException}
+	 * 
+	 * @param request
+	 *            request to perform
+	 * @param exceptionMessage
+	 *            message to log if an exception is thrown
+	 */
+	void performRequest(VoidDiscordRequest request, String exceptionLoggerMessage) {
+		RequestBuffer.request(() -> {
+			try {
+				request.perform();
+			} catch (MissingPermissionsException | DiscordException | NullPointerException e) {
+				LOGGER.warn(exceptionLoggerMessage, e);
+			}
+		});
+	}
+
+	/**
 	 * Sends a message to the specified channel in Discord
 	 * 
 	 * @param channel
 	 *            channel to send message in
 	 * @param message
 	 *            message to send
-	 * @return IMessage of sent message
+	 * @return IMessage of sent message;<br>
+	 *         null, if unsuccessful
 	 */
 	public IMessage sendMessage(IChannel channel, String message) {
 		LOGGER.debug("Sending message [" + channel.getName() + "][" + message + "]");
-		try {
-			return new MessageBuilder(client).withChannel(channel).withContent(message).send();
-		} catch (RateLimitException | DiscordException | MissingPermissionsException | NullPointerException e) {
-			LOGGER.warn("Could not send message [" + message + "] to [" + channel + "]", e);
-			return null;
-		}
+		return performRequest(
+				() -> new MessageBuilder(client).withChannel(channel).withContent(message).send(),
+				"Could not send message [" + message + "] to [" + channel + "]",
+				null);
 	}
 
 	/**
@@ -53,7 +93,7 @@ public class DiscordManager {
 	 *            channels to send message in
 	 * @param message
 	 *            message to send
-	 * @return List<IMessage> of sent messages
+	 * @return List of sent messages (null/unsuccessful removed)
 	 */
 	public List<IMessage> sendMessage(List<IChannel> channels, String message) {
 		List<IMessage> messages = new ArrayList<>();
@@ -77,16 +117,17 @@ public class DiscordManager {
 	 */
 	public IMessage updateMessage(IMessage message, String newMessage) {
 		LOGGER.debug("Updating message [" + message.getContent() + "][" + newMessage + "]");
-		try {
-			if (!message.getContent().equals(newMessage)) {
-				return message.edit(newMessage);
-			} else {
-				LOGGER.warn("No change to the message [" + message.getContent() + "]");
-			}
-		} catch (MissingPermissionsException | RateLimitException | DiscordException | NullPointerException e) {
-			LOGGER.warn("Could not edit message [" + message + "] to [" + newMessage + "]", e);
-		}
-		return message;
+		return performRequest(
+				() -> {
+					if (!message.getContent().equals(newMessage)) {
+						return message.edit(newMessage);
+					} else {
+						LOGGER.warn("No change to the message [" + message.getContent() + "]");
+						return message;
+					}
+				}, 
+				"Could not edit message [" + message + "] to [" + newMessage + "]", 
+				message);
 	}
 
 	/**
@@ -113,11 +154,9 @@ public class DiscordManager {
 	 *            message to delete in Discord
 	 */
 	public void deleteMessage(IMessage message) {
-		try {
-			message.delete();
-		} catch (MissingPermissionsException | RateLimitException | DiscordException | NullPointerException e) {
-			LOGGER.warn("Could not delete message [" + message + "]", e);
-		}
+		performRequest(
+				() -> message.delete(), 
+				"Could not delete message [" + message + "]");
 	}
 
 	/**
@@ -139,13 +178,10 @@ public class DiscordManager {
 	 */
 	public List<IMessage> getPinnedMessages(IChannel channel) {
 		LOGGER.debug("Getting pinned messages in channel [" + channel + "]");
-		try {
-			return channel.getPinnedMessages();
-		} catch (RateLimitException | DiscordException | NullPointerException e) {
-			LOGGER.warn("Could not get pinned messages for channel [" + channel + "]", e);
-			return new ArrayList<>();
-		}
-
+		return performRequest(
+				() -> channel.getPinnedMessages(), 
+				"Could not get pinned messages for channel [" + channel + "]",
+				new ArrayList<>());
 	}
 
 	/**
@@ -156,11 +192,9 @@ public class DiscordManager {
 	 */
 	public void deleteChannel(IChannel channel) {
 		LOGGER.debug("Deleting channel [" + channel.getName() + "]");
-		try {
-			channel.delete();
-		} catch (MissingPermissionsException | RateLimitException | DiscordException | NullPointerException e) {
-			LOGGER.warn("Could not delete channel [" + channel + "]", e);
-		}
+		performRequest(
+				() -> channel.delete(),
+				"Could not delete channel [" + channel + "]");
 	}
 
 	/**
@@ -174,12 +208,10 @@ public class DiscordManager {
 	 */
 	public IChannel createChannel(IGuild guild, String channelName) {
 		LOGGER.debug("Creating channel [" + channelName + "] in [" + guild.getName() + "]");
-		try {
-			return guild.createChannel(channelName);
-		} catch (DiscordException | MissingPermissionsException | RateLimitException | NullPointerException e) {
-			LOGGER.warn("Could not create channel [" + channelName + "] in [" + guild.getName() + "]", e);
-			return null;
-		}
+		return performRequest(
+				() -> guild.createChannel(channelName),
+				"Could not create channel [" + channelName + "] in [" + guild.getName() + "]",
+				null);
 	}
 
 	/**
@@ -192,11 +224,8 @@ public class DiscordManager {
 	 */
 	public void changeTopic(IChannel channel, String topic) {
 		LOGGER.debug("Changing topic in [" + channel.getName() + "] to [" + topic + "]");
-		try {
-			channel.changeTopic(topic);
-		} catch (RateLimitException | DiscordException | MissingPermissionsException | NullPointerException e) {
-			LOGGER.warn("Could not change topic of channel [" + channel + "] to [" + topic + "]", e);
-		}
+		performRequest(() -> channel.changeTopic(topic),
+				"Could not change topic of channel [" + channel + "] to [" + topic + "]");
 	}
 
 	/**
@@ -209,12 +238,9 @@ public class DiscordManager {
 	 */
 	public void pinMessage(IChannel channel, IMessage message) {
 		LOGGER.debug("Pinning message [" + message.getContent() + "] to [" + channel.getName() + "]");
-		try {
-			channel.pin(message);
-		} catch (RateLimitException | DiscordException | MissingPermissionsException | NullPointerException e) {
-			LOGGER.warn("Could not pin message  [" + message + "] to channel [" + channel + "]",
-					e);
-		}
+		performRequest(
+				() -> channel.pin(message),
+				"Could not pin message  [" + message + "] to channel [" + channel + "]");
 	}
 
 	/**
