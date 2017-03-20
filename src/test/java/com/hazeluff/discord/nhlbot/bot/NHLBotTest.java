@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.MongoClient;
@@ -37,7 +37,7 @@ import sx.blah.discord.api.events.EventDispatcher;
 import sx.blah.discord.util.DiscordException;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ NHLBot.class, GuildPreferencesManager.class })
+@PrepareForTest({ NHLBot.class, PreferencesManager.class })
 public class NHLBotTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBotTest.class);
 
@@ -52,7 +52,7 @@ public class NHLBotTest {
 	@Mock
 	MongoDatabase mockMongoDatabase;
 	@Mock
-	GuildPreferencesManager mockGuildPreferencesManager;
+	PreferencesManager mockPreferencesManager;
 	@Mock
 	GameChannelsManager mockGameChannelsManager;
 	@Mock
@@ -75,15 +75,15 @@ public class NHLBotTest {
 		whenNew(GameScheduler.class).withAnyArguments().thenReturn(mockGameScheduler);
 		when(mockDiscordClient.getDispatcher()).thenReturn(mockEventDispatcher);
 		when(mockDiscordClient.getApplicationClientID()).thenReturn(ID);
-		mockStatic(GuildPreferencesManager.class);
-		when(GuildPreferencesManager.getInstance(mockDiscordClient, mockMongoDatabase))
-				.thenReturn(mockGuildPreferencesManager);
+		mockStatic(PreferencesManager.class);
+		when(PreferencesManager.getInstance(mockDiscordClient, mockMongoDatabase))
+				.thenReturn(mockPreferencesManager);
 	}
 
 	@Test
 	public void constructorShouldRegisterListeners() throws Exception {
 		LOGGER.info("constructorShouldRegisterListeners");
-		mockStatic(NHLBot.class, GuildPreferencesManager.class);
+		mockStatic(NHLBot.class, PreferencesManager.class);
 		when(NHLBot.getClient(TOKEN)).thenReturn(mockDiscordClient);
 
 		new NHLBot(TOKEN);
@@ -103,7 +103,7 @@ public class NHLBotTest {
 		assertEquals(mockDiscordClient, nlhBotBot.getDiscordClient());
 		assertEquals(mockMongoDatabase, nlhBotBot.getMongoDatabase());
 		assertEquals(mockDiscordManager, nlhBotBot.getDiscordManager());
-		assertEquals(mockGuildPreferencesManager, nlhBotBot.getGuildPreferencesManager());
+		assertEquals(mockPreferencesManager, nlhBotBot.getPreferencesManager());
 		assertEquals(mockGameChannelsManager, nlhBotBot.getGameChannelsManager());
 		assertEquals(mockGameScheduler, nlhBotBot.getGameScheduler());
 		assertEquals(ID, nlhBotBot.getId());
@@ -119,7 +119,7 @@ public class NHLBotTest {
 	}
 
 	@Test
-	@PrepareForTest({ NHLBot.class, GuildPreferencesManager.class, Utils.class })
+	@PrepareForTest({ NHLBot.class, PreferencesManager.class, Utils.class })
 	public void getClientShouldReturnIDiscordClient() throws Exception {
 		LOGGER.info("getClientShouldReturnIDiscordClient");
 		when(mockClientBuilder.login()).thenReturn(mockDiscordClient);

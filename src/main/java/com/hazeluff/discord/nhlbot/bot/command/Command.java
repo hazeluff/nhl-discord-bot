@@ -20,6 +20,7 @@ public abstract class Command {
 			+ "where [team] is the 3 letter code for your team.\n"
 			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
 	static final String GAME_NOT_STARTED_MESSAGE = "The game hasn't started yet.";
+	static final String RUN_IN_SERVER_CHANNEL_MESSAGE = "This can only be run on a server's 'Game Day Channel'.";
 	
 	final NHLBot nhlBot;
 
@@ -80,7 +81,7 @@ public abstract class Command {
 	 * @return
 	 */
 	String getRunInGameDayChannelMessage(IGuild guild, Team team) {
-		return String.format("Please run this command in a Game Day Channel.\nLatest game channel: %s",
+		return String.format("Please run this command in a 'Game Day Channel'.\nLatest game channel: %s",
 				getLatestGameChannelMention(guild, team));
 	}
 }

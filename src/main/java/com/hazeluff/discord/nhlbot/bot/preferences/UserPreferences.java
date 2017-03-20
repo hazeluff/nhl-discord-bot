@@ -2,12 +2,12 @@ package com.hazeluff.discord.nhlbot.bot.preferences;
 
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
-public class GuildPreferences {
+public class UserPreferences {
 	private Team team;
 
-	public GuildPreferences() {}
+	public UserPreferences() {}
 
-	public GuildPreferences(Team team) {
+	public UserPreferences(Team team) {
 		this.team = team;
 	}
 
@@ -35,7 +35,7 @@ public class GuildPreferences {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		GuildPreferences other = (GuildPreferences) obj;
+		UserPreferences other = (UserPreferences) obj;
 		if (team != other.team)
 			return false;
 		return true;
@@ -43,6 +43,6 @@ public class GuildPreferences {
 
 	@Override
 	public String toString() {
-		return "GuildPreferences [team=" + team + "]";
+		return "UserPreferences [team=" + team + "]";
 	}
 }

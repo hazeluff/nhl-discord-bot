@@ -19,7 +19,13 @@ public class NextGameCommand extends Command {
 	@Override
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
-		Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(message.getGuild().getID());
+		Team preferredTeam;
+		if (channel.isPrivate()) {
+			preferredTeam = nhlBot.getPreferencesManager().getTeamByUser(message.getAuthor().getID());
+		} else {
+			preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(message.getGuild().getID());			
+		}
+		
 		if (preferredTeam == null) {
 			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
 		} else {

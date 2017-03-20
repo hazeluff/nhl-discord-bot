@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.nhlbot.bot.GameChannelsManager;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -54,7 +54,7 @@ public class GameSchedulerTest {
 	@Mock
 	DiscordManager mockDiscordManager;
 	@Mock
-	GuildPreferencesManager mockGuildPreferencesManager;
+	PreferencesManager mockPreferencesManager;
 	@Mock
 	GameChannelsManager mockGameChannelsManager;
 	@Mock
@@ -87,7 +87,7 @@ public class GameSchedulerTest {
 	@Before
 	public void setup() throws Exception {
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getGuildPreferencesManager()).thenReturn(mockGuildPreferencesManager);
+		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockNHLBot.getGameChannelsManager()).thenReturn(mockGameChannelsManager);
 
 		when(mockGame1.getDate()).thenReturn(gameDate1);
@@ -490,8 +490,8 @@ public class GameSchedulerTest {
 		LOGGER.info("deleteInactiveChannelsShouldRemoveChannels");
 		doReturn(Arrays.asList(mockGame1, mockGame3)).when(spyGameScheduler).getInactiveGames(TEAM);
 		doReturn(Arrays.asList(mockGame4)).when(spyGameScheduler).getInactiveGames(TEAM2);
-		when(mockGuildPreferencesManager.getSubscribedGuilds(TEAM)).thenReturn(Arrays.asList(mockGuild1, mockGuild2));
-		when(mockGuildPreferencesManager.getSubscribedGuilds(TEAM2)).thenReturn(Arrays.asList(mockGuild3));
+		when(mockPreferencesManager.getSubscribedGuilds(TEAM)).thenReturn(Arrays.asList(mockGuild1, mockGuild2));
+		when(mockPreferencesManager.getSubscribedGuilds(TEAM2)).thenReturn(Arrays.asList(mockGuild3));
 		when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2));
 		when(mockGuild2.getChannels()).thenReturn(Arrays.asList(mockChannel3));
 		when(mockGuild3.getChannels()).thenReturn(Arrays.asList(mockChannel4));
@@ -508,7 +508,7 @@ public class GameSchedulerTest {
 	@Test
 	public void initChannelsShouldInvokeGameChannelsManager() {
 		LOGGER.info("initChannelsShouldInvokeGameChannelsManager");
-		when(mockGuildPreferencesManager.getTeam(GUILD_ID1)).thenReturn(TEAM);
+		when(mockPreferencesManager.getTeamByGuild(GUILD_ID1)).thenReturn(TEAM);
 		gameScheduler = new GameScheduler(mockNHLBot, Arrays.asList(mockGame1, mockGame2), null, 
 				new HashMap<Team, List<Game>>() {{
 						put(TEAM, Arrays.asList(mockGame2, mockGame3));

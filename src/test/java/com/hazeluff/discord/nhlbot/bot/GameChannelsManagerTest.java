@@ -37,7 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameEvent;
 import com.hazeluff.discord.nhlbot.nhl.GameEventStrength;
@@ -90,7 +90,7 @@ public class GameChannelsManagerTest {
 	@Mock
 	private GameScheduler mockGameScheduler;
 	@Mock
-	private GuildPreferencesManager mockGuildPreferencesManager;
+	private PreferencesManager mockPreferencesManager;
 	@Mock
 	private Game mockGame;
 	@Mock
@@ -112,7 +112,7 @@ public class GameChannelsManagerTest {
 	@Before
 	public void before() {
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getGuildPreferencesManager()).thenReturn(mockGuildPreferencesManager);
+		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
 		when(mockGame.getTeams()).thenReturn(Arrays.asList(HOME_TEAM, AWAY_TEAM));
 		when(mockGame.getHomeTeam()).thenReturn(HOME_TEAM);
@@ -122,10 +122,10 @@ public class GameChannelsManagerTest {
 		when(mockGame.getScoreMessage()).thenReturn(SCORE_MESSAGE);
 		when(mockGame.getGoalsMessage()).thenReturn(GOALS_MESSAGE);
 		when(mockGame.getGamePk()).thenReturn(GAME_PK);
-		when(mockGuildPreferencesManager.getSubscribedGuilds(HOME_TEAM)).thenReturn(Arrays.asList(mockHomeGuild));
-		when(mockGuildPreferencesManager.getSubscribedGuilds(AWAY_TEAM)).thenReturn(Arrays.asList(mockAwayGuild));
-		when(mockGuildPreferencesManager.getTeam(HOME_GUILD_ID)).thenReturn(HOME_TEAM);
-		when(mockGuildPreferencesManager.getTeam(AWAY_GUILD_ID)).thenReturn(AWAY_TEAM);
+		when(mockPreferencesManager.getSubscribedGuilds(HOME_TEAM)).thenReturn(Arrays.asList(mockHomeGuild));
+		when(mockPreferencesManager.getSubscribedGuilds(AWAY_TEAM)).thenReturn(Arrays.asList(mockAwayGuild));
+		when(mockPreferencesManager.getTeamByGuild(HOME_GUILD_ID)).thenReturn(HOME_TEAM);
+		when(mockPreferencesManager.getTeamByGuild(AWAY_GUILD_ID)).thenReturn(AWAY_TEAM);
 		when(mockHomeGuild.getID()).thenReturn(HOME_GUILD_ID);
 		when(mockAwayGuild.getID()).thenReturn(AWAY_GUILD_ID);
 		when(mockHomeGuild.getChannels()).thenReturn(Arrays.asList(mockHomeChannel1, mockHomeChannel2));

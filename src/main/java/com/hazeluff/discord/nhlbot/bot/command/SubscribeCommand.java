@@ -23,7 +23,7 @@ public class SubscribeCommand extends Command {
 	@Override
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
-		if (hasPermission(message)) {
+		if (channel.isPrivate() || hasPermission(message)) {
 			if (arguments.length < 3) {
 				nhlBot.getDiscordManager().sendMessage(channel, SPECIFY_TEAM_MESSAGE);
 			} else if (arguments[2].equalsIgnoreCase("help")) {
@@ -38,15 +38,22 @@ public class SubscribeCommand extends Command {
 				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
 			} else if (Team.isValid(arguments[2])) {
 				Team team = Team.parse(arguments[2]);
-				nhlBot.getGuildPreferencesManager().subscribe(message.getGuild().getID(), team);
-				nhlBot.getGameScheduler().initChannels(message.getGuild());
-				nhlBot.getDiscordManager().sendMessage(channel,
-						"You are now subscribed to games of the **" + team.getFullName() + "**!");
+				if (channel.isPrivate()) {
+					// Subscribe user
+					nhlBot.getPreferencesManager().subscribeUser(message.getAuthor().getID(), team);
+					nhlBot.getDiscordManager().sendMessage(channel,
+							"You are now subscribed to games of the **" + team.getFullName() + "**!");
+				} else {
+					// Subscribe guild
+					nhlBot.getPreferencesManager().subscribeGuild(message.getGuild().getID(), team);
+					nhlBot.getGameScheduler().initChannels(message.getGuild());
+					nhlBot.getDiscordManager().sendMessage(channel,
+							"This server is now subscribed to games of the **" + team.getFullName() + "**!");
+				}
 			} else {
 				nhlBot.getDiscordManager().sendMessage(channel, "[" + arguments[2] + "] is not a valid team code. "
 						+ "Use `@NHLBot subscribe help` to get a full list of team");
 			}
-
 		} else {
 			nhlBot.getDiscordManager().sendMessage(channel, MUST_BE_ADMIN_TO_SUBSCRIBE_MESSAGE);
 		}

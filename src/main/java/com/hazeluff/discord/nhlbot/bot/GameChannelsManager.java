@@ -95,7 +95,7 @@ public class GameChannelsManager {
 			endOfGameMessages.get(game.getGamePk()).put(team, new ArrayList<>());
 		}
 
-		for (IGuild guild : nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team)) {
+		for (IGuild guild : nhlBot.getPreferencesManager().getSubscribedGuilds(team)) {
 			createChannel(game, guild);
 		}
 	}
@@ -113,7 +113,7 @@ public class GameChannelsManager {
 		Predicate<IChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		if (gameChannels.containsKey(game.getGamePk())) {
 			String guildId = guild.getID();
-			Team team = nhlBot.getGuildPreferencesManager().getTeam(guildId);
+			Team team = nhlBot.getPreferencesManager().getTeamByGuild(guildId);
 			IChannel channel;
 			if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
 				channel = nhlBot.getDiscordManager().createChannel(guild, channelName);
@@ -351,7 +351,7 @@ public class GameChannelsManager {
 	 */
 	public void removeChannels(Game game, Team team) {
 		LOGGER.info("Removing channels for game [" + game + "]");
-		for (IGuild guild : nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team)) {
+		for (IGuild guild : nhlBot.getPreferencesManager().getSubscribedGuilds(team)) {
 			for (IChannel channel : guild.getChannels()) {
 				if (channel.getName().equalsIgnoreCase(game.getChannelName())) {
 					nhlBot.getDiscordManager().deleteChannel(channel);
@@ -385,7 +385,7 @@ public class GameChannelsManager {
 	public void removeChannel(Game game, IChannel channel) {
 		LOGGER.info("Removing channel [" + channel.getName() + "] for game [" + game.getGamePk() + "]");
 		String guildId = channel.getGuild().getID();
-		Team team = nhlBot.getGuildPreferencesManager().getTeam(guildId);
+		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guildId);
 
 		if (gameChannels.containsKey(game.getGamePk())) {
 			gameChannels.get(game.getGamePk()).get(team)

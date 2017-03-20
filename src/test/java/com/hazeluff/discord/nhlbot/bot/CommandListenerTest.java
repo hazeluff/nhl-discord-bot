@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.command.Command;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.utils.Utils;
@@ -69,7 +69,7 @@ public class CommandListenerTest {
 	@Mock
 	private GameScheduler mockGameScheduler;
 	@Mock
-	private GuildPreferencesManager mockGuildPreferencesManager;
+	private PreferencesManager mockPreferencesManager;
 
 	@Mock
 	private MessageReceivedEvent mockEvent;
@@ -95,7 +95,7 @@ public class CommandListenerTest {
 		when(mockNHLBot.getDiscordClient()).thenReturn(mockDiscordClient);
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
 		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
-		when(mockNHLBot.getGuildPreferencesManager()).thenReturn(mockGuildPreferencesManager);
+		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockEvent.getMessage()).thenReturn(mockMessage);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
@@ -495,6 +495,15 @@ public class CommandListenerTest {
 
 		String content2 = "fuck off " + BOT_NICKNAME_MENTION_ID;
 		when(mockMessage.getContent()).thenReturn(content2);
+		assertTrue(commandListener.isBotMentioned(mockMessage));
+	}
+
+	@Test
+	public void isBotMentionedShouldReturnTrueIfMessageIsInPrivateChannel() {
+		LOGGER.info("isBotMentionedShouldReturnTrueIfMessageIsInPrivateChannel");
+		when(mockMessage.getChannel().isPrivate()).thenReturn(true);
+		String content = "hey, what's up?";
+		when(mockMessage.getContent()).thenReturn(content);
 		assertTrue(commandListener.isBotMentioned(mockMessage));
 	}
 

@@ -22,8 +22,10 @@ public class ScoreCommand extends Command {
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
 		IGuild guild = message.getGuild();
-		Team preferredTeam = nhlBot.getGuildPreferencesManager().getTeam(guild.getID());
-		if (preferredTeam == null) {
+		Team preferredTeam;
+		if (channel.isPrivate()) {
+			nhlBot.getDiscordManager().sendMessage(channel, RUN_IN_SERVER_CHANNEL_MESSAGE);
+		} else if ((preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(guild.getID())) == null) {
 			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
 		} else {
 			Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());

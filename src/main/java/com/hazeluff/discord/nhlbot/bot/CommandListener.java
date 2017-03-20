@@ -60,11 +60,18 @@ public class CommandListener {
 	@EventSubscriber
 	public void onReceivedMessageEvent(MessageReceivedEvent event) {
 		IMessage message = event.getMessage();
-		LOGGER.trace(String.format("[%s][%s][%s][%s]",
-				message.getChannel().getGuild().getName(),
-				message.getChannel().getName(),
-				message.getAuthor().getName(),
-				message.getContent()));
+		if(message.getChannel().isPrivate()) {
+			LOGGER.trace(String.format("[Direct Message][%s][%s][%s]",
+					message.getChannel().getName(),
+					message.getAuthor().getName(),
+					message.getContent()));			
+		} else {
+			LOGGER.trace(String.format("[%s][%s][%s][%s]",
+					message.getGuild().getName(),
+					message.getChannel().getName(),
+					message.getAuthor().getName(),
+					message.getContent()));			
+		}
 		
 
 		if (replyToCommand(message)) {
@@ -99,9 +106,19 @@ public class CommandListener {
 	boolean replyToCommand(IMessage message) {
 		String[] arguments = getBotCommand(message);
 		if (arguments.length > 1) {
-			LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
-					message.getChannel().getName(), message.getAuthor().getName(),
-					"Command:" + Arrays.toString(arguments)));
+			if(message.getChannel().isPrivate()) {
+				LOGGER.info(
+						String.format("Received Command:[Direct Message][%s][%s][%s]",
+						message.getChannel().getName(), 
+						message.getAuthor().getName(),
+						"Command:" + Arrays.toString(arguments)));	
+			} else {
+				LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]", 
+						message.getChannel().getGuild().getName(),
+						message.getChannel().getName(), 
+						message.getAuthor().getName(),
+						"Command:" + Arrays.toString(arguments)));
+			}
 			Optional<Command> matchedCommand = commands
 					.stream()
 					.filter(command -> command.isAccept(arguments))
@@ -125,8 +142,18 @@ public class CommandListener {
 	 */
 	boolean replyToMention(IMessage message) {
 		if (isBotMentioned(message)) {
-			LOGGER.info(String.format("Received Mention:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
-					message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
+			if(message.getChannel().isPrivate()) {
+				LOGGER.info(String.format("Received Mention:[Direct Message][%s][%s][%s]", 
+						message.getChannel().getName(), 
+						message.getAuthor().getName(), 
+						message.getContent()));
+			} else {
+				LOGGER.info(String.format("Received Mention:[%s][%s][%s][%s]", 
+						message.getChannel().getGuild().getName(),
+						message.getChannel().getName(), 
+						message.getAuthor().getName(), 
+						message.getContent()));
+			}
 			String strMessage = message.getContent();
 			
 			String response = null;
@@ -169,10 +196,10 @@ public class CommandListener {
 	 */
 	String[] getBotCommand(IMessage message) {
 		String messageContent = message.getContent();
-		if(messageContent.startsWith(nhlBot.getMentionId())
+		if (messageContent.startsWith(nhlBot.getMentionId())
 				|| messageContent.startsWith(nhlBot.getNicknameMentionId())) {
 			return messageContent.split("\\s+");
-		}		
+		}
 		return new String[0];
 	}
 
@@ -198,7 +225,9 @@ public class CommandListener {
 	 */
 	boolean isBotMentioned(IMessage message) {
 		String messageContent = message.getContent();
-		return messageContent.contains(nhlBot.getMentionId()) || messageContent.contains(nhlBot.getNicknameMentionId());
+		return messageContent.contains(nhlBot.getMentionId()) 
+				|| messageContent.contains(nhlBot.getNicknameMentionId())
+				|| message.getChannel().isPrivate();
 	}
 
 	/**

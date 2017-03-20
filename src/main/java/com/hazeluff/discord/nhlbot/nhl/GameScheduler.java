@@ -184,7 +184,7 @@ public class GameScheduler extends Thread {
 		LOGGER.info("Cleaning up old channels.");
 		for (Team team : Team.values()) {
 			List<Game> inactiveGames = getInactiveGames(team);
-			nhlBot.getGuildPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
+			nhlBot.getPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
 				guild.getChannels().forEach(channel -> {
 					inactiveGames.forEach(game -> {
 						if (channel.getName().equalsIgnoreCase(game.getChannelName())) {
@@ -239,7 +239,7 @@ public class GameScheduler extends Thread {
 	 */
 	public void initChannels(IGuild guild) {
 		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
-		Team team = nhlBot.getGuildPreferencesManager().getTeam(guild.getID());
+		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getID());
 
 		// Remove all game channels
 		games.forEach(game -> {

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.MongoClient;
@@ -23,7 +23,7 @@ public class NHLBot {
 
 	private final IDiscordClient discordClient;
 	private final MongoDatabase mongoDatabase;
-	private final GuildPreferencesManager guildPreferencesManager;
+	private final PreferencesManager preferencesManager;
 	private final DiscordManager discordManager;
 	private final GameChannelsManager gameChannelsManager;
 	private final GameScheduler gameScheduler;
@@ -44,7 +44,7 @@ public class NHLBot {
 
 		// Init MongoClient/GuildPreferences
 		mongoDatabase = getMongoDatabaseInstance();
-		guildPreferencesManager = GuildPreferencesManager.getInstance(discordClient, mongoDatabase);
+		preferencesManager = PreferencesManager.getInstance(discordClient, mongoDatabase);
 
 		// Init other classes
 		discordManager = new DiscordManager(discordClient);
@@ -89,8 +89,8 @@ public class NHLBot {
 		return mongoDatabase;
 	}
 
-	public GuildPreferencesManager getGuildPreferencesManager() {
-		return guildPreferencesManager;
+	public PreferencesManager getPreferencesManager() {
+		return preferencesManager;
 	}
 
 	public DiscordManager getDiscordManager() {

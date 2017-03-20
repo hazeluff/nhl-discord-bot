@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
@@ -57,7 +57,7 @@ public class SubscribeCommandTest {
 	@Mock
 	private DiscordManager mockDiscordManager;
 	@Mock
-	private GuildPreferencesManager mockGuildPreferencesManager;
+	private PreferencesManager mockPreferencesManager;
 	@Mock
 	private GameScheduler mockGameScheduler;
 	@Mock
@@ -83,7 +83,7 @@ public class SubscribeCommandTest {
 		subscribeCommand = new SubscribeCommand(mockNHLBot);
 		spySubscribeCommand = spy(subscribeCommand);
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getGuildPreferencesManager()).thenReturn(mockGuildPreferencesManager);
+		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
@@ -164,7 +164,7 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "help" });
 
-		verify(mockGuildPreferencesManager, never()).subscribe(anyString(), any(Team.class));
+		verify(mockPreferencesManager, never()).subscribeGuild(anyString(), any(Team.class));
 		verify(mockGameScheduler, never()).initChannels(any(IGuild.class));
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		String message = captorString.getValue();
@@ -176,13 +176,28 @@ public class SubscribeCommandTest {
 	}
 
 	@Test
-	public void replyToShouldSendMessageAndInvokeClassesWhenTeamIsValid() {
-		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenTeamIsNotValid");
+	public void replyToShouldSendMessageAndInvokeClassesWhenChannelIsPrivateAndTeamIsValid() {
+		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenChannelIsPrivateAndTeamIsValid");
+		when(mockChannel.isPrivate()).thenReturn(true);
+		doReturn(false).when(spySubscribeCommand).hasPermission(mockMessage);
+
+		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
+
+		verify(mockPreferencesManager).subscribeUser(USER_ID_AUTHOR, TEAM);
+		verify(mockGameScheduler, never()).initChannels(mockGuild);
+		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
+		assertTrue(captorString.getValue().contains(TEAM.getFullName()));
+	}
+
+	@Test
+	public void replyToShouldSendMessageAndInvokeClassesWhenChannelIsNotPrivateAndTeamIsValid() {
+		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenChannelIsNotPrivateAndTeamIsValid");
+		when(mockChannel.isPrivate()).thenReturn(false);
 		doReturn(true).when(spySubscribeCommand).hasPermission(mockMessage);
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
 
-		verify(mockGuildPreferencesManager).subscribe(GUILD_ID, TEAM);
+		verify(mockPreferencesManager).subscribeGuild(GUILD_ID, TEAM);
 		verify(mockGameScheduler).initChannels(mockGuild);
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		assertTrue(captorString.getValue().contains(TEAM.getFullName()));
@@ -195,7 +210,7 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "ZZZ" });
 
-		verify(mockGuildPreferencesManager, never()).subscribe(anyString(), any(Team.class));
+		verify(mockPreferencesManager, never()).subscribeGuild(anyString(), any(Team.class));
 		verify(mockGameScheduler, never()).initChannels(any(IGuild.class));
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		assertTrue(captorString.getValue().contains("`@NHLBot subscribe help`"));

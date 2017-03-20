@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferencesManager;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
@@ -28,27 +28,32 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IUser;
 
 @RunWith(PowerMockRunner.class)
 public class NextGameCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NextGameCommandTest.class);
 
 	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
+	private static final String USER_ID = RandomStringUtils.randomNumeric(10);
 	private static final String CHANNEL_NAME = "ChannelName";
-	private static final Team TEAM = Team.COLORADO_AVALANCH;
+	private static final Team GUILD_TEAM = Team.COLORADO_AVALANCH;
+	private static final Team USER_TEAM = Team.FLORIDA_PANTHERS;
 
 	@Mock
 	private NHLBot mockNHLBot;
 	@Mock
 	private DiscordManager mockDiscordManager;
 	@Mock
-	private GuildPreferencesManager mockGuildPreferencesManager;
+	private PreferencesManager mockPreferencesManager;
 	@Mock
 	private GameScheduler mockGameScheduler;
 	@Mock
 	private IMessage mockMessage;
 	@Mock
 	private IChannel mockChannel;
+	@Mock
+	private IUser mockUser;
 	@Mock
 	private IGuild mockGuild;
 	@Mock
@@ -64,12 +69,14 @@ public class NextGameCommandTest {
 		nextGameCommand = new NextGameCommand(mockNHLBot);
 		spyNextGameCommand = spy(nextGameCommand);
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getGuildPreferencesManager()).thenReturn(mockGuildPreferencesManager);
+		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
 		when(mockGuild.getID()).thenReturn(GUILD_ID);
+		when(mockMessage.getAuthor()).thenReturn(mockUser);
+		when(mockUser.getID()).thenReturn(USER_ID);
 	}
 
 	@Test
@@ -85,8 +92,9 @@ public class NextGameCommandTest {
 	}
 
 	@Test
-	public void replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed() {
+	public void replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribedAndChannelIsPrivate() {
 		LOGGER.info("replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed");
+		when(mockChannel.isPrivate()).thenReturn(true);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 
 		nextGameCommand.replyTo(mockMessage, null);
@@ -95,12 +103,39 @@ public class NextGameCommandTest {
 	}
 
 	@Test
-	public void replyToShouldSendMessage() {
-		LOGGER.info("replyToShouldSendMessage");
-		when(mockGuildPreferencesManager.getTeam(GUILD_ID)).thenReturn(TEAM);
-		when(mockGameScheduler.getNextGame(TEAM)).thenReturn(mockGame);
+	public void replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribedAndChannelIsNotPrivate() {
+		LOGGER.info("replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed");
+		when(mockChannel.isPrivate()).thenReturn(false);
+		when(mockMessage.getChannel()).thenReturn(mockChannel);
+
+		nextGameCommand.replyTo(mockMessage, null);
+
+		verify(mockDiscordManager).sendMessage(mockChannel, Command.SUBSCRIBE_FIRST_MESSAGE);
+	}
+
+	@Test
+	public void replyToShouldSendMessageIfChannelIsPrivate() {
+		LOGGER.info("replyToShouldSendMessageIfChannelIsPrivate");
+		when(mockChannel.isPrivate()).thenReturn(true);
+		when(mockPreferencesManager.getTeamByUser(USER_ID)).thenReturn(USER_TEAM);
+		when(mockGameScheduler.getNextGame(USER_TEAM)).thenReturn(mockGame);
 		String detailsMessage = "DetailsMessage";
-		when(mockGame.getDetailsMessage(TEAM.getTimeZone())).thenReturn(detailsMessage);
+		when(mockGame.getDetailsMessage(USER_TEAM.getTimeZone())).thenReturn(detailsMessage);
+
+		spyNextGameCommand.replyTo(mockMessage, null);
+
+		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
+		assertTrue(captorString.getValue().contains(detailsMessage));
+	}
+
+	@Test
+	public void replyToShouldSendMessageIfChannelIsNotPrivate() {
+		LOGGER.info("replyToShouldSendMessageIfChannelIsNotPrivate");
+		when(mockChannel.isPrivate()).thenReturn(false);
+		when(mockPreferencesManager.getTeamByGuild(GUILD_ID)).thenReturn(GUILD_TEAM);
+		when(mockGameScheduler.getNextGame(GUILD_TEAM)).thenReturn(mockGame);
+		String detailsMessage = "DetailsMessage";
+		when(mockGame.getDetailsMessage(GUILD_TEAM.getTimeZone())).thenReturn(detailsMessage);
 
 		spyNextGameCommand.replyTo(mockMessage, null);
 
