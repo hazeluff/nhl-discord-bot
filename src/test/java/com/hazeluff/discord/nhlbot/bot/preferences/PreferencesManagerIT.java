@@ -26,6 +26,7 @@ public class PreferencesManagerIT {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManagerIT.class);
 
 	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
+	private static final String USER_ID = RandomStringUtils.randomNumeric(10);
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 
 	static MongoClient mongoClient;
@@ -57,8 +58,8 @@ public class PreferencesManagerIT {
 	}
 	
 	@Test
-	public void subscribeShouldWriteToDatabase() {
-		LOGGER.info("subscribeShouldWriteToDatabase");
+	public void subscribeGuildShouldWriteToDatabase() {
+		LOGGER.info("subscribeGuildShouldWriteToDatabase");
 		guildPreferencesManager.subscribeGuild(GUILD_ID, TEAM);
 
 		guildPreferencesManager = new PreferencesManager(null, mongoDatabase);
@@ -66,6 +67,18 @@ public class PreferencesManagerIT {
 		guildPreferencesManager.loadPreferences();
 
 		assertEquals(TEAM, guildPreferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+	}
+
+	@Test
+	public void subscribeUserShouldWriteToDatabase() {
+		LOGGER.info("subscribeUserShouldWriteToDatabase");
+		guildPreferencesManager.subscribeUser(USER_ID, TEAM);
+
+		guildPreferencesManager = new PreferencesManager(null, mongoDatabase);
+		assertFalse(guildPreferencesManager.getUserPreferences().containsKey(USER_ID));
+		guildPreferencesManager.loadPreferences();
+
+		assertEquals(TEAM, guildPreferencesManager.getUserPreferences().get(USER_ID).getTeam());
 	}
 
 }
