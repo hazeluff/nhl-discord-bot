@@ -33,6 +33,7 @@ import sx.blah.discord.handle.obj.IMessage;
 public class CommandListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListener.class);
 
+	static final String DIRECT_MESSAGE_COMMAND_INSERT = "DirectMessage";
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
@@ -81,7 +82,7 @@ public class CommandListener {
 		if (replyToMention(message)) {
 			return;
 		}
-		
+
 		if (isBotCommand(message)) {
 			nhlBot.getDiscordManager().sendMessage(message.getChannel(),
 					"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
@@ -89,7 +90,7 @@ public class CommandListener {
 		}
 
 		if (shouldFuckMessier(message)) {
-			return;
+			nhlBot.getDiscordManager().sendMessage(message.getChannel(), "FUCK MESSIER");
 		}
 	}
 
@@ -200,6 +201,10 @@ public class CommandListener {
 				|| messageContent.startsWith(nhlBot.getNicknameMentionId())) {
 			return messageContent.split("\\s+");
 		}
+
+		if (message.getChannel().isPrivate()) {
+			return (DIRECT_MESSAGE_COMMAND_INSERT + " " + messageContent).split("\\s+");
+		}
 		return new String[0];
 	}
 
@@ -253,7 +258,6 @@ public class CommandListener {
 			counter.removeIf(time -> currentTime - time > FUCK_MESSIER_COUNT_LIFESPAN);
 			if (counter.size() >= 5) {
 				counter.clear();
-				nhlBot.getDiscordManager().sendMessage(channel, "FUCK MESSIER");
 				return true;
 			}
 		}

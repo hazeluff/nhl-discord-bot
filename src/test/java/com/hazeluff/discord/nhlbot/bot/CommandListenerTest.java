@@ -152,7 +152,6 @@ public class CommandListenerTest {
 		doReturn(false).when(spyCommandListener).replyToCommand(any(IMessage.class));
 		doReturn(false).when(spyCommandListener).replyToMention(any(IMessage.class));
 		doReturn(true).when(spyCommandListener).isBotCommand(any(IMessage.class));
-		doReturn(null).when(mockDiscordManager).sendMessage(any(IChannel.class), anyString());
 
 		spyCommandListener.onReceivedMessageEvent(mockEvent);
 
@@ -179,6 +178,8 @@ public class CommandListenerTest {
 		verify(spyCommandListener).replyToMention(mockMessage);
 		verify(spyCommandListener).isBotCommand(mockMessage);
 		verify(spyCommandListener).shouldFuckMessier(mockMessage);
+		verify(mockDiscordManager).sendMessage(mockChannel, "FUCK MESSIER");
+		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
 	}
 
 	// replyToCommand
@@ -446,6 +447,16 @@ public class CommandListenerTest {
 		String[] result = commandListener.getBotCommand(mockMessage);
 
 		assertArrayEquals(new String[] { BOT_NICKNAME_MENTION_ID, "2", "3" }, result);
+	}
+
+	@Test
+	public void getBotCommandShouldReturnSplitMessageWhenChannelIsPrivate() {
+		LOGGER.info("getBotCommandShouldReturnSplitMessageWhenChannelIsPrivate");
+		when(mockMessage.getContent()).thenReturn("  2  3");
+		when(mockMessage.getChannel().isPrivate()).thenReturn(true);
+		String[] result = commandListener.getBotCommand(mockMessage);
+
+		assertArrayEquals(new String[] { CommandListener.DIRECT_MESSAGE_COMMAND_INSERT, "2", "3" }, result);
 	}
 
 	@Test
