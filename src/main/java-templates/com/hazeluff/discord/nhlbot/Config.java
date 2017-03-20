@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot;
 
 public class Config {
 	public static final String GIT_URL = "http://nhlbot.hazeluff.com";
+	public static final String STATUS_MESSAGE = "@NHLBot help";
 	public static final String HAZELUFF_ID = "225742618422673409";
 	public static final String HAZELUFF_MENTION = "<@" + HAZELUFF_ID + ">";
 	public static final String HAZELUFF_EMAIL = "me@hazeluff.com";

@@ -72,7 +72,7 @@ public class NHLBot {
 			Utils.sleep(5000);
 		}
 		LOGGER.info("Client is ready.");
-		client.changeStatus(Status.game("hazeluff.com"));
+		client.changeStatus(Status.game(Config.STATUS_MESSAGE));
 
 		return client;
 	}
