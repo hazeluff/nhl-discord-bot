@@ -121,8 +121,8 @@ public class GameTracker extends Thread {
 	void sendReminders() {
 		boolean firstPass = true;
 		boolean closeToStart;
+		long timeTillGameMs = Long.MAX_VALUE;
 		do {
-			long timeTillGameMs = Long.MAX_VALUE;
 			timeTillGameMs = DateUtils.diffMs(ZonedDateTime.now(), game.getDate());
 			closeToStart = timeTillGameMs < CLOSE_TO_START_THRESHOLD_MS;
 			if (!closeToStart) {
@@ -147,7 +147,6 @@ public class GameTracker extends Thread {
 				lowestThreshold = Long.MAX_VALUE;
 				message = null;
 				firstPass = false;
-				// Sleep (wait for
 				LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE_MS + "]");
 				Utils.sleep(IDLE_POLL_RATE_MS);
 			}
@@ -161,13 +160,12 @@ public class GameTracker extends Thread {
 	 *         false, otherwise
 	 */
 	boolean waitForStart() {
-		boolean alreadyStarted = true;
+		boolean alreadyStarted = game.getStatus() != GameStatus.PREVIEW;
 		boolean started = false;
 		do {
 			game.update();
 			started = game.getStatus() != GameStatus.PREVIEW;
 			if (!started) {
-				alreadyStarted = false;
 				LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
 				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}

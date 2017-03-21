@@ -237,7 +237,7 @@ public class GameTrackerTest {
 		LOGGER.info("waitForStartShouldSleepUntilGameStarted");
 		mockStatic(Utils.class);
 		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.PREVIEW, GameStatus.PREVIEW,
-				GameStatus.STARTED);
+				GameStatus.PREVIEW, GameStatus.STARTED);
 
 		gameTracker.waitForStart();
 
@@ -260,9 +260,11 @@ public class GameTrackerTest {
 	public void waitForStartShouldReturnFalseIfNotAlreadyStarted() {
 		LOGGER.info("waitForStartShouldReturnFalseIfNotAlreadyStarted");
 		mockStatic(Utils.class);
-		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.STARTED);
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.PREVIEW, GameStatus.STARTED);
 
 		assertFalse(gameTracker.waitForStart());
+		verifyStatic();
+		Utils.sleep(GameTracker.ACTIVE_POLL_RATE_MS);
 	}
 	
 	@Test
