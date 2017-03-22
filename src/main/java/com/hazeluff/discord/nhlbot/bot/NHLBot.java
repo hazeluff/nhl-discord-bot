@@ -54,7 +54,10 @@ public class NHLBot {
 		// Register listeners
 		EventDispatcher dispatcher = discordClient.getDispatcher();
 		dispatcher.registerListener(new CommandListener(this));
-		gameScheduler.start();
+
+		if (Config.isLoadGames()) {
+			gameScheduler.start();
+		}
 	}
 
 	static IDiscordClient getClient(String token) {

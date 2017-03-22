@@ -36,7 +36,7 @@ public class GameScheduler extends Thread {
 	static final int UPDATE_RATE = 1800000;
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
-	private List<Game> games;
+	private List<Game> games = new ArrayList<>();
 	private List<GameTracker> gameTrackers = new ArrayList<>(); // TODO Change to HashMap<Integer(GamePk), GameTracker>
 	private Map<Team, List<Game>> teamActiveGames = new HashMap<>();
 
@@ -124,7 +124,8 @@ public class GameScheduler extends Thread {
 		}
 		games = new ArrayList<>(setGames);
 		games.sort(Game.getDateComparator());
-		LOGGER.info("Retrieved all games: [" + games.size() + "]");
+		LOGGER.info("Retrieved all games: [" + games.size() + "]");		
+
 		LOGGER.info("Finished Initialization.");
 	}
 
