@@ -36,6 +36,7 @@ public class AboutCommand extends Command {
 								+ "and creates channels that provides game information in real time.")
 				.appendField("Contact", Config.HAZELUFF_MENTION, true)
 				.appendField("Email", Config.HAZELUFF_EMAIL, true)
+				.appendField("Version", Config.VERSION, true)
 				.appendField("GitHub", Config.GIT_URL, true)
 				.build();
 		discordManager.sendFile(channel, ResourceLoader.get().getHazeluffAvatar(), embed);
