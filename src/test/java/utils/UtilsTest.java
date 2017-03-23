@@ -1,5 +1,6 @@
 package utils;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyLong;
@@ -59,5 +60,12 @@ public class UtilsTest {
 		Thread.sleep(anyLong());
 		
 		Utils.sleep(1);
+	}
+
+	@Test
+	public void getFileNameShouldGetFileNameFromPath() {
+		LOGGER.info("getFileNameShouldGetFileNameFromPath");
+		assertEquals("filename.png", Utils.getFileName("a/b/c/filename.png"));
+		assertEquals("filename.png", Utils.getFileName("/a/b/c/filename.png"));
 	}
 }

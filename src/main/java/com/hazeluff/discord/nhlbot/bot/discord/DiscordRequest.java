@@ -1,5 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.discord;
 
+import java.io.FileNotFoundException;
+
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
@@ -17,6 +19,7 @@ public interface DiscordRequest<T> {
 	 *
 	 * @return The result of this request, if any.
 	 *
+	 * @throws FileNotFoundException
 	 * @throws DiscordException
 	 * @throws MissingPermissionsException
 	 * @throws RateLimitException

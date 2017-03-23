@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -19,6 +20,8 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +37,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
+
 import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -70,6 +76,9 @@ public class DiscordManagerTest {
 	DiscordRequest<Object> mockDiscordRequest;
 	@Mock
 	VoidDiscordRequest mockVoidDiscordRequest;
+	@Mock
+	EmbedObject mockEmbedObject;
+
 	@SuppressWarnings("rawtypes")
 	@Captor
 	ArgumentCaptor<DiscordRequest> captorDiscordRequest;
@@ -99,7 +108,7 @@ public class DiscordManagerTest {
 	@Test
 	@PrepareForTest(RequestBuffer.class)
 	public void performRequestWithReturnShouldInvokeClassesAndCatchException()
-			throws DiscordException, MissingPermissionsException, RateLimitException {
+			throws DiscordException, MissingPermissionsException, RateLimitException, FileNotFoundException {
 		LOGGER.info("performRequestWithReturnShouldInvokeClassesAndCatchException");
 		Object expected = new Object();
 		mockStatic(RequestBuffer.class);
@@ -168,28 +177,105 @@ public class DiscordManagerTest {
 		verify(mockVoidDiscordRequest).perform();
 	}
 
+	@Test
+	@PrepareForTest(DiscordManager.class)
+	public void getMessageBuilderShouldReturnMessageBuilder() throws Exception {
+		MessageBuilder spyMessageBuilder = spy(new MessageBuilder(mockClient));
+		whenNew(MessageBuilder.class).withArguments(mockClient).thenReturn(spyMessageBuilder);
+
+		MessageBuilder result = discordManager.getMessageBuilder(mockChannel, MESSAGE, mockEmbedObject);
+
+		verify(spyMessageBuilder).withChannel(mockChannel);
+		verify(spyMessageBuilder).withContent(MESSAGE);
+		verify(spyMessageBuilder).withEmbed(mockEmbedObject);
+
+		assertEquals(spyMessageBuilder, result);
+	}
+
+	@Test
+	@PrepareForTest(DiscordManager.class)
+	public void getMessageBuilderShouldNotInvokeWithMethodsWhenParametersAreNull() throws Exception {
+		MessageBuilder spyMessageBuilder = spy(new MessageBuilder(mockClient));
+		whenNew(MessageBuilder.class).withArguments(mockClient).thenReturn(spyMessageBuilder);
+
+		MessageBuilder result = discordManager.getMessageBuilder(mockChannel, null, null);
+
+		verify(spyMessageBuilder).withChannel(mockChannel);
+		verify(spyMessageBuilder, never()).withContent(MESSAGE);
+		verify(spyMessageBuilder, never()).withEmbed(mockEmbedObject);
+
+		assertEquals(spyMessageBuilder, result);
+
+	}
+
 	@SuppressWarnings("unchecked")
 	@Test
 	@PrepareForTest(DiscordManager.class)
+	public void sendFileShouldInvokePerformRequest() throws Exception {
+		LOGGER.info("sendFileShouldInvokePerformRequest");
+		doReturn(mockMessage).when(spyDiscordManager).performRequest(any(DiscordRequest.class), anyString(),
+				any(IMessage.class));
+		Resource mockResource = mock(Resource.class);
+		when(mockResource.getStream()).thenReturn(mock(InputStream.class));
+		when(mockResource.getFileName()).thenReturn("FileName");
+
+		IMessage result = spyDiscordManager.sendFile(mockChannel, mockResource, mockEmbedObject);
+
+		assertSame(mockMessage, result);
+		verify(spyDiscordManager).performRequest(captorDiscordRequest.capture(), anyString(), isNull(IMessage.class));
+
+		// Verify DiscordRequest's invocations are correct
+		when(mockChannel.sendFile(null, false, mockResource.getStream(), mockResource.getFileName(), mockEmbedObject))
+				.thenReturn(mockMessage);
+		result = (IMessage) captorDiscordRequest.getValue().perform();
+
+		assertEquals(mockMessage, result);
+		verify(mockChannel).sendFile(null, false, mockResource.getStream(), mockResource.getFileName(),
+				mockEmbedObject);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
 	public void sendMessageShouldInvokePerformRequest() throws Exception {
 		LOGGER.info("sendMessageShouldInvokePerformRequest");
-		doReturn(mockMessage).when(spyDiscordManager).performRequest(any(), any(), any());
-		MessageBuilder mockMessageBuilder = mock(MessageBuilder.class);
-		whenNew(MessageBuilder.class).withArguments(mockClient).thenReturn(mockMessageBuilder);
-		when(mockMessageBuilder.withChannel(any(IChannel.class))).thenReturn(mockMessageBuilder);
-		when(mockMessageBuilder.withContent(anyString())).thenReturn(mockMessageBuilder);
-		when(mockMessageBuilder.send()).thenReturn(mockMessage);
+		doReturn(mockMessage).when(spyDiscordManager).performRequest(any(DiscordRequest.class), anyString(),
+				any(IMessage.class));
 
 		IMessage result = spyDiscordManager.sendMessage(mockChannel, MESSAGE);
 
 		assertSame(mockMessage, result);
-		verify(spyDiscordManager).performRequest(captorDiscordRequest.capture(), anyString(), anyString());
+		verify(spyDiscordManager).performRequest(captorDiscordRequest.capture(), anyString(), isNull(IMessage.class));
 
 		// Verify DiscordRequest's invocations are correct
+		MessageBuilder mockMessageBuilder = mock(MessageBuilder.class);
+		doReturn(mockMessageBuilder).when(spyDiscordManager).getMessageBuilder(mockChannel, MESSAGE, null);
+		when(mockMessageBuilder.send()).thenReturn(mockMessage);
 		result = (IMessage) captorDiscordRequest.getValue().perform();
+
 		assertEquals(mockMessage, result);
-		verify(mockMessageBuilder).withChannel(mockChannel);
-		verify(mockMessageBuilder).withContent(MESSAGE);
+		verify(spyDiscordManager).getMessageBuilder(mockChannel, MESSAGE, null);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void sendMessageWithEmbedShouldInvokePerformRequest() throws Exception {
+		LOGGER.info("sendMessageWithEmbedShouldInvokePerformRequest");
+		doReturn(mockMessage).when(spyDiscordManager).performRequest(any(DiscordRequest.class), anyString(),
+				any(IMessage.class));
+
+		IMessage result = spyDiscordManager.sendMessage(mockChannel, MESSAGE, mockEmbedObject);
+
+		assertSame(mockMessage, result);
+		verify(spyDiscordManager).performRequest(captorDiscordRequest.capture(), anyString(), isNull(IMessage.class));
+
+		// Verify DiscordRequest's invocations are correct
+		MessageBuilder mockMessageBuilder = mock(MessageBuilder.class);
+		doReturn(mockMessageBuilder).when(spyDiscordManager).getMessageBuilder(mockChannel, MESSAGE, mockEmbedObject);
+		when(mockMessageBuilder.send()).thenReturn(mockMessage);
+		result = (IMessage) captorDiscordRequest.getValue().perform();
+
+		assertEquals(mockMessage, result);
+		verify(spyDiscordManager).getMessageBuilder(mockChannel, MESSAGE, mockEmbedObject);
 	}
 
 	@Test

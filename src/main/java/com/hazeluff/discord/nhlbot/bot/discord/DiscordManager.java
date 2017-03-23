@@ -1,12 +1,16 @@
 package com.hazeluff.discord.nhlbot.bot.discord;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
+
 import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -69,6 +73,27 @@ public class DiscordManager {
 	}
 
 	/**
+	 * Sends a file to the server, that can be displayed in an Embed.
+	 * 
+	 * @param channel
+	 *            channel to send file to
+	 * @param resource
+	 *            resource to send
+	 * @param embed
+	 *            embed to use file in.<br>
+	 *            when null, image is displayed by itself
+	 * @return
+	 */
+	public IMessage sendFile(IChannel channel, Resource resource, EmbedObject embed) {
+		InputStream inputStream = resource.getStream();
+		String fileName = resource.getFileName();
+		return performRequest(
+				() -> channel.sendFile(null, false, inputStream, fileName, embed),
+				String.format("Could not send file [%s] to [%s]", fileName, channel),
+				null);
+	}
+
+	/**
 	 * Sends a message to the specified channel in Discord
 	 * 
 	 * @param channel
@@ -81,9 +106,48 @@ public class DiscordManager {
 	public IMessage sendMessage(IChannel channel, String message) {
 		LOGGER.debug("Sending message [" + channel.getName() + "][" + message + "]");
 		return performRequest(
-				() -> new MessageBuilder(client).withChannel(channel).withContent(message).send(),
-				"Could not send message [" + message + "] to [" + channel + "]",
+				() -> getMessageBuilder(channel, message, null).send(),
+				String.format("Could not send message [%s] to [%s]", message, channel),
 				null);
+	}
+	/**
+	 * Sends a message with an embed to the specified channel in Discord
+	 * 
+	 * @param channel
+	 *            channel to send message in
+	 * @param message
+	 *            message to send
+	 * @param embed
+	 *            embed to include in the message
+	 * @return
+	 */
+	public IMessage sendMessage(IChannel channel, String message, EmbedObject embed) {
+		return performRequest(
+				() -> getMessageBuilder(channel, message, embed).send(),
+				String.format("Could not send message [%s] with embed [%s] to [%s]", message, embed, channel),
+				null);
+	}
+
+	/**
+	 * Gets a message builder that contains a message and embed.
+	 * 
+	 * @param channel
+	 *            channel to send message to
+	 * @param message
+	 *            message to send
+	 * @param embed
+	 *            embed to send
+	 * @return {@link MessageBuilder}
+	 */
+	MessageBuilder getMessageBuilder(IChannel channel, String message, EmbedObject embed) {
+		MessageBuilder messageBuilder = new MessageBuilder(client).withChannel(channel);
+		if(message != null) {
+			messageBuilder.withContent(message);
+		}
+		if(embed != null) {
+			messageBuilder.withEmbed(embed);
+		}
+		return messageBuilder;
 	}
 
 	/**

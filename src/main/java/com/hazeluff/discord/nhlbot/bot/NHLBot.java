@@ -14,7 +14,6 @@ import com.mongodb.client.MongoDatabase;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
-import sx.blah.discord.handle.obj.Status;
 import sx.blah.discord.util.DiscordException;
 
 
@@ -75,7 +74,7 @@ public class NHLBot {
 			Utils.sleep(5000);
 		}
 		LOGGER.info("Client is ready.");
-		client.changeStatus(Status.game(Config.STATUS_MESSAGE));
+		client.streaming(Config.STATUS_MESSAGE, Config.GIT_URL);
 
 		return client;
 	}

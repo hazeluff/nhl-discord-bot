@@ -42,4 +42,8 @@ public class Utils {
 	public static long getCurrentTime() {
 		return System.currentTimeMillis();
 	}
+
+	public static String getFileName(String filePath) {
+		return filePath.substring(filePath.lastIndexOf("/") + 1);
+	}
 }
