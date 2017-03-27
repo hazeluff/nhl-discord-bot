@@ -25,10 +25,8 @@ public class ResourceLoader {
 
 	private static ResourceLoader resourceLoader;
 
-	private Resource hazeluffAvatar;
-
 	private ResourceLoader() {
-		hazeluffAvatar = getResource("/hazeluff.png");
+
 	}
 
 	public static ResourceLoader get() {
@@ -43,6 +41,6 @@ public class ResourceLoader {
 	}
 
 	public Resource getHazeluffAvatar() {
-		return hazeluffAvatar;
+		return getResource("/hazeluff.png");
 	}
 }
