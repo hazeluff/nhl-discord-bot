@@ -232,8 +232,8 @@ public class GameScheduler extends Thread {
 	}
 
 	/**
-	 * Initializes the channels of guild in Discord. Removes all channels that have names in the format of a game
-	 * channel and creates channels for the latest games of the current team the guild is subscribed to.
+	 * Initializes the channels of guild in Discord. Creates channels for the latest games of the current team the guild
+	 * is subscribed to.
 	 * 
 	 * @param guild
 	 *            guild to initialize channels for
@@ -242,7 +242,18 @@ public class GameScheduler extends Thread {
 		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
 		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getID());
 
-		// Remove all game channels
+		// Create game channels of latest game for current subscribed team
+		for (Game game : teamActiveGames.get(team)) {
+			nhlBot.getGameChannelsManager().createChannel(game, guild);
+		}
+	}
+
+	/**
+	 * Removes all channels that have names in the format of a game channel.
+	 * 
+	 * @param guild
+	 */
+	public void removeAllChannels(IGuild guild) {
 		games.forEach(game -> {
 			guild.getChannels().forEach(channel -> {
 				if (game.getChannelName().equalsIgnoreCase(channel.getName())) {
@@ -250,11 +261,6 @@ public class GameScheduler extends Thread {
 				}
 			});
 		});
-
-		// Create game channels of latest game for current subscribed team
-		for (Game game : teamActiveGames.get(team)) {
-			nhlBot.getGameChannelsManager().createChannel(game, guild);
-		}
 	}
 
 	/**

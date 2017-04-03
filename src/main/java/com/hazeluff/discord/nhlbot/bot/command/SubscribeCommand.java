@@ -45,6 +45,7 @@ public class SubscribeCommand extends Command {
 							"You are now subscribed to games of the **" + team.getFullName() + "**!");
 				} else {
 					// Subscribe guild
+					nhlBot.getGameScheduler().removeAllChannels(message.getGuild());
 					nhlBot.getPreferencesManager().subscribeGuild(message.getGuild().getID(), team);
 					nhlBot.getGameScheduler().initChannels(message.getGuild());
 					nhlBot.getDiscordManager().sendMessage(channel,

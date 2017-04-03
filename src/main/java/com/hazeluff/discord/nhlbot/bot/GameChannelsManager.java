@@ -77,22 +77,25 @@ public class GameChannelsManager {
 		if (!gameChannels.containsKey(game.getGamePk())) {
 			gameChannels.put(game.getGamePk(), new HashMap<>());
 		}
-		if (!gameChannels.get(game.getGamePk()).containsKey(team)) {
-			gameChannels.get(game.getGamePk()).put(team, new ArrayList<>());
+		if (gameChannels.get(game.getGamePk()).isEmpty()) {
+			gameChannels.get(game.getGamePk()).put(game.getHomeTeam(), new ArrayList<>());
+			gameChannels.get(game.getGamePk()).put(game.getAwayTeam(), new ArrayList<>());
 		}
 
 		if (!eventMessages.containsKey(game.getGamePk())) {
 			eventMessages.put(game.getGamePk(), new HashMap<>());
 		}
-		if (!eventMessages.get(game.getGamePk()).containsKey(team)) {
-			eventMessages.get(game.getGamePk()).put(team, new HashMap<>());
+		if (eventMessages.get(game.getGamePk()).isEmpty()) {
+			eventMessages.get(game.getGamePk()).put(game.getHomeTeam(), new HashMap<>());
+			eventMessages.get(game.getGamePk()).put(game.getAwayTeam(), new HashMap<>());
 		}
 
 		if (!endOfGameMessages.containsKey(game.getGamePk())) {
 			endOfGameMessages.put(game.getGamePk(), new HashMap<>());
 		}
-		if (!endOfGameMessages.get(game.getGamePk()).containsKey(team)) {
-			endOfGameMessages.get(game.getGamePk()).put(team, new ArrayList<>());
+		if (endOfGameMessages.get(game.getGamePk()).isEmpty()) {
+			endOfGameMessages.get(game.getGamePk()).put(game.getHomeTeam(), new ArrayList<>());
+			endOfGameMessages.get(game.getGamePk()).put(game.getAwayTeam(), new ArrayList<>());
 		}
 
 		for (IGuild guild : nhlBot.getPreferencesManager().getSubscribedGuilds(team)) {

@@ -504,21 +504,32 @@ public class GameSchedulerTest {
 		verify(mockGameChannelsManager).removeChannel(mockGame4, mockChannel4);
 	}
 
+	@Test
+	public void removeAllChannelsShouldInvokeGameChannelsManager() {
+		LOGGER.info("removeAllChannelsShouldInvokeGameChannelsManager");
+		gameScheduler = new GameScheduler(mockNHLBot, Arrays.asList(mockGame1, mockGame2), null, null);
+
+		gameScheduler.removeAllChannels(mockGuild1);
+
+		verify(mockGameChannelsManager).removeChannel(mockGame1, mockChannel1);
+		verify(mockGameChannelsManager).removeChannel(mockGame2, mockChannel2);
+		verify(mockGameChannelsManager, never()).removeChannel(mockGame3, mockChannel3);
+		verify(mockGameChannelsManager, never()).createChannel(mockGame1, mockGuild1);
+
+	}
+
 	@SuppressWarnings("serial")
 	@Test
 	public void initChannelsShouldInvokeGameChannelsManager() {
 		LOGGER.info("initChannelsShouldInvokeGameChannelsManager");
 		when(mockPreferencesManager.getTeamByGuild(GUILD_ID1)).thenReturn(TEAM);
-		gameScheduler = new GameScheduler(mockNHLBot, Arrays.asList(mockGame1, mockGame2), null, 
+		gameScheduler = new GameScheduler(mockNHLBot, null, null, 
 				new HashMap<Team, List<Game>>() {{
 						put(TEAM, Arrays.asList(mockGame2, mockGame3));
 				}});
 
 		gameScheduler.initChannels(mockGuild1);
 
-		verify(mockGameChannelsManager).removeChannel(mockGame1, mockChannel1);
-		verify(mockGameChannelsManager).removeChannel(mockGame2, mockChannel2);
-		verify(mockGameChannelsManager, never()).removeChannel(mockGame3, mockChannel3);
 		verify(mockGameChannelsManager, never()).createChannel(mockGame1, mockGuild1);
 		verify(mockGameChannelsManager).createChannel(mockGame2, mockGuild1);
 		verify(mockGameChannelsManager).createChannel(mockGame3, mockGuild1);
