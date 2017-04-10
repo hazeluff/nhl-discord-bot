@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
@@ -78,7 +79,7 @@ public class GameSchedulerTest {
 	private static final String GAME_CHANNEL_NAME4 = "GameChannelName4";
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 	private static final Team TEAM2 = Team.EDMONTON_OILERS;
-	private List<Game> GAMES;
+	private Set<Game> GAMES;
 	private List<GameTracker> GAME_TRACKERS;
 	private Map<Team, List<Game>> TEAM_LATEST_GAMES;
 	private static final String GUILD_ID1 = RandomStringUtils.randomNumeric(10);
@@ -109,7 +110,7 @@ public class GameSchedulerTest {
 		when(mockChannel4.getName()).thenReturn(GAME_CHANNEL_NAME4);
 		when(mockGuild1.getID()).thenReturn(GUILD_ID1);
 		when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2, mockChannel3));
-		GAMES = Arrays.asList(mockGame1, mockGame2, mockGame3);
+		GAMES = Utils.asSet(mockGame1, mockGame2, mockGame3);
 		GAME_TRACKERS = new ArrayList(Arrays.asList(mockGameTracker1, mockGameTracker2, mockGameTracker3));
 		TEAM_LATEST_GAMES = new HashMap<>();
 		TEAM_LATEST_GAMES.put(TEAM, new ArrayList<Game>());
@@ -151,7 +152,7 @@ public class GameSchedulerTest {
 		whenNew(Game.class).withAnyArguments().thenReturn(mockGame1, mockGame3, mockGame2);
 		gameScheduler.initGames();
 
-		assertEquals(Arrays.asList(mockGame1, mockGame2, mockGame3), gameScheduler.getGames());
+		assertEquals(Utils.asSet(mockGame1, mockGame2, mockGame3), gameScheduler.getGames());
 	}
 
 	@Test
@@ -309,7 +310,7 @@ public class GameSchedulerTest {
 	@Test
 	public void getFutureGameShouldReturnGameInTheFuture() {
 		LOGGER.info("getFutureGameShouldReturnGameInTheFuture");
-		List<Game> games = Arrays.asList(mockGame1, mockGame2, mockGame3, mockGame4, mockGame5, mockGame6);
+		Set<Game> games = Utils.asSet(mockGame1, mockGame2, mockGame3, mockGame4, mockGame5, mockGame6);
 		when(mockGame1.containsTeam(TEAM)).thenReturn(false);
 		when(mockGame2.containsTeam(TEAM)).thenReturn(true);
 		when(mockGame3.containsTeam(TEAM)).thenReturn(true);
@@ -340,7 +341,7 @@ public class GameSchedulerTest {
 	@Test
 	public void getPreviousGameShouldReturnGameInPast() {
 		LOGGER.info("getPreviousGameShouldReturnGameInPast");
-		List<Game> games = Arrays.asList(mockGame1, mockGame2, mockGame3, mockGame4, mockGame5, mockGame6);
+		Set<Game> games = Utils.asSet(mockGame1, mockGame2, mockGame3, mockGame4, mockGame5, mockGame6);
 		when(mockGame1.containsTeam(TEAM)).thenReturn(false);
 		when(mockGame2.containsTeam(TEAM)).thenReturn(true);
 		when(mockGame3.containsTeam(TEAM)).thenReturn(true);
@@ -371,7 +372,7 @@ public class GameSchedulerTest {
 	@Test
 	public void getCurrentGameShouldReturnStartedGame() {
 		LOGGER.info("getCurrentGameShouldReturnStartedGame");
-		List<Game> games = Arrays.asList(mockGame1, mockGame2, mockGame3, mockGame4);
+		Set<Game> games = Utils.asSet(mockGame1, mockGame2, mockGame3, mockGame4);
 		when(mockGame1.containsTeam(TEAM)).thenReturn(false);
 		when(mockGame2.containsTeam(TEAM)).thenReturn(true);
 		when(mockGame3.containsTeam(TEAM)).thenReturn(true);
@@ -387,7 +388,7 @@ public class GameSchedulerTest {
 	@Test
 	public void getCurrentGameShouldReturnLiveGame() {
 		LOGGER.info("getCurrentGameShouldReturnLiveGame");
-		List<Game> games = Arrays.asList(mockGame1, mockGame2, mockGame3, mockGame4);
+		Set<Game> games = Utils.asSet(mockGame1, mockGame2, mockGame3, mockGame4);
 		when(mockGame1.containsTeam(TEAM)).thenReturn(false);
 		when(mockGame2.containsTeam(TEAM)).thenReturn(true);
 		when(mockGame3.containsTeam(TEAM)).thenReturn(true);
@@ -507,7 +508,7 @@ public class GameSchedulerTest {
 	@Test
 	public void removeAllChannelsShouldInvokeGameChannelsManager() {
 		LOGGER.info("removeAllChannelsShouldInvokeGameChannelsManager");
-		gameScheduler = new GameScheduler(mockNHLBot, Arrays.asList(mockGame1, mockGame2), null, null);
+		gameScheduler = new GameScheduler(mockNHLBot, Utils.asSet(mockGame1, mockGame2), null, null);
 
 		gameScheduler.removeAllChannels(mockGuild1);
 
@@ -540,7 +541,7 @@ public class GameSchedulerTest {
 	@Test
 	public void getInactiveGamesShouldReturnListOfGames() {
 		LOGGER.info("getInactiveGamesShouldReturnListOfGames");
-		GameScheduler gameScheduler = new GameScheduler(null, Arrays.asList(mockGame1, mockGame2, mockGame3), null,
+		GameScheduler gameScheduler = new GameScheduler(null, Utils.asSet(mockGame1, mockGame2, mockGame3), null,
 				new HashMap<Team, List<Game>>() {
 					{
 						for (Team team : Team.values()) {

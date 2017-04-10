@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -33,10 +34,11 @@ public class GameScheduler extends Thread {
 	private final NHLBot nhlBot;
 
 	// Poll for if the day has rolled over every 30 minutes
-	static final int UPDATE_RATE = 1800000;
+	static final long GAME_SCHEDULE_UPDATE_RATE = 86400000L;
+	static final long UPDATE_RATE = 1800000L;
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
-	private List<Game> games = new ArrayList<>();
+	private Set<Game> games = new TreeSet<>();
 	private List<GameTracker> gameTrackers = new ArrayList<>(); // TODO Change to HashMap<Integer(GamePk), GameTracker>
 	private Map<Team, List<Game>> teamActiveGames = new HashMap<>();
 
@@ -51,7 +53,7 @@ public class GameScheduler extends Thread {
 	 * @param teamSubscriptions
 	 * @param teamLatestGames
 	 */
-	GameScheduler(NHLBot nhlBot, List<Game> games, List<GameTracker> gameTrackers,
+	GameScheduler(NHLBot nhlBot, Set<Game> games, List<GameTracker> gameTrackers,
 			Map<Team, List<Game>> teamLatestGames) {
 		this.nhlBot = nhlBot;
 		this.games = games;
@@ -100,7 +102,6 @@ public class GameScheduler extends Thread {
 		}
 
 		// Retrieve schedule/game information from NHL API
-		Set<Game> setGames = new HashSet<>();
 		for (Team team : Team.values()) {
 			LOGGER.info("Retrieving games of [" + team + "]");
 			URIBuilder uriBuilder = null;
@@ -119,11 +120,9 @@ public class GameScheduler extends Thread {
 			JSONArray jsonDates = jsonSchedule.getJSONArray("dates");
 			for (int i = 0; i < jsonDates.length(); i++) {
 				JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
-				setGames.add(new Game(jsonGame));
+				games.add(new Game(jsonGame));
 			}
 		}
-		games = new ArrayList<>(setGames);
-		games.sort(Game.getDateComparator());
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");		
 
 		LOGGER.info("Finished Initialization.");
@@ -278,6 +277,17 @@ public class GameScheduler extends Thread {
 				latestGames.remove(0);
 				nhlBot.getGameChannelsManager().removeChannels(oldestGame, team);
 			}
+		}
+	}
+
+	private long updateGamesLastTime = System.currentTimeMillis();
+
+	void updateGameSchedule() {
+		long updateGamesElapsedTime = Utils.getCurrentTime() - updateGamesLastTime;
+		if (updateGamesElapsedTime > GAME_SCHEDULE_UPDATE_RATE) {
+			// Update schedule
+
+			updateGamesLastTime = Utils.getCurrentTime();
 		}
 	}
 
@@ -440,8 +450,8 @@ public class GameScheduler extends Thread {
 		return stop;
 	}
 
-	public List<Game> getGames() {
-		return new ArrayList<>(games);
+	public Set<Game> getGames() {
+		return new HashSet<>(games);
 	}
 
 	public List<Game> getActiveGames(Team team) {

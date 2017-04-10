@@ -1,7 +1,10 @@
 package com.hazeluff.discord.nhlbot.utils;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,5 +48,10 @@ public class Utils {
 
 	public static String getFileName(String filePath) {
 		return filePath.substring(filePath.lastIndexOf("/") + 1);
+	}
+
+	@SafeVarargs
+	public static <T> Set<T> asSet(T... elements) {
+		return new HashSet<T>(Arrays.asList(elements));
 	}
 }
