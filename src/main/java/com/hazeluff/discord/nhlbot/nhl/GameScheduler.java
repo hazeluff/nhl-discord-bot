@@ -1,7 +1,11 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
 import java.net.URISyntaxException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,20 +33,43 @@ import sx.blah.discord.handle.obj.IGuild;
  * This class is used to start GameTrackers for games and to maintain the channels in discord for those games.
  */
 public class GameScheduler extends Thread {
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 
 	private final NHLBot nhlBot;
 
+	/**
+	 * To be applied to the overall games list, so that it removes duplicates and sorts all games in order. Duplicates
+	 * are determined by the gamePk being identicle. Games are sorted by game date.
+	 */
+	static final Comparator<Game> GAME_COMPARATOR = new Comparator<Game>() {
+		public int compare(Game g1, Game g2) {
+			if (g1.getGamePk() == g2.getGamePk()) {
+				return 0;
+			}
+			int diff = g1.getDate().compareTo(g2.getDate());
+			return diff == 0 ? Integer.compare(g1.getGamePk(), g2.getGamePk()) : diff;
+		}
+	};
+
+	static final long GAME_SCHEDULE_UPDATE_RATE = 43200000L;
+
 	// Poll for if the day has rolled over every 30 minutes
-	static final long GAME_SCHEDULE_UPDATE_RATE = 86400000L;
 	static final long UPDATE_RATE = 1800000L;
 
 	// I want to use TreeSet, but it removes a lot of elements for some reason...
-	private Set<Game> games = new TreeSet<>();
+	private Set<Game> games = new TreeSet<>(GAME_COMPARATOR);
 	private List<GameTracker> gameTrackers = new ArrayList<>(); // TODO Change to HashMap<Integer(GamePk), GameTracker>
-	private Map<Team, List<Game>> teamActiveGames = new HashMap<>();
+
+	@SuppressWarnings("serial")
+	private Map<Team, List<Game>> teamActiveGames = new HashMap<Team, List<Game>>() {{
+		for (Team team : Team.values()) {
+			put(team, new ArrayList<Game>());
+		}
+	}};
 
 	private boolean stop = false;
+
 
 	/**
 	 * Constructor for injecting private members (Use only for testing).
@@ -87,6 +114,9 @@ public class GameScheduler extends Thread {
 			// Remove the inactive games from the list of latest games
 			removeInactiveGames();
 
+			// Update game schedule (games list)
+			updateGameSchedule();
+
 			LOGGER.info("Checking for finished games after [" + UPDATE_RATE + "]");
 			Utils.sleep(UPDATE_RATE);
 		}
@@ -97,31 +127,11 @@ public class GameScheduler extends Thread {
 	 */
 	public void initGames() {
 		LOGGER.info("Initializing");
-		for (Team team : Team.values()) {
-			teamActiveGames.put(team, new ArrayList<Game>());
-		}
-
 		// Retrieve schedule/game information from NHL API
 		for (Team team : Team.values()) {
-			LOGGER.info("Retrieving games of [" + team + "]");
-			URIBuilder uriBuilder = null;
-			String strJSONSchedule = "";
-			try {
-				uriBuilder = new URIBuilder(Config.NHL_API_URL + "/schedule");
-				uriBuilder.addParameter("startDate", "2016-08-01");
-				uriBuilder.addParameter("endDate", "2017-06-15");
-				uriBuilder.addParameter("teamId", String.valueOf(team.getId()));
-				uriBuilder.addParameter("expand", "schedule.scoringplays");
-				strJSONSchedule = HttpUtils.get(uriBuilder.build());
-			} catch (URISyntaxException e) {
-				LOGGER.error("Error building URI", e);
-			}
-			JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
-			JSONArray jsonDates = jsonSchedule.getJSONArray("dates");
-			for (int i = 0; i < jsonDates.length(); i++) {
-				JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
-				games.add(new Game(jsonGame));
-			}
+			ZonedDateTime startDate = ZonedDateTime.of(2016, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+			ZonedDateTime endDate = ZonedDateTime.of(2017, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+			games.addAll(getGames(team, startDate, endDate));
 		}
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");		
 
@@ -141,12 +151,22 @@ public class GameScheduler extends Thread {
 		for (Entry<Team, List<Game>> entry : teamActiveGames.entrySet()) {
 			Team team = entry.getKey();
 			List<Game> list = entry.getValue();
-			list.add(getLastGame(team));
+			Game lastGame = getLastGame(team);
+			if (lastGame != null) {
+				list.add(lastGame);
+			}
 			Game currentGame = getCurrentGame(team);
 			if (currentGame != null) {
 				list.add(currentGame);
-			} else {
-				list.add(getNextGame(team));
+			}
+			int futureGameIndex = 0;
+			while(list.size() < 2) {
+				Game futureGame = getFutureGame(team, futureGameIndex++);
+				if (futureGame != null) {
+					list.add(futureGame);
+				} else {
+					break;
+				}
 			}
 		}
 	}
@@ -210,11 +230,13 @@ public class GameScheduler extends Thread {
 				Game finishedGame = gameTracker.getGame();
 				LOGGER.info("Game is finished: " + finishedGame);
 				for (Team team : finishedGame.getTeams()) {
-					List<Game> latestGames = teamActiveGames.get(team);
 					// Add the next game to the list of latest games
 					Game nextGame = getNextGame(team);
-					latestGames.add(nextGame);
-					newGames.put(team, nextGame);
+					if (nextGame != null) {
+						List<Game> latestGames = teamActiveGames.get(team);
+						latestGames.add(nextGame);
+						newGames.put(team, nextGame);
+					}
 				}
 
 				return true;
@@ -280,15 +302,67 @@ public class GameScheduler extends Thread {
 		}
 	}
 
-	private long updateGamesLastTime = System.currentTimeMillis();
+	private long updateGamesLastTime = Utils.getCurrentTime();
 
 	void updateGameSchedule() {
 		long updateGamesElapsedTime = Utils.getCurrentTime() - updateGamesLastTime;
 		if (updateGamesElapsedTime > GAME_SCHEDULE_UPDATE_RATE) {
 			// Update schedule
-
+			for (Team team : Team.values()) {
+				ZonedDateTime startDate = ZonedDateTime.now();
+				ZonedDateTime endDate = startDate.plusDays(7);
+				games.addAll(getGames(team, startDate, endDate));
+			}
 			updateGamesLastTime = Utils.getCurrentTime();
 		}
+	}
+
+	/**
+	 * Gets games for the specified team between the given time period.
+	 * 
+	 * @param team
+	 *            team to get games of
+	 * @return list of games
+	 */
+	List<Game> getGames(Team team, ZonedDateTime startDate, ZonedDateTime endDate) {
+		LOGGER.info("Retrieving games of [" + team + "]");
+		URIBuilder uriBuilder = null;
+		String strJSONSchedule = null;
+		ZonedDateTime latestDate = ZonedDateTime.of(2017, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+		if (endDate.compareTo(latestDate) > 0) {
+			endDate = latestDate;
+		}
+		if (endDate.isBefore(startDate)) {
+			return new ArrayList<>();
+		}
+		String strStartDate = startDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+		String strEndDate = endDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+		try {
+			uriBuilder = new URIBuilder(Config.NHL_API_URL + "/schedule");
+			uriBuilder.addParameter("startDate", strStartDate);
+			uriBuilder.addParameter("endDate", strEndDate);
+			uriBuilder.addParameter("teamId", String.valueOf(team.getId()));
+			uriBuilder.addParameter("expand", "schedule.scoringplays");
+			strJSONSchedule = HttpUtils.get(uriBuilder.build());
+		} catch (URISyntaxException e) {
+			String message = "Error building URI";
+			RuntimeException runtimeException = new RuntimeException(message, e);
+			LOGGER.error(message, runtimeException);
+			throw runtimeException;
+		}
+		JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
+		JSONArray jsonDates = jsonSchedule.getJSONArray("dates");
+		List<Game> games = new ArrayList<>();
+		for (int i = 0; i < jsonDates.length(); i++) {
+			JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
+			Game game = new Game(jsonGame);
+			if (game.getStatus() != GameStatus.SCHEDULED) {
+				LOGGER.debug("Adding additional game [" + game + "]");
+				games.add(game);
+			}
+		}
+		return games;
 	}
 
 	/**
@@ -306,7 +380,7 @@ public class GameScheduler extends Thread {
 				.filter(game -> game.getStatus() == GameStatus.PREVIEW)
 				.collect(Collectors.toList());
 		if (futureIndex >= futureGames.size()) {
-			futureIndex = futureGames.size() - 1;
+			return null;
 		}
 		return futureGames.get(futureIndex);
 	}
@@ -336,13 +410,13 @@ public class GameScheduler extends Thread {
 	 *            index index of how many games after to get (0 for first games)
 	 * @return NHLGame of next game for the provided team
 	 */
-	public Game getPreviousGame(Team team, int beforeIndex) {
+	public Game getPastGame(Team team, int beforeIndex) {
 		List<Game> previousGames = games.stream()
 				.filter(game -> game.containsTeam(team))
 				.filter(game -> game.getStatus() == GameStatus.FINAL)
 				.collect(Collectors.toList());
 		if (beforeIndex >= previousGames.size()) {
-			beforeIndex = previousGames.size() - 1;
+			return null;
 		}
 		return previousGames.get(previousGames.size() - 1 - beforeIndex);
 	}
@@ -352,7 +426,7 @@ public class GameScheduler extends Thread {
 	 * Gets the last game for the provided team.
 	 * </p>
 	 * <p>
-	 * See {@link #getPreviousGame(Team, int)}
+	 * See {@link #getPastGame(Team, int)}
 	 * </p>
 	 * 
 	 * @param team
@@ -360,7 +434,7 @@ public class GameScheduler extends Thread {
 	 * @return NHLGame of last game for the provided team
 	 */
 	public Game getLastGame(Team team) {
-		return getPreviousGame(team, 0);
+		return getPastGame(team, 0);
 	}
 
 	/**

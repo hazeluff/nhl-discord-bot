@@ -6,7 +6,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -267,14 +266,6 @@ public class Game {
 
 	public boolean equals(Game other) {
 		return gamePk == other.gamePk;
-	}
-
-	public static Comparator<Game> getDateComparator() {
-		return new Comparator<Game>() {
-			public int compare(Game g1, Game g2) {
-				return (g1.getDate().compareTo(g2.getDate()));
-			}
-		};
 	}
 
 	/**

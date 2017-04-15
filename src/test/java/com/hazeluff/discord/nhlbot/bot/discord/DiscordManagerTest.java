@@ -142,7 +142,7 @@ public class DiscordManagerTest {
 		verify(mockDiscordRequest).perform();
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	@PrepareForTest(RequestBuffer.class)
 	public void performRequestShouldInvokeClassesAndCatchException()
@@ -156,7 +156,7 @@ public class DiscordManagerTest {
 
 		verifyStatic();
 		RequestBuffer.request(captorVoidRequest.capture());
-		IRequest request = captorVoidRequest.getValue();
+		IVoidRequest request = captorVoidRequest.getValue();
 
 		request.request();
 		verify(mockVoidDiscordRequest).perform();

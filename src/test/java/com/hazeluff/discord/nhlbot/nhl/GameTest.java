@@ -24,7 +24,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -243,29 +242,6 @@ public class GameTest {
 		List<GameEvent> newResult = game.getUpdatedEvents();
 		assertTrue(game.getUpdatedEvents().isEmpty());
 		assertNotEquals(result, newResult);
-	}
-
-	@Test
-	public void dateComparatorShouldCompareDates() {
-		LOGGER.info("dateComparatorShouldCompareDates");
-		Game game1 = mock(Game.class);
-		Game game2 = mock(Game.class);
-		ZonedDateTime date1 = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
-		ZonedDateTime date2 = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
-		ZonedDateTime date3 = ZonedDateTime.of(0, 1, 1, 0, 0, 2, 0, ZoneOffset.UTC);
-		
-		Comparator<Game> comparator = Game.getDateComparator();
-		
-
-		when(game1.getDate()).thenReturn(date1);
-		when(game2.getDate()).thenReturn(date3);
-		assertEquals(1, comparator.compare(game2, game1));
-		assertEquals(-1, comparator.compare(game1, game2));
-
-		when(game1.getDate()).thenReturn(date1);
-		when(game2.getDate()).thenReturn(date2);
-		assertEquals(0, comparator.compare(game2, game1));
-		assertEquals(0, comparator.compare(game1, game2));
 	}
 
 	@Test

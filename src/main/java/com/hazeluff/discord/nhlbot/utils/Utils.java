@@ -1,7 +1,7 @@
 package com.hazeluff.discord.nhlbot.utils;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -46,12 +46,26 @@ public class Utils {
 		return System.currentTimeMillis();
 	}
 
+	/**
+	 * Gets file name from the path of a file.
+	 * 
+	 * @param filePath
+	 *            path of the file
+	 * @return name of the file
+	 */
 	public static String getFileName(String filePath) {
 		return filePath.substring(filePath.lastIndexOf("/") + 1);
 	}
 
+	/**
+	 * Creates a set from a var arg of elements. Maintains order
+	 * 
+	 * @param elements
+	 *            elements to create set with
+	 * @return Set of elements
+	 */
 	@SafeVarargs
 	public static <T> Set<T> asSet(T... elements) {
-		return new HashSet<T>(Arrays.asList(elements));
+		return new LinkedHashSet<T>(Arrays.asList(elements));
 	}
 }

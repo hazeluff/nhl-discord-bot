@@ -284,6 +284,7 @@ public class GameTrackerTest {
 	}
 
 	@Test
+	@PrepareForTest(Utils.class)
 	public void updateChannelShouldNotInvokeClassesIfGameIsFinal() {
 		LOGGER.info("updateChannelShouldNotInvokeClassesIfGameIsFinal");
 		doNothing().when(spyGameTracker).updateMessages();

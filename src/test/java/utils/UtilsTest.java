@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,5 +68,17 @@ public class UtilsTest {
 		LOGGER.info("getFileNameShouldGetFileNameFromPath");
 		assertEquals("filename.png", Utils.getFileName("a/b/c/filename.png"));
 		assertEquals("filename.png", Utils.getFileName("/a/b/c/filename.png"));
+	}
+
+	@Test
+	public void asSetShouldReturnOrderedSet() {
+		LOGGER.info("asSetShouldReturnOrderedSet");
+		
+		Set<String> set = Utils.asSet("1", "2", "3");
+		
+		assertEquals(set.size(), 3);
+		assertEquals("1", set.toArray()[0]);
+		assertEquals("2", set.toArray()[1]);
+		assertEquals("3", set.toArray()[2]);
 	}
 }

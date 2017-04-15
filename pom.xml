@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.hazeluff.discord</groupId>
   <artifactId>nhlbot</artifactId>
-  <version>0.2.10</version>
+  <version>0.2.11</version>
   <packaging>jar</packaging>
   <name>NHLBot</name>
   <url>http://maven.apache.org</url>
@@ -23,14 +23,14 @@
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-module-junit4</artifactId>
-      <version>1.6.2</version>
+      <version>1.7.0RC4</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-api-mockito</artifactId>
-      <version>1.6.2</version>
+      <version>1.7.0RC4</version>
       <scope>test</scope>
     </dependency>
 
@@ -64,6 +64,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.0.0</version>
         <configuration>
           <archive>
             <manifest>
