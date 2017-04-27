@@ -265,6 +265,24 @@ public class GameChannelsManagerTest {
 
 	@SuppressWarnings("serial")
 	@Test
+	public void createChannelShouldHandleNullReturnedFromDiscordManagerCreateChannels() {
+		LOGGER.info("createChannelShouldCreateChannelsIfTheyDoNotExist");
+		String newChannelName = "New Channel Name";
+		when(mockGame.getChannelName()).thenReturn(newChannelName);
+		when(mockDiscordManager.createChannel(mockHomeGuild, newChannelName)).thenReturn(null);
+
+		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<>();
+		gameChannels.put(mockGame.getGamePk(), new HashMap<Team, List<IChannel>>() {			{
+				put(HOME_TEAM, new ArrayList<>());
+				put(AWAY_TEAM, new ArrayList<>());
+		}});
+		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
+
+		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+	}
+
+	@SuppressWarnings("serial")
+	@Test
 	public void createChannelShouldAddExistingChannelsIfChannelsAlreadyExist() {
 		LOGGER.info("createChannelShouldAddExistingChannelsIfChannelsAlreadyExist");
 		when(mockGame.getChannelName()).thenReturn(CHANNEL1_NAME);

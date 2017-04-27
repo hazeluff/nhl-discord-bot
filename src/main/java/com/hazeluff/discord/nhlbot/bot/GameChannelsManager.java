@@ -120,15 +120,18 @@ public class GameChannelsManager {
 			IChannel channel;
 			if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
 				channel = nhlBot.getDiscordManager().createChannel(guild, channelName);
-				nhlBot.getDiscordManager().changeTopic(channel, team.getCheer());
-				ZoneId timeZone = team.getTimeZone();
-				IMessage message = nhlBot.getDiscordManager().sendMessage(channel, game.getDetailsMessage(timeZone));
-				nhlBot.getDiscordManager().pinMessage(channel, message);
+				if (channel != null) {
+					nhlBot.getDiscordManager().changeTopic(channel, team.getCheer());
+					ZoneId timeZone = team.getTimeZone();
+					IMessage message = nhlBot.getDiscordManager().sendMessage(channel,
+							game.getDetailsMessage(timeZone));
+					nhlBot.getDiscordManager().pinMessage(channel, message);
+				}
 			} else {
 				LOGGER.warn("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
 				channel = guild.getChannels().stream().filter(channelMatcher).findAny().get();
 			}
-			if (!gameChannels.get(game.getGamePk()).get(team).stream()
+			if (channel != null && !gameChannels.get(game.getGamePk()).get(team).stream()
 					.anyMatch(gameChannel -> gameChannel.getID() == channel.getID())) {
 				gameChannels.get(game.getGamePk()).get(team).add(channel);
 			}
