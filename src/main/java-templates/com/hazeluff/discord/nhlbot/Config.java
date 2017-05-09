@@ -3,6 +3,18 @@ package com.hazeluff.discord.nhlbot;
 import java.util.Properties;
 
 public class Config {
+	public static class Debug {		
+		private static final String LOAD_GAMES_KEY = "load.games";
+		
+		public static boolean isLoadGames() {
+			boolean hasKey = systemProperties.containsKey(LOAD_GAMES_KEY);
+			if(!hasKey) {
+				return true;
+			}
+			String strValue = systemProperties.getProperty(LOAD_GAMES_KEY);
+			return strValue.isEmpty() || Boolean.valueOf(strValue);
+		}
+	}
 	public static final String GIT_URL = "http://nhlbot.hazeluff.com";
 	public static final String STATUS_MESSAGE = "@NHLBot help";
 	public static final String HAZELUFF_ID = "225742618422673409";
@@ -16,19 +28,7 @@ public class Config {
 	public static final String MONGO_TEST_DATABASE_NAME = "NHLBotIntegrationTest";
 
 	public static final int HTTP_REQUEST_RETRIES = 5;
-	public static final String NHL_API_URL = "https://statsapi.web.nhl.com/api/v1";
-	
+	public static final String NHL_API_URL = "https://statsapi.web.nhl.com/api/v1";	
 	
 	private static final Properties systemProperties = System.getProperties();
-	
-	private static final String LOAD_GAMES_KEY = "load.games";
-	
-	public static boolean isLoadGames() {
-		boolean hasKey = systemProperties.containsKey(LOAD_GAMES_KEY);
-		if(!hasKey) {
-			return true;
-		}
-		String strValue = systemProperties.getProperty(LOAD_GAMES_KEY);
-		return strValue.isEmpty() || Boolean.valueOf(strValue);
-	}
 }

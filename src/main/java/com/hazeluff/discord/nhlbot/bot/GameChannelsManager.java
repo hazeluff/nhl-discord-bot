@@ -342,9 +342,13 @@ public class GameChannelsManager {
 	 * @return end of game message
 	 */
 	String buildEndOfGameMessage(Game game, Team team) {
-		return "Game has ended. Thanks for joining!\n" + "Final Score: " + game.getScoreMessage() + "\n"
-				+ "Goals Scored:\n" + game.getGoalsMessage() + "\n" + "The next game is: "
-				+ nhlBot.getGameScheduler().getNextGame(team).getDetailsMessage(team.getTimeZone());
+		String message = "Game has ended. Thanks for joining!\n" + "Final Score: " + game.getScoreMessage() + "\n"
+				+ "Goals Scored:\n" + game.getGoalsMessage();
+		Game nextGame = nhlBot.getGameScheduler().getNextGame(team);
+		if(nextGame != null){
+			message += "\nThe next game is: " + nextGame.getDetailsMessage(team.getTimeZone());
+		}
+		return  message;
 	}
 
 	/**

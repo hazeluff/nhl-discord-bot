@@ -1,5 +1,7 @@
 package com.hazeluff.discord.nhlbot.utils;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,6 +46,15 @@ public class Utils {
 	 */
 	public static long getCurrentTime() {
 		return System.currentTimeMillis();
+	}
+
+	/**
+	 * Gets the current date (UTC)
+	 * 
+	 * @return
+	 */
+	public static LocalDate getCurrentDate() {
+		return LocalDate.now(ZoneOffset.UTC);
 	}
 
 	/**

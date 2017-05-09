@@ -54,8 +54,8 @@ public class NHLBot {
 		EventDispatcher dispatcher = discordClient.getDispatcher();
 		dispatcher.registerListener(new CommandListener(this));
 
-		if (Config.isLoadGames()) {
-			gameScheduler.start();
+		if (Config.Debug.isLoadGames()) {
+			gameScheduler.run();
 		}
 	}
 

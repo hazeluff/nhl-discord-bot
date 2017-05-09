@@ -272,7 +272,7 @@ public class GameChannelsManagerTest {
 		when(mockDiscordManager.createChannel(mockHomeGuild, newChannelName)).thenReturn(null);
 
 		Map<Integer, Map<Team, List<IChannel>>> gameChannels = new HashMap<>();
-		gameChannels.put(mockGame.getGamePk(), new HashMap<Team, List<IChannel>>() {			{
+		gameChannels.put(mockGame.getGamePk(), new HashMap<Team, List<IChannel>>() {{
 				put(HOME_TEAM, new ArrayList<>());
 				put(AWAY_TEAM, new ArrayList<>());
 		}});
@@ -716,6 +716,18 @@ public class GameChannelsManagerTest {
 		assertTrue(result.contains(SCORE_MESSAGE));
 		assertTrue(result.contains(GOALS_MESSAGE));
 		assertTrue(result.contains(HOME_DETAILS_MESSAGE));
+	}
+
+	@Test
+	public void buildEndOfGameMessageWhenNextGameIsNull() {
+		LOGGER.info("buildEndOfGameMessageWhenNextGameIsNull");
+		when(mockGameScheduler.getNextGame(HOME_TEAM)).thenReturn(null);
+
+		String result = gameChannelsManager.buildEndOfGameMessage(mockGame, HOME_TEAM);
+
+		assertTrue(result.contains(SCORE_MESSAGE));
+		assertTrue(result.contains(GOALS_MESSAGE));
+		assertFalse(result.contains(HOME_DETAILS_MESSAGE));
 	}
 
 	@SuppressWarnings("serial")
