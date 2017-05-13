@@ -30,6 +30,7 @@ public class NHLBot {
 
 	public NHLBot(String botToken) {
 		LOGGER.info("Running NHLBot v" + Config.VERSION);
+		Thread.currentThread().setName("NHLBot");
 		// Init DiscordClient
 		discordClient = getClient(botToken);
 

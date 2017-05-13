@@ -99,7 +99,6 @@ public class GameScheduler {
 		LocalDate lastUpdate = Utils.getCurrentDate().minusDays(1);
 
 		while (!isStop()) {
-			LOGGER.info("Starting daily update thread.");
 			LocalDate today = Utils.getCurrentDate();
 			if (today.compareTo(lastUpdate) > 0) {
 				updateGameSchedule();
@@ -447,7 +446,7 @@ public class GameScheduler {
 	 */
 	GameTracker createGameTracker(Game game) {
 		for (GameTracker gameTracker : gameTrackers) {
-			if (gameTracker != null && gameTracker.getGame().equals(game)) {
+			if (gameTracker != null && gameTracker.getGame().getGamePk() == game.getGamePk()) {
 				// NHLGameTracker already exists
 				LOGGER.debug("NHLGameTracker exists: " + game);
 				return gameTracker;

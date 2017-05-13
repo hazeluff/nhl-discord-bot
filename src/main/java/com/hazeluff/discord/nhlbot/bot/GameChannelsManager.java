@@ -132,7 +132,7 @@ public class GameChannelsManager {
 				channel = guild.getChannels().stream().filter(channelMatcher).findAny().get();
 			}
 			if (channel != null && !gameChannels.get(game.getGamePk()).get(team).stream()
-					.anyMatch(gameChannel -> gameChannel.getID() == channel.getID())) {
+					.anyMatch(gameChannel -> gameChannel.getLongID() == channel.getLongID())) {
 				gameChannels.get(game.getGamePk()).get(team).add(channel);
 			}
 		} else {
@@ -399,15 +399,15 @@ public class GameChannelsManager {
 
 		if (gameChannels.containsKey(game.getGamePk())) {
 			gameChannels.get(game.getGamePk()).get(team)
-					.removeIf(gameChannel -> gameChannel.getID().equals(channel.getID()));
+					.removeIf(gameChannel -> gameChannel.getLongID() == channel.getLongID());
 		}
 		if (eventMessages.containsKey(game.getGamePk())) {
 			eventMessages.get(game.getGamePk()).get(team).forEach((eventId,
-					messages) -> messages.removeIf(message -> message.getChannel().getID().equals(channel.getID())));
+					messages) -> messages.removeIf(message -> message.getChannel().getLongID() == channel.getLongID()));
 		}
 		if (endOfGameMessages.containsKey(game.getGamePk())) {
 			endOfGameMessages.get(game.getGamePk()).get(team)
-					.removeIf(message -> message.getChannel().getID().equals(channel.getID()));
+					.removeIf(message -> message.getChannel().getLongID() == channel.getLongID());
 		}
 
 		nhlBot.getDiscordManager().deleteChannel(channel);

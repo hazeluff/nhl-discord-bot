@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
@@ -76,12 +77,12 @@ public class GameChannelsManagerTest {
 	private static final int EVENT_ID = 10000;
 	private static final int GAME_PK = 10001;
 	private static final int GAME_PK2 = 10002;
-	private static final String CHANNEL_ID = RandomStringUtils.randomNumeric(10);
-	private static final String CHANNEL_ID2 = RandomStringUtils.randomNumeric(10);
-	private static final String HOME_CHANNEL_ID = RandomStringUtils.randomNumeric(10);
-	private static final String AWAY_CHANNEL_ID = RandomStringUtils.randomNumeric(10);
-	private static final String HOME_CHANNEL_ID2 = RandomStringUtils.randomNumeric(10);
-	private static final String AWAY_CHANNEL_ID2 = RandomStringUtils.randomNumeric(10);
+	private static final long CHANNEL_ID = ThreadLocalRandom.current().nextLong(10000000000l);
+	private static final long CHANNEL_ID2 = ThreadLocalRandom.current().nextLong(10000000000l);
+	private static final long HOME_CHANNEL_ID = ThreadLocalRandom.current().nextLong(10000000000l);
+	private static final long AWAY_CHANNEL_ID = ThreadLocalRandom.current().nextLong(10000000000l);
+	private static final long HOME_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong(10000000000l);
+	private static final long AWAY_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong(10000000000l);
 
 	@Mock
 	private NHLBot mockNHLBot;
@@ -136,14 +137,14 @@ public class GameChannelsManagerTest {
 		when(mockAwayChannel1.getName()).thenReturn(CHANNEL1_NAME);
 		when(mockHomeChannel2.getName()).thenReturn(CHANNEL2_NAME);
 		when(mockAwayChannel2.getName()).thenReturn(CHANNEL2_NAME);
-		when(mockHomeChannel1.getID()).thenReturn(HOME_CHANNEL_ID);
-		when(mockAwayChannel1.getID()).thenReturn(AWAY_CHANNEL_ID);
-		when(mockHomeChannel2.getID()).thenReturn(HOME_CHANNEL_ID2);
-		when(mockAwayChannel2.getID()).thenReturn(AWAY_CHANNEL_ID2);
+		when(mockHomeChannel1.getLongID()).thenReturn(HOME_CHANNEL_ID);
+		when(mockAwayChannel1.getLongID()).thenReturn(AWAY_CHANNEL_ID);
+		when(mockHomeChannel2.getLongID()).thenReturn(HOME_CHANNEL_ID2);
+		when(mockAwayChannel2.getLongID()).thenReturn(AWAY_CHANNEL_ID2);
 		when(mockGameEvent.getId()).thenReturn(EVENT_ID);
 		when(mockGameEvent.getPlayers()).thenReturn(Arrays.asList(PLAYER, PLAYER2, PLAYER3));
-		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
-		when(mockChannel2.getID()).thenReturn(CHANNEL_ID2);
+		when(mockChannel.getLongID()).thenReturn(CHANNEL_ID);
+		when(mockChannel2.getLongID()).thenReturn(CHANNEL_ID2);
 
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, new HashMap<>(), new HashMap<>(), new HashMap<>());
 		spyGameChannelsManager = spy(gameChannelsManager);
@@ -869,7 +870,7 @@ public class GameChannelsManagerTest {
 		Map<Integer, Map<Team, List<IMessage>>> endOfGameMessages = new HashMap<>();
 		Map<Team, List<IMessage>> teamEndOfGameMessages = new HashMap<>();
 		IMessage mockHomeEndOfGameMessage = mock(IMessage.class);
-		when(mockHomeEndOfGameMessage.getID()).thenReturn(CHANNEL_ID);
+		when(mockHomeEndOfGameMessage.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
 		IMessage mockHomeEndOfGameMessage2 = mock(IMessage.class);
 		when(mockHomeEndOfGameMessage2.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
 		IMessage mockAwayEndOfGameMessage = mock(IMessage.class);

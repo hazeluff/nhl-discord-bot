@@ -464,9 +464,9 @@ public class GameSchedulerTest {
 	@Test
 	public void createGameTrackerShouldReturnExistingGameTracker() {
 		LOGGER.info("createGameTrackerShouldReturnExistingGameTracker");
-		when(mockGame1.equals(mockGame1)).thenReturn(true);
-		when(mockGame2.equals(mockGame2)).thenReturn(true);
-		when(mockGame3.equals(mockGame3)).thenReturn(true);
+		when(mockGame1.getGamePk()).thenReturn(1);
+		when(mockGame2.getGamePk()).thenReturn(2);
+		when(mockGame3.getGamePk()).thenReturn(3);
 
 		GameScheduler gameScheduler = new GameScheduler(mockNHLBot, null,
 				Arrays.asList(mockGameTracker1, mockGameTracker2, mockGameTracker3));
