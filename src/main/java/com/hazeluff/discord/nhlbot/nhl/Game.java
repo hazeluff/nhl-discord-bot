@@ -23,6 +23,9 @@ import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 public class Game {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
 
+	// Number of retries to do when NHL API returns no events.
+	static final int NHL_EVENTS_RETRIES = 5;
+
 	private final ZonedDateTime date;
 	private final int gamePk;
 	private final Team awayTeam;
@@ -34,6 +37,8 @@ public class Game {
 	private final List<GameEvent> newEvents = new ArrayList<>();
 	private final List<GameEvent> updatedEvents = new ArrayList<>();
 	private final List<GameEvent> removedEvents = new ArrayList<>();
+	private int eventsRetries = 0;
+	
 
 	Game(ZonedDateTime date, int gamePk, Team awayTeam, Team homeTeam, int awayScore, int homeScore,
 			GameStatus status, List<GameEvent> events, List<GameEvent> newEvents, List<GameEvent> updatedEvents,
@@ -314,28 +319,43 @@ public class Game {
 		updatedEvents.clear();
 		removedEvents.clear();
 		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
-		List<GameEvent> actualEvents = new ArrayList<>();
-		for(int i=0; i<jsonScoringPlays.length(); i++){
-			actualEvents.add(new GameEvent(jsonScoringPlays.getJSONObject(i)));
+		List<GameEvent> retrievedEvents = new ArrayList<>();
+		for (int i = 0; i < jsonScoringPlays.length(); i++) {
+			retrievedEvents.add(new GameEvent(jsonScoringPlays.getJSONObject(i)));
 		}
-		actualEvents.forEach(actualEvent -> {
-			if (!actualEvent.getPlayers().isEmpty() && !events.stream().anyMatch(event -> event.equals(actualEvent))) {
-				if (events.removeIf(event -> event.getId() == actualEvent.getId())) {
+		if (retrievedEvents.isEmpty()) {
+			if (events.size() > 1) {
+				LOGGER.warn("NHL api returned no events, but we have stored more than one event.");
+				return;
+			} else if (events.size() == 1) {
+				LOGGER.warn("NHL api returned no events, but we have stored one event.");
+				if (eventsRetries++ < NHL_EVENTS_RETRIES) {
+					LOGGER.warn(String.format("Could be a rescinded goal or NHL api issue. "
+							+ "Retrying %s time(s) out of %s", eventsRetries, NHL_EVENTS_RETRIES));
+					return;
+				}
+			}
+		}
+		eventsRetries = 0;
+		retrievedEvents.forEach(retrievedEvent -> {
+			if (!retrievedEvent.getPlayers().isEmpty()
+					&& !events.stream().anyMatch(event -> event.equals(retrievedEvent))) {
+				if (events.removeIf(event -> event.getId() == retrievedEvent.getId())) {
 					// Updated events
-					LOGGER.debug("Updated event: [" + actualEvent + "]");
-					updatedEvents.add(actualEvent);
+					LOGGER.debug("Updated event: [" + retrievedEvent + "]");
+					updatedEvents.add(retrievedEvent);
 				} else {
 					// New events
-					LOGGER.debug("New event: [" + actualEvent + "]");
-					newEvents.add(actualEvent);
+					LOGGER.debug("New event: [" + retrievedEvent + "]");
+					newEvents.add(retrievedEvent);
 				}
-				events.add(actualEvent);
+				events.add(retrievedEvent);
 			}
 		});
 
 		// Deleted events
 		events.removeIf(event -> {
-			if (!actualEvents.contains(event)) {
+			if (!retrievedEvents.contains(event)) {
 				LOGGER.debug("Removed event: [" + event + "]");
 				removedEvents.add(event);
 				return true;

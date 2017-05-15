@@ -77,12 +77,12 @@ public class GameChannelsManagerTest {
 	private static final int EVENT_ID = 10000;
 	private static final int GAME_PK = 10001;
 	private static final int GAME_PK2 = 10002;
-	private static final long CHANNEL_ID = ThreadLocalRandom.current().nextLong(10000000000l);
-	private static final long CHANNEL_ID2 = ThreadLocalRandom.current().nextLong(10000000000l);
-	private static final long HOME_CHANNEL_ID = ThreadLocalRandom.current().nextLong(10000000000l);
-	private static final long AWAY_CHANNEL_ID = ThreadLocalRandom.current().nextLong(10000000000l);
-	private static final long HOME_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong(10000000000l);
-	private static final long AWAY_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong(10000000000l);
+	private static final long CHANNEL_ID = ThreadLocalRandom.current().nextLong();
+	private static final long CHANNEL_ID2 = ThreadLocalRandom.current().nextLong();
+	private static final long HOME_CHANNEL_ID = ThreadLocalRandom.current().nextLong();
+	private static final long AWAY_CHANNEL_ID = ThreadLocalRandom.current().nextLong();
+	private static final long HOME_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong();
+	private static final long AWAY_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong();
 
 	@Mock
 	private NHLBot mockNHLBot;
