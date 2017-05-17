@@ -103,6 +103,7 @@ public class GameScheduler {
 			if (today.compareTo(lastUpdate) > 0) {
 				updateGameSchedule();
 				updateTrackers();
+				deleteInactiveChannels();
 				lastUpdate = today;
 			}
 			Utils.sleep(UPDATE_RATE);

@@ -187,6 +187,7 @@ public class GameSchedulerTest {
 		doNothing().when(spyGameScheduler).initGames();
 		doNothing().when(spyGameScheduler).createChannels();
 		doNothing().when(spyGameScheduler).initTrackers();
+		doNothing().when(spyGameScheduler).deleteInactiveChannels();
 		doReturn(true).when(spyGameScheduler).isStop();
 
 		spyGameScheduler.run();
@@ -206,6 +207,7 @@ public class GameSchedulerTest {
 		doNothing().when(spyGameScheduler).createChannels();
 		doNothing().when(spyGameScheduler).initTrackers();
 		doNothing().when(spyGameScheduler).updateGameSchedule();
+		doNothing().when(spyGameScheduler).deleteInactiveChannels();
 		doReturn(false).doReturn(false).doReturn(false).doReturn(false).doReturn(true).when(spyGameScheduler).isStop();
 		when(Utils.getCurrentDate()).thenReturn(
 				LocalDate.of(1900, 1, 1),
@@ -217,6 +219,7 @@ public class GameSchedulerTest {
 
 		verify(spyGameScheduler, times(2)).updateGameSchedule();
 		verify(spyGameScheduler, times(2)).updateTrackers();
+		verify(spyGameScheduler, times(3)).deleteInactiveChannels();
 
 		verifyStatic(times(4));
 		Utils.sleep(GameScheduler.UPDATE_RATE);

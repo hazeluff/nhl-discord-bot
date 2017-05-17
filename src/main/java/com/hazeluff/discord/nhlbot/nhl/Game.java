@@ -323,6 +323,7 @@ public class Game {
 		for (int i = 0; i < jsonScoringPlays.length(); i++) {
 			retrievedEvents.add(new GameEvent(jsonScoringPlays.getJSONObject(i)));
 		}
+
 		if (retrievedEvents.isEmpty()) {
 			if (events.size() > 1) {
 				LOGGER.warn("NHL api returned no events, but we have stored more than one event.");
@@ -337,6 +338,7 @@ public class Game {
 			}
 		}
 		eventsRetries = 0;
+
 		retrievedEvents.forEach(retrievedEvent -> {
 			if (!retrievedEvent.getPlayers().isEmpty()
 					&& !events.stream().anyMatch(event -> event.equals(retrievedEvent))) {
