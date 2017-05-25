@@ -209,7 +209,7 @@ public class GameSchedulerTest {
 		doNothing().when(spyGameScheduler).updateGameSchedule();
 		doNothing().when(spyGameScheduler).deleteInactiveChannels();
 		doReturn(false).doReturn(false).doReturn(false).doReturn(false).doReturn(true).when(spyGameScheduler).isStop();
-		when(Utils.getCurrentDate()).thenReturn(
+		when(Utils.getCurrentDate(Config.DATE_START_TIME_ZONE)).thenReturn(
 				LocalDate.of(1900, 1, 1),
 				LocalDate.of(1900, 1, 1),
 				LocalDate.of(1900, 1, 1),

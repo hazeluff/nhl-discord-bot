@@ -96,10 +96,10 @@ public class GameScheduler {
 		 * Start threads to maintain the games, trackers, guild channels
 		 */
 
-		LocalDate lastUpdate = Utils.getCurrentDate().minusDays(1);
+		LocalDate lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE).minusDays(1);
 
 		while (!isStop()) {
-			LocalDate today = Utils.getCurrentDate();
+			LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
 			if (today.compareTo(lastUpdate) > 0) {
 				updateGameSchedule();
 				updateTrackers();
