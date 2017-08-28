@@ -64,7 +64,9 @@ public enum Team {
 	WINNIPEG_JETS(52, "Winnipeg", "Jets", "WPG", Division.CENTRAL, "Go Jets Go!", 
 			ZoneId.of("America/Winnipeg")),
 	ARIZONA_COYOTES(53, "Arizona", "Coyotes", "ARI", Division.PACIFIC, "Lets Go Coyotes!", 
-			ZoneId.of("America/Denver"));
+			ZoneId.of("America/Denver")),
+	VEGAS_GOLDEN_KNIGHTS(54, "Vegas", "Golden Knights", "VGK", Division.PACIFIC, "Go Knights Go!",
+			ZoneId.of("America/Los_Angeles"));
 	
 
 	private final int id;

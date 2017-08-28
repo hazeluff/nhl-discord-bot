@@ -127,8 +127,8 @@ public class GameChannelsManagerTest {
 		when(mockPreferencesManager.getSubscribedGuilds(AWAY_TEAM)).thenReturn(Arrays.asList(mockAwayGuild));
 		when(mockPreferencesManager.getTeamByGuild(HOME_GUILD_ID)).thenReturn(HOME_TEAM);
 		when(mockPreferencesManager.getTeamByGuild(AWAY_GUILD_ID)).thenReturn(AWAY_TEAM);
-		when(mockHomeGuild.getID()).thenReturn(HOME_GUILD_ID);
-		when(mockAwayGuild.getID()).thenReturn(AWAY_GUILD_ID);
+		when(mockHomeGuild.getStringID()).thenReturn(HOME_GUILD_ID);
+		when(mockAwayGuild.getStringID()).thenReturn(AWAY_GUILD_ID);
 		when(mockHomeGuild.getChannels()).thenReturn(Arrays.asList(mockHomeChannel1, mockHomeChannel2));
 		when(mockAwayGuild.getChannels()).thenReturn(Arrays.asList(mockAwayChannel1, mockAwayChannel2));
 		when(mockHomeChannel1.getGuild()).thenReturn(mockHomeGuild);

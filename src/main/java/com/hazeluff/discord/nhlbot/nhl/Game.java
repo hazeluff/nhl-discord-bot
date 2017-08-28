@@ -413,4 +413,21 @@ public class Game {
 	public boolean isEnded() {
 		return status == GameStatus.FINAL;
 	}
+
+	/**
+	 * Determines if the given channel name is that of a possible game. Does not factor into account whether or not the
+	 * game is real.
+	 * 
+	 * @param channelName
+	 *            name of the channel
+	 * @return true, if is of game channel format;<br>
+	 *         false, otherwise.
+	 */
+	public static boolean isFormatted(String channelName) {
+		String teamRegex = String.join("|", Arrays.asList(Team.values()).stream()
+				.map(team -> team.getCode().toLowerCase()).collect(Collectors.toList()));
+		teamRegex = String.format("(%s)", teamRegex);
+		String regex = String.format("%1$s_vs_%1$s_[0-9]{2}-[0-9]{2}-[0-9]{2}", teamRegex);
+		return channelName.matches(regex);
+	}
 }

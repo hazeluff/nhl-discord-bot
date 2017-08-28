@@ -332,8 +332,8 @@ public class GameSchedulerTest {
 	@PrepareForTest({ HttpUtils.class, GameScheduler.class })
 	public void getGamesShouldLimitEndDate() throws Exception {
 		LOGGER.info("getGamesShouldLimitEndDate");
-		ZonedDateTime startDate = ZonedDateTime.of(2016, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-		ZonedDateTime endDate = ZonedDateTime.of(2017, 7, 5, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 7, 5, 0, 0, 0, 0, ZoneOffset.UTC);
 
 		URIBuilder mockURIBuilder = mock(URIBuilder.class);
 		whenNew(URIBuilder.class).withAnyArguments().thenReturn(mockURIBuilder);
@@ -344,7 +344,7 @@ public class GameSchedulerTest {
 		
 		gameScheduler.getGames(TEAM, startDate, endDate);
 
-		verify(mockURIBuilder).addParameter("endDate", "2017-06-15");
+		verify(mockURIBuilder).addParameter("endDate", "2018-06-15");
 	}
 
 	@Test
@@ -535,8 +535,28 @@ public class GameSchedulerTest {
 	@Test
 	public void deleteInactiveChannelsShouldRemoveChannels() {
 		LOGGER.info("deleteInactiveChannelsShouldRemoveChannels");
-		doReturn(Arrays.asList(mockGame1, mockGame3)).when(spyGameScheduler).getInactiveGames(TEAM);
-		doReturn(Arrays.asList(mockGame4)).when(spyGameScheduler).getInactiveGames(TEAM2);
+		String channelName1 = String
+				.format("%s_vs_%s_02-46-80", Team.ANAHEIM_DUCKS.getCode(), Team.ARIZONA_COYOTES.getCode())
+				.toLowerCase();
+		String channelName2 = String
+				.format("%s_vs_%s_02-46-80", Team.BOSTON_BRUINS.getCode(), Team.BUFFALO_SABRES.getCode())
+				.toLowerCase();
+		String channelName3 = String
+				.format("%s_vs_%s_02-46-80", Team.CALGARY_FLAMES.getCode(), Team.CAROLINA_HURRICANES.getCode())
+				.toLowerCase();
+		String channelName4 = String
+				.format("%s_vs_%s_02-46-80", Team.CHICAGO_BLACKHAWKS.getCode(), Team.COLORADO_AVALANCH.getCode())
+				.toLowerCase();
+		when(mockGame1.getChannelName()).thenReturn(channelName1);
+		when(mockGame2.getChannelName()).thenReturn(channelName2);
+		when(mockGame3.getChannelName()).thenReturn(channelName3);
+		when(mockGame4.getChannelName()).thenReturn(channelName4);
+		when(mockChannel1.getName()).thenReturn(channelName1);
+		when(mockChannel2.getName()).thenReturn(channelName2);
+		when(mockChannel3.getName()).thenReturn("Not a channel to delete");
+		when(mockChannel4.getName()).thenReturn(channelName4);
+		doReturn(Arrays.asList(mockGame2)).when(spyGameScheduler).getActiveGames(TEAM);
+		doReturn(Arrays.asList(mockGame4)).when(spyGameScheduler).getActiveGames(TEAM2);
 		when(mockPreferencesManager.getSubscribedGuilds(TEAM)).thenReturn(Arrays.asList(mockGuild1, mockGuild2));
 		when(mockPreferencesManager.getSubscribedGuilds(TEAM2)).thenReturn(Arrays.asList(mockGuild3));
 		when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2));
@@ -545,10 +565,10 @@ public class GameSchedulerTest {
 
 		spyGameScheduler.deleteInactiveChannels();
 		
-		verify(mockGameChannelsManager).removeChannel(mockGame1, mockChannel1);
-		verify(mockGameChannelsManager, never()).removeChannel(mockGame2, mockChannel2);
-		verify(mockGameChannelsManager).removeChannel(mockGame3, mockChannel3);
-		verify(mockGameChannelsManager).removeChannel(mockGame4, mockChannel4);
+		verify(mockGameChannelsManager).removeChannel(any(Game.class), eq(mockChannel1));
+		verify(mockGameChannelsManager, never()).removeChannel(any(Game.class), eq(mockChannel2));
+		verify(mockGameChannelsManager, never()).removeChannel(any(Game.class), eq(mockChannel3));
+		verify(mockGameChannelsManager, never()).removeChannel(any(Game.class), eq(mockChannel4));
 	}
 
 	@Test

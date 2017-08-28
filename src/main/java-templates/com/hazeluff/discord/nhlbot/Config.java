@@ -16,6 +16,12 @@ public class Config {
 			return strValue.isEmpty() || Boolean.valueOf(strValue);
 		}
 	}
+	
+	/**
+	 * The starting year of season (e.g. 2017 for the 2017-2018 season)
+	 */
+	public static final int SEASON_YEAR = 2017;
+	
 	public static final String GIT_URL = "http://nhlbot.hazeluff.com";
 	public static final String STATUS_MESSAGE = "@NHLBot help";
 	public static final String HAZELUFF_ID = "225742618422673409";

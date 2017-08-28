@@ -117,8 +117,8 @@ public class GameScheduler {
 		LOGGER.info("Initializing");
 		// Retrieve schedule/game information from NHL API
 		for (Team team : Team.values()) {
-			ZonedDateTime startDate = ZonedDateTime.of(2016, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-			ZonedDateTime endDate = ZonedDateTime.of(2017, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+			ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+			ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
 			games.addAll(getGames(team, startDate, endDate));
 		}
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");		
@@ -161,14 +161,21 @@ public class GameScheduler {
 	public void deleteInactiveChannels() {
 		LOGGER.info("Cleaning up old channels.");
 		for (Team team : Team.values()) {
-			List<Game> inactiveGames = getInactiveGames(team);
+			List<Game> activeGames = getActiveGames(team);
 			nhlBot.getPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
 				guild.getChannels().forEach(channel -> {
-					inactiveGames.forEach(game -> {
-						if (channel.getName().equalsIgnoreCase(game.getChannelName())) {
-							nhlBot.getGameChannelsManager().removeChannel(game, channel);
+					String channelName = channel.getName();
+					if (Game.isFormatted(channelName)) {
+						Game activeGame = activeGames.stream()
+								.filter(game -> channelName.equalsIgnoreCase(game.getChannelName()))
+								.findAny()
+								.orElse(null);
+						if (activeGame == null) {
+							nhlBot.getGameChannelsManager().removeChannel(null, channel);
+						} else {
+
 						}
-					});
+					}
 				});
 			});
 		}
@@ -254,7 +261,7 @@ public class GameScheduler {
 		LOGGER.info("Retrieving games of [" + team + "]");
 		URIBuilder uriBuilder = null;
 		String strJSONSchedule = null;
-		ZonedDateTime latestDate = ZonedDateTime.of(2017, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime latestDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
 		if (endDate.compareTo(latestDate) > 0) {
 			endDate = latestDate;
 		}

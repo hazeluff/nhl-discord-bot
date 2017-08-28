@@ -115,7 +115,7 @@ public class GameChannelsManager {
 		String channelName = game.getChannelName();
 		Predicate<IChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		if (gameChannels.containsKey(game.getGamePk())) {
-			String guildId = guild.getID();
+			String guildId = guild.getStringID();
 			Team team = nhlBot.getPreferencesManager().getTeamByGuild(guildId);
 			IChannel channel;
 			if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
@@ -388,24 +388,25 @@ public class GameChannelsManager {
 	 * Removes the specified channel from Maps in this class. Also deletes the channel in Discord.
 	 * 
 	 * @param game
-	 *            game the channel represents
+	 *            game the channel represents. can be null
 	 * @param channel
 	 *            channel to remove
 	 */
 	public void removeChannel(Game game, IChannel channel) {
-		LOGGER.info("Removing channel [" + channel.getName() + "] for game [" + game.getGamePk() + "]");
-		String guildId = channel.getGuild().getID();
+		LOGGER.info("Removing channel [" + channel.getName() + "] for game [" + (game == null ? null : game.getGamePk())
+				+ "]");
+		String guildId = channel.getGuild().getStringID();
 		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guildId);
 
-		if (gameChannels.containsKey(game.getGamePk())) {
+		if (game != null && gameChannels.containsKey(game.getGamePk())) {
 			gameChannels.get(game.getGamePk()).get(team)
 					.removeIf(gameChannel -> gameChannel.getLongID() == channel.getLongID());
 		}
-		if (eventMessages.containsKey(game.getGamePk())) {
+		if (game != null && eventMessages.containsKey(game.getGamePk())) {
 			eventMessages.get(game.getGamePk()).get(team).forEach((eventId,
 					messages) -> messages.removeIf(message -> message.getChannel().getLongID() == channel.getLongID()));
 		}
-		if (endOfGameMessages.containsKey(game.getGamePk())) {
+		if (game != null && endOfGameMessages.containsKey(game.getGamePk())) {
 			endOfGameMessages.get(game.getGamePk()).get(team)
 					.removeIf(message -> message.getChannel().getLongID() == channel.getLongID());
 		}
