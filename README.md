@@ -1,17 +1,15 @@
-# discord-nhlbot
+# Discord Server / Demo
 
-## Discord Server / Demo
-
-### [Join the Discord server](https://discord.gg/VVHe6d3)
+## [Join the Discord server](https://discord.gg/VVHe6d3)
 
 Ask questions or have a look at the bot that is added to the server.
 
-## Add NHLBot to your server:
+# Add NHLBot to your server:
 
 ### [Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=93200)
 ### [Development](https://discordapp.com/oauth2/authorize?client_id=257345572162371588&scope=bot&permissions=93200) (not for you)
 
-### Permissions for bot
+## Permissions for NHLBot
 
 | Permission           | Hex        | Dec   |
 |----------------------|------------|-------|
@@ -23,7 +21,8 @@ Ask questions or have a look at the bot that is added to the server.
 | READ_MESSAGE_HISTORY | 0x00010000 | 65636 |
 | Combined             | 0x00016C10 | 93200 |
 
-## Game Day Channel
+# Features
+## Game Day Channels
 - [x] Automatically generate channels for individual games
 - [x] Give warnings before the game starts (60/30/10 minutes before).
 - [x] Display messages for when goals are scored.
