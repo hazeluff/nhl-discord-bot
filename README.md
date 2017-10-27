@@ -1,3 +1,6 @@
+# NHLBot
+[![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square)](https://twitter.com/hazeluff)
+
 # Announcement 2017-10-27
 
 During a upgrade, I ran a script to update the database, without backing it up. Those who are affected, should have their guild unsubscribed from NHLBot. To resubscribe please use:
@@ -6,13 +9,6 @@ During a upgrade, I ran a script to update the database, without backing it up. 
 
 Deepest Appologies,
 [Hazeluff](https://twitter.com/hazeluff)
-
-
-# Discord Server / Demo
-
-## [Join the Discord server](https://discord.gg/VVHe6d3)
-
-Ask questions or have a look at the bot that is added to the server.
 
 # Add NHLBot to your server:
 
@@ -52,8 +48,5 @@ Ask questions or have a look at the bot that is added to the server.
 - `score` Displays score of that game.
 - `goals` Displays goals of that game.
 
-# Contact Me
-
-Twitter: [Hazeluff](https://twitter.com/hazeluff)
-
-Discord: Hazeluff#1137
+# Contact Me / Support
+[![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square)](https://twitter.com/hazeluff)
