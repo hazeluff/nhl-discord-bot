@@ -29,8 +29,10 @@ public class PreferencesManager {
 	private final IDiscordClient discordClient;
 	private final MongoDatabase mongoDB;
 
-	private Map<String, GuildPreferences> guildPreferences = new HashMap<>();
-	private Map<String, UserPreferences> userPreferences = new HashMap<>();
+	// GuildID -> GuildPreferences
+	private Map<Long, GuildPreferences> guildPreferences = new HashMap<>();
+	// UserID -> UserPreferences
+	private Map<Long, UserPreferences> userPreferences = new HashMap<>();
 
 	PreferencesManager(IDiscordClient discordClient, MongoDatabase mongoDB) {
 		this.discordClient = discordClient;
@@ -38,7 +40,7 @@ public class PreferencesManager {
 	}
 
 	PreferencesManager(IDiscordClient discordClient, MongoDatabase mongoDB,
-			Map<String, GuildPreferences> guildPreferences, Map<String, UserPreferences> userPreferences) {
+			Map<Long, GuildPreferences> guildPreferences, Map<Long, UserPreferences> userPreferences) {
 		this.discordClient = discordClient;
 		this.mongoDB = mongoDB;
 		this.guildPreferences = guildPreferences;
@@ -65,7 +67,7 @@ public class PreferencesManager {
 		// Load Guild preferences
 		while (iterator.hasNext()) {
 			Document doc = iterator.next();
-			guildPreferences.put(doc.getString("id"),
+			guildPreferences.put(doc.getLong("id"),
 					new GuildPreferences(Team.parse(doc.containsKey("team") ? doc.getInteger("team") : null)));
 		}
 
@@ -73,7 +75,7 @@ public class PreferencesManager {
 		iterator = getUserCollection().find().iterator();
 		while (iterator.hasNext()) {
 			Document doc = iterator.next();
-			userPreferences.put(doc.getString("id"),
+			userPreferences.put(doc.getLong("id"),
 					new UserPreferences(Team.parse(doc.containsKey("team") ? doc.getInteger("team") : null)));
 		}
 	}
@@ -85,7 +87,7 @@ public class PreferencesManager {
 	 *            id of the guild
 	 * @return the team the guild is subscribed to
 	 */
-	public Team getTeamByGuild(String guildId) {
+	public Team getTeamByGuild(long guildId) {
 		if (!guildPreferences.containsKey(guildId)) {
 			return null;
 		}
@@ -99,7 +101,7 @@ public class PreferencesManager {
 	 *            id of the user
 	 * @return the team the user is subscribed to
 	 */
-	public Team getTeamByUser(String userId) {
+	public Team getTeamByUser(long userId) {
 		if (!userPreferences.containsKey(userId)) {
 			return null;
 		}
@@ -114,7 +116,7 @@ public class PreferencesManager {
 	 * @param team
 	 *            team to subscribe to
 	 */
-	public void subscribeGuild(String guildId, Team team) {
+	public void subscribeGuild(long guildId, Team team) {
 		LOGGER.info(String.format("Subscribing guild to team. guildId=[%s], team=[%s]", guildId, team));
 		if (!guildPreferences.containsKey(guildId)) {
 			guildPreferences.put(guildId, new GuildPreferences());
@@ -134,7 +136,7 @@ public class PreferencesManager {
 	 * @param team
 	 *            team to subscribe to
 	 */
-	public void subscribeUser(String userId, Team team) {
+	public void subscribeUser(long userId, Team team) {
 		LOGGER.info(String.format("Subscribing user to team. guildId=[%s], team=[%s]", userId, team));
 		if (!userPreferences.containsKey(userId)) {
 			userPreferences.put(userId, new UserPreferences());
@@ -154,19 +156,19 @@ public class PreferencesManager {
 	public List<IGuild> getSubscribedGuilds(Team team) {
 		return discordClient.getGuilds().stream()
 				.filter(guild -> {
-					if (!guildPreferences.containsKey(guild.getID())) {
+					if (!guildPreferences.containsKey(guild.getLongID())) {
 						return false;
 					}
-					return guildPreferences.get(guild.getID()).getTeam() == team;
+					return guildPreferences.get(guild.getLongID()).getTeam() == team;
 				})
 				.collect(Collectors.toList());
 	}
 
-	Map<String, GuildPreferences> getGuildPreferences() {
+	Map<Long, GuildPreferences> getGuildPreferences() {
 		return guildPreferences;
 	}
 
-	Map<String, UserPreferences> getUserPreferences() {
+	Map<Long, UserPreferences> getUserPreferences() {
 		return userPreferences;
 	}
 }

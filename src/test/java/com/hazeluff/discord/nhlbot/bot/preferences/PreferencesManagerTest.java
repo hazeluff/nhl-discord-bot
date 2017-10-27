@@ -14,8 +14,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.commons.lang3.RandomStringUtils;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.nhl.Team;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -40,12 +39,12 @@ import sx.blah.discord.handle.obj.IGuild;
 public class PreferencesManagerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManagerTest.class);
 
-	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
-	private static final String GUILD_ID2 = RandomStringUtils.randomNumeric(10);
-	private static final String GUILD_ID3 = RandomStringUtils.randomNumeric(10);
-	private static final String GUILD_ID4 = RandomStringUtils.randomNumeric(10);
-	private static final String USER_ID = RandomStringUtils.randomNumeric(10);
-	private static final String USER_ID2 = RandomStringUtils.randomNumeric(10);
+	private static final long GUILD_ID = Utils.getRandomLong();
+	private static final long GUILD_ID2 = Utils.getRandomLong();
+	private static final long GUILD_ID3 = Utils.getRandomLong();
+	private static final long GUILD_ID4 = Utils.getRandomLong();
+	private static final long USER_ID = Utils.getRandomLong();
+	private static final long USER_ID2 = Utils.getRandomLong();
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 	private static final Team TEAM2 = Team.EDMONTON_OILERS;
 
@@ -92,27 +91,27 @@ public class PreferencesManagerTest {
 		// Guilds
 		when(mockGuildIterator.hasNext()).thenReturn(true, true, false);
 		Document mockGuildDocument1 = mock(Document.class);
-		when(mockGuildDocument1.getString("id")).thenReturn(GUILD_ID);
+		when(mockGuildDocument1.getLong("id")).thenReturn(GUILD_ID);
 		when(mockGuildDocument1.containsKey("team")).thenReturn(true);
 		when(mockGuildDocument1.getInteger("team")).thenReturn(TEAM.getId());
 		Document mockGuildDocument2 = mock(Document.class);
-		when(mockGuildDocument2.getString("id")).thenReturn(GUILD_ID2);
+		when(mockGuildDocument2.getLong("id")).thenReturn(GUILD_ID2);
 		when(mockGuildDocument2.containsKey("team")).thenReturn(false);
 		// Users
 		when(mockUserIterator.hasNext()).thenReturn(true, true, false);
 		Document mockUserDocument1 = mock(Document.class);
-		when(mockUserDocument1.getString("id")).thenReturn(USER_ID);
+		when(mockUserDocument1.getLong("id")).thenReturn(USER_ID);
 		when(mockUserDocument1.containsKey("team")).thenReturn(true);
 		when(mockUserDocument1.getInteger("team")).thenReturn(TEAM.getId());
 		Document mockUserDocument2 = mock(Document.class);
-		when(mockUserDocument2.getString("id")).thenReturn(USER_ID2);
+		when(mockUserDocument2.getLong("id")).thenReturn(USER_ID2);
 		when(mockUserDocument2.containsKey("team")).thenReturn(false);
 		when(mockGuildIterator.next()).thenReturn(mockGuildDocument1, mockGuildDocument2);
 		when(mockUserIterator.next()).thenReturn(mockUserDocument1, mockUserDocument2);
 
 		spyPreferencesManager.loadPreferences();
-		Map<String, GuildPreferences> guildPreferences = spyPreferencesManager.getGuildPreferences();
-		Map<String, UserPreferences> userPreferences = spyPreferencesManager.getUserPreferences();
+		Map<Long, GuildPreferences> guildPreferences = spyPreferencesManager.getGuildPreferences();
+		Map<Long, UserPreferences> userPreferences = spyPreferencesManager.getUserPreferences();
 		
 		assertEquals(TEAM, guildPreferences.get(GUILD_ID).getTeam());
 		assertNull(guildPreferences.get(GUILD_ID2).getTeam());
@@ -127,7 +126,7 @@ public class PreferencesManagerTest {
 		preferencesManager = new PreferencesManager(
 				mockDiscordClient, 
 				mockMongoDB, 
-				new HashMap<String, GuildPreferences>() {{
+				new HashMap<Long, GuildPreferences>() {{
 					put(GUILD_ID, new GuildPreferences(TEAM));
 					put(GUILD_ID2, new GuildPreferences(TEAM2));
 				}},
@@ -151,7 +150,7 @@ public class PreferencesManagerTest {
 				mockDiscordClient, 
 				mockMongoDB,
 				null, 
-				new HashMap<String, UserPreferences>() {{
+				new HashMap<Long, UserPreferences>() {{
 					put(USER_ID, new UserPreferences(TEAM));
 					put(USER_ID2, new UserPreferences(TEAM2));
 				}});
@@ -173,7 +172,7 @@ public class PreferencesManagerTest {
 		preferencesManager = new PreferencesManager(
 				mockDiscordClient, 
 				mockMongoDB, 
-				new HashMap<String, GuildPreferences>() {{
+				new HashMap<Long, GuildPreferences>() {{
 					put(GUILD_ID, new GuildPreferences(TEAM));
 				}},
 				null);
@@ -208,7 +207,7 @@ public class PreferencesManagerTest {
 				mockDiscordClient, 
 				mockMongoDB,
 				null, 
-				new HashMap<String, UserPreferences>() {{
+				new HashMap<Long, UserPreferences>() {{
 					put(USER_ID, new UserPreferences(TEAM));
 				}});
 		spyPreferencesManager = spy(preferencesManager);
@@ -240,15 +239,15 @@ public class PreferencesManagerTest {
 		LOGGER.info("getSubscribedGuildsShouldReturnListOfGuilds");
 		when(mockDiscordClient.getGuilds()).thenReturn(
 				Arrays.asList(mock(IGuild.class), mock(IGuild.class), mock(IGuild.class), mock(IGuild.class)));
-		when(mockDiscordClient.getGuilds().get(0).getID()).thenReturn(GUILD_ID);
-		when(mockDiscordClient.getGuilds().get(1).getID()).thenReturn(GUILD_ID2);
-		when(mockDiscordClient.getGuilds().get(2).getID()).thenReturn(GUILD_ID3);
-		when(mockDiscordClient.getGuilds().get(3).getID()).thenReturn(GUILD_ID4);
+		when(mockDiscordClient.getGuilds().get(0).getLongID()).thenReturn(GUILD_ID);
+		when(mockDiscordClient.getGuilds().get(1).getLongID()).thenReturn(GUILD_ID2);
+		when(mockDiscordClient.getGuilds().get(2).getLongID()).thenReturn(GUILD_ID3);
+		when(mockDiscordClient.getGuilds().get(3).getLongID()).thenReturn(GUILD_ID4);
 
 		preferencesManager = new PreferencesManager(
 				mockDiscordClient, 
 				mockMongoDB, 
-				new HashMap<String, GuildPreferences>() {{
+				new HashMap<Long, GuildPreferences>() {{
 					put(GUILD_ID, new GuildPreferences(TEAM));
 					put(GUILD_ID2, new GuildPreferences(TEAM2));
 					put(GUILD_ID3, new GuildPreferences(TEAM));

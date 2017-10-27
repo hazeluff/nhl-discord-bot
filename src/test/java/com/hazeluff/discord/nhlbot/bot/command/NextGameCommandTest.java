@@ -7,7 +7,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +23,7 @@ import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -34,8 +34,8 @@ import sx.blah.discord.handle.obj.IUser;
 public class NextGameCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NextGameCommandTest.class);
 
-	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
-	private static final String USER_ID = RandomStringUtils.randomNumeric(10);
+	private static final long GUILD_ID = Utils.getRandomLong();
+	private static final long USER_ID = Utils.getRandomLong();
 	private static final String CHANNEL_NAME = "ChannelName";
 	private static final Team GUILD_TEAM = Team.COLORADO_AVALANCH;
 	private static final Team USER_TEAM = Team.FLORIDA_PANTHERS;
@@ -74,9 +74,9 @@ public class NextGameCommandTest {
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
-		when(mockGuild.getID()).thenReturn(GUILD_ID);
+		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
 		when(mockMessage.getAuthor()).thenReturn(mockUser);
-		when(mockUser.getID()).thenReturn(USER_ID);
+		when(mockUser.getLongID()).thenReturn(USER_ID);
 	}
 
 	@Test

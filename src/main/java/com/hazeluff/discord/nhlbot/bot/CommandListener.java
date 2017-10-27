@@ -180,7 +180,7 @@ public class CommandListener {
 
 			if (response != null) {
 				nhlBot.getDiscordManager().sendMessage(message.getChannel(),
-						String.format("<@%s> %s", message.getAuthor().getID(), response));
+						String.format("<@%s> %s", message.getAuthor().getLongID(), response));
 				return true;
 			}
 		}		

@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,7 +86,7 @@ public class GameSchedulerTest {
 	private static final Team TEAM2 = Team.EDMONTON_OILERS;
 	private Set<Game> GAMES;
 	private List<GameTracker> GAME_TRACKERS;
-	private static final String GUILD_ID1 = RandomStringUtils.randomNumeric(10);
+	private static final long GUILD_ID1 = Utils.getRandomLong();
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Before
@@ -113,7 +112,7 @@ public class GameSchedulerTest {
 		when(mockChannel2.getName()).thenReturn(GAME_CHANNEL_NAME2);
 		when(mockChannel3.getName()).thenReturn(GAME_CHANNEL_NAME3);
 		when(mockChannel4.getName()).thenReturn(GAME_CHANNEL_NAME4);
-		when(mockGuild1.getID()).thenReturn(GUILD_ID1);
+		when(mockGuild1.getLongID()).thenReturn(GUILD_ID1);
 		when(mockPreferencesManager.getTeamByGuild(GUILD_ID1)).thenReturn(TEAM);
 		when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2, mockChannel3));
 		GAMES = Utils.asSet(mockGame1, mockGame2, mockGame3);

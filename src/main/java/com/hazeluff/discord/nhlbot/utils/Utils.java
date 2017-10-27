@@ -2,7 +2,6 @@ package com.hazeluff.discord.nhlbot.utils;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -15,6 +14,8 @@ import org.slf4j.LoggerFactory;
 public class Utils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
+	private static final Random random = new Random();
+	
 	/**
 	 * Invokes Thread.sleep() and catches the exception.
 	 * 
@@ -28,6 +29,22 @@ public class Utils {
 			LOGGER.error("Could not sleep for [" + duration + "]", e);
 		}
 	}
+	
+	/**
+	 * Gets a random int value.
+	 * @return random value
+	 */
+	public static int getRandomInt() {
+		return random.nextInt();
+	}
+	
+	/**
+	 * Gets a random long value.
+	 * @return random value
+	 */
+	public static long getRandomLong() {
+		return random.nextLong();
+	}
 
 	/**
 	 * Gets a random element from the provided list.
@@ -37,7 +54,7 @@ public class Utils {
 	 * @return random element from list
 	 */
 	public static <T> T getRandom(List<T> list) {
-		return list.get(new Random().nextInt(list.size()));
+		return list.get(random.nextInt(list.size()));
 	}
 
 	/**

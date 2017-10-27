@@ -7,7 +7,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +24,7 @@ import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
 import com.hazeluff.discord.nhlbot.nhl.Team;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -34,7 +34,7 @@ import sx.blah.discord.handle.obj.IMessage;
 public class ScoreCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ScoreCommandTest.class);
 
-	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
+	private static final long GUILD_ID = Utils.getRandomLong();
 	private static final String CHANNEL_NAME = "ChannelName";
 	private static final Team TEAM = Team.COLORADO_AVALANCH;
 	private static final String SCORE_MESSAGE = "ScoreMesage";
@@ -71,7 +71,7 @@ public class ScoreCommandTest {
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
-		when(mockGuild.getID()).thenReturn(GUILD_ID);
+		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
 		when(mockGame.getScoreMessage()).thenReturn(SCORE_MESSAGE);
 	}
 

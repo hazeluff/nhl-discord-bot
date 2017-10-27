@@ -28,6 +28,7 @@ import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -55,7 +56,7 @@ public class CommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandTest.class);
 
 	private static final Team TEAM = Team.COLORADO_AVALANCH;
-	private static final String CHANNEL_ID = RandomStringUtils.randomNumeric(10);
+	private static final String CHANNEL_ID = RandomStringUtils.randomAlphanumeric(10);
 	private static final String CHANNEL_NAME_CURRENT = "CurrentGameChannelName";
 	private static final String CHANNEL_NAME_LAST = "LastGameChannelName";
 
@@ -87,7 +88,7 @@ public class CommandTest {
 		spyCommand = spy(command);
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
 		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
-		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
 		when(mockCurrentGame.getChannelName()).thenReturn(CHANNEL_NAME_CURRENT);
 		when(mockLastGame.getChannelName()).thenReturn(CHANNEL_NAME_LAST);
 	}
@@ -127,7 +128,7 @@ public class CommandTest {
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
 		when(mockGuild.getChannelsByName(mockCurrentGame.getChannelName().toLowerCase()))
 				.thenReturn(Arrays.asList(mockChannel));
-		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
 		
 		String result = command.getLatestGameChannelMention(mockGuild, TEAM);
 
@@ -139,7 +140,7 @@ public class CommandTest {
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
 		when(mockGuild.getChannelsByName(mockCurrentGame.getChannelName().toLowerCase()))
 				.thenReturn(Collections.emptyList());
-		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
 
 		String result = command.getLatestGameChannelMention(mockGuild, TEAM);
 

@@ -40,13 +40,13 @@ public class SubscribeCommand extends Command {
 				Team team = Team.parse(arguments[2]);
 				if (channel.isPrivate()) {
 					// Subscribe user
-					nhlBot.getPreferencesManager().subscribeUser(message.getAuthor().getID(), team);
+					nhlBot.getPreferencesManager().subscribeUser(message.getAuthor().getLongID(), team);
 					nhlBot.getDiscordManager().sendMessage(channel,
 							"You are now subscribed to games of the **" + team.getFullName() + "**!");
 				} else {
 					// Subscribe guild
 					nhlBot.getGameScheduler().removeAllChannels(message.getGuild());
-					nhlBot.getPreferencesManager().subscribeGuild(message.getGuild().getID(), team);
+					nhlBot.getPreferencesManager().subscribeGuild(message.getGuild().getLongID(), team);
 					nhlBot.getGameScheduler().initChannels(message.getGuild());
 					nhlBot.getDiscordManager().sendMessage(channel,
 							"This server is now subscribed to games of the **" + team.getFullName() + "**!");
@@ -80,7 +80,7 @@ public class SubscribeCommand extends Command {
 						role -> role.getPermissions().stream()
 						.anyMatch(permission -> permission == Permissions.ADMINISTRATOR)
 				)
-				|| message.getGuild().getOwner().getID().equals(message.getAuthor().getID());
+				|| message.getGuild().getOwner().getLongID() == message.getAuthor().getLongID();
 	}
 
 }

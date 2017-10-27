@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
-
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,6 +45,7 @@ import com.hazeluff.discord.nhlbot.nhl.Player.EventRole;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.nhl.custommessages.CanucksCustomMessages;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -59,9 +57,9 @@ public class GameChannelsManagerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameChannelsManagerTest.class);
 
 	private static final Team HOME_TEAM = Team.VANCOUVER_CANUCKS;
-	private static final String HOME_GUILD_ID = RandomStringUtils.randomNumeric(10);
+	private static final long HOME_GUILD_ID = Utils.getRandomLong();
 	private static final Team AWAY_TEAM = Team.EDMONTON_OILERS;
-	private static final String AWAY_GUILD_ID = RandomStringUtils.randomNumeric(10);
+	private static final long AWAY_GUILD_ID = Utils.getRandomLong();
 	private static final String CHANNEL1_NAME = "Channel1 Name";
 	private static final String CHANNEL2_NAME = "Channel2 Name";
 	private static final String HOME_DETAILS_MESSAGE = "Home Details";
@@ -74,15 +72,15 @@ public class GameChannelsManagerTest {
 	private static final String MESSAGE = "Message";
 	private static final String HOME_END_OF_GAME_MESSAGE = "HomeEndOfGameMessage";
 	private static final String AWAY_END_OF_GAME_MESSAGE = "AwayEndOfGameMessage";
-	private static final int EVENT_ID = 10000;
-	private static final int GAME_PK = 10001;
-	private static final int GAME_PK2 = 10002;
-	private static final long CHANNEL_ID = ThreadLocalRandom.current().nextLong();
-	private static final long CHANNEL_ID2 = ThreadLocalRandom.current().nextLong();
-	private static final long HOME_CHANNEL_ID = ThreadLocalRandom.current().nextLong();
-	private static final long AWAY_CHANNEL_ID = ThreadLocalRandom.current().nextLong();
-	private static final long HOME_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong();
-	private static final long AWAY_CHANNEL_ID2 = ThreadLocalRandom.current().nextLong();
+	private static final int EVENT_ID = Utils.getRandomInt();
+	private static final int GAME_PK = Utils.getRandomInt();
+	private static final int GAME_PK2 = Utils.getRandomInt();
+	private static final long CHANNEL_ID = Utils.getRandomLong();
+	private static final long CHANNEL_ID2 = Utils.getRandomLong();
+	private static final long HOME_CHANNEL_ID = Utils.getRandomLong();
+	private static final long AWAY_CHANNEL_ID = Utils.getRandomLong();
+	private static final long HOME_CHANNEL_ID2 = Utils.getRandomLong();
+	private static final long AWAY_CHANNEL_ID2 = Utils.getRandomLong();
 
 	@Mock
 	private NHLBot mockNHLBot;
@@ -127,8 +125,8 @@ public class GameChannelsManagerTest {
 		when(mockPreferencesManager.getSubscribedGuilds(AWAY_TEAM)).thenReturn(Arrays.asList(mockAwayGuild));
 		when(mockPreferencesManager.getTeamByGuild(HOME_GUILD_ID)).thenReturn(HOME_TEAM);
 		when(mockPreferencesManager.getTeamByGuild(AWAY_GUILD_ID)).thenReturn(AWAY_TEAM);
-		when(mockHomeGuild.getStringID()).thenReturn(HOME_GUILD_ID);
-		when(mockAwayGuild.getStringID()).thenReturn(AWAY_GUILD_ID);
+		when(mockHomeGuild.getLongID()).thenReturn(HOME_GUILD_ID);
+		when(mockAwayGuild.getLongID()).thenReturn(AWAY_GUILD_ID);
 		when(mockHomeGuild.getChannels()).thenReturn(Arrays.asList(mockHomeChannel1, mockHomeChannel2));
 		when(mockAwayGuild.getChannels()).thenReturn(Arrays.asList(mockAwayChannel1, mockAwayChannel2));
 		when(mockHomeChannel1.getGuild()).thenReturn(mockHomeGuild);
@@ -677,12 +675,13 @@ public class GameChannelsManagerTest {
 		when(mockGameEvent.getPlayers()).thenReturn(Arrays.asList(PLAYER));
 		when(mockGameEvent.getStrength()).thenReturn(GameEventStrength.EVEN);
 		when(mockGameEvent.getTeam()).thenReturn(HOME_TEAM);
+		when(mockGameEvent.getId()).thenReturn(0);
 		mockStatic(CanucksCustomMessages.class);
 		String customMessage = "CustomMessage";
 		when(CanucksCustomMessages.getMessage(anyListOf(Player.class))).thenReturn(customMessage);
-
+		
 		String result = gameChannelsManager.buildEventMessage(mockGameEvent);
-
+		
 		assertTrue(result.startsWith(customMessage));
 		assertTrue(result.contains(HOME_TEAM.getLocation()));
 		assertTrue(result.contains(PLAYER.getFullName()));
@@ -870,13 +869,13 @@ public class GameChannelsManagerTest {
 		Map<Integer, Map<Team, List<IMessage>>> endOfGameMessages = new HashMap<>();
 		Map<Team, List<IMessage>> teamEndOfGameMessages = new HashMap<>();
 		IMessage mockHomeEndOfGameMessage = mock(IMessage.class);
-		when(mockHomeEndOfGameMessage.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
+		when(mockHomeEndOfGameMessage.getLongID()).thenReturn(Utils.getRandomLong());
 		IMessage mockHomeEndOfGameMessage2 = mock(IMessage.class);
-		when(mockHomeEndOfGameMessage2.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
+		when(mockHomeEndOfGameMessage2.getLongID()).thenReturn(Utils.getRandomLong());
 		IMessage mockAwayEndOfGameMessage = mock(IMessage.class);
-		when(mockAwayEndOfGameMessage.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
+		when(mockAwayEndOfGameMessage.getLongID()).thenReturn(Utils.getRandomLong());
 		IMessage mockAwayEndOfGameMessage2 = mock(IMessage.class);
-		when(mockAwayEndOfGameMessage2.getID()).thenReturn(RandomStringUtils.randomNumeric(10));
+		when(mockAwayEndOfGameMessage2.getLongID()).thenReturn(Utils.getRandomLong());
 		teamEndOfGameMessages.put(HOME_TEAM,
 				new ArrayList<>(Arrays.asList(mockHomeEndOfGameMessage, mockHomeEndOfGameMessage2)));
 		teamEndOfGameMessages.put(AWAY_TEAM,

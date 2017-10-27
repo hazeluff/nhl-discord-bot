@@ -80,7 +80,9 @@ public class NHLBot {
 		return client;
 	}
 
+	@SuppressWarnings("resource")
 	static MongoDatabase getMongoDatabaseInstance() {
+		// No need to close the connection.
 		return new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT).getDatabase(Config.MONGO_DATABASE_NAME);
 	}
 

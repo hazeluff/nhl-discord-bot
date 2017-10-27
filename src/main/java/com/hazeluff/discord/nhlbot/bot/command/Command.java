@@ -66,7 +66,7 @@ public abstract class Command {
 		String channelName = game.getChannelName().toLowerCase();
 		List<IChannel> channels = guild.getChannelsByName(channelName);
 		if (!channels.isEmpty()) {
-			channelName = "<#" + channels.get(0).getID() + ">";
+			channelName = "<#" + channels.get(0).getStringID() + ">";
 		} else {
 			channelName = "#" + channelName;
 		}

@@ -50,15 +50,15 @@ import sx.blah.discord.handle.obj.IUser;
 public class CommandListenerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListenerTest.class);
 
-	private static final String BOT_ID = RandomStringUtils.randomNumeric(10);
+	private static final String BOT_ID = RandomStringUtils.randomAlphabetic(10);
 	private static final String BOT_MENTION_ID = "<@" + BOT_ID + ">";
 	private static final String BOT_NICKNAME_MENTION_ID = "<@!" + BOT_ID + ">";
-	private static final String AUTHOR_USER_ID = RandomStringUtils.randomNumeric(10);
-	private static final String OWNER_USER_ID = RandomStringUtils.randomNumeric(10);
+	private static final long AUTHOR_USER_ID = Utils.getRandomLong();
+	private static final long OWNER_USER_ID = Utils.getRandomLong();
 	private static final String MESSAGE_CONTENT = "Message Content";
 	private static final String CHANNEL_NAME = "ChannelName";
-	private static final String CHANNEL_ID = RandomStringUtils.randomNumeric(10);
-	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
+	private static final long CHANNEL_ID = Utils.getRandomLong();
+	private static final long GUILD_ID = Utils.getRandomLong();
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
@@ -98,7 +98,7 @@ public class CommandListenerTest {
 		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockEvent.getMessage()).thenReturn(mockMessage);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
-		when(mockChannel.getID()).thenReturn(CHANNEL_ID);
+		when(mockChannel.getLongID()).thenReturn(CHANNEL_ID);
 		when(mockChannel.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
@@ -106,11 +106,11 @@ public class CommandListenerTest {
 		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
 		when(mockNHLBot.getNicknameMentionId()).thenReturn(BOT_NICKNAME_MENTION_ID);
 		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
-		when(mockGuild.getID()).thenReturn(GUILD_ID);
+		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
-		when(mockAuthorUser.getID()).thenReturn(AUTHOR_USER_ID);
+		when(mockAuthorUser.getLongID()).thenReturn(AUTHOR_USER_ID);
 		when(mockGuild.getOwner()).thenReturn(mockOwnerUser);
-		when(mockOwnerUser.getID()).thenReturn(OWNER_USER_ID);
+		when(mockOwnerUser.getLongID()).thenReturn(OWNER_USER_ID);
 		commandListener = new CommandListener(mockNHLBot);
 		spyCommandListener = spy(commandListener);
 	}

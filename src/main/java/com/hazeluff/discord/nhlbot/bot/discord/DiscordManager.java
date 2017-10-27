@@ -316,6 +316,6 @@ public class DiscordManager {
 	 *         false, otherwise.
 	 */
 	public boolean isAuthorOfMessage(IMessage message) {
-		return message.getAuthor().getID().equals(client.getOurUser().getID());
+		return message.getAuthor().getLongID() == client.getOurUser().getLongID();
 	}
 }

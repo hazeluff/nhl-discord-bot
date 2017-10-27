@@ -115,7 +115,7 @@ public class GameChannelsManager {
 		String channelName = game.getChannelName();
 		Predicate<IChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		if (gameChannels.containsKey(game.getGamePk())) {
-			String guildId = guild.getStringID();
+			long guildId = guild.getLongID();
 			Team team = nhlBot.getPreferencesManager().getTeamByGuild(guildId);
 			IChannel channel;
 			if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
@@ -395,7 +395,7 @@ public class GameChannelsManager {
 	public void removeChannel(Game game, IChannel channel) {
 		LOGGER.info("Removing channel [" + channel.getName() + "] for game [" + (game == null ? null : game.getGamePk())
 				+ "]");
-		String guildId = channel.getGuild().getStringID();
+		long guildId = channel.getGuild().getLongID();
 		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guildId);
 
 		if (game != null && gameChannels.containsKey(game.getGamePk())) {

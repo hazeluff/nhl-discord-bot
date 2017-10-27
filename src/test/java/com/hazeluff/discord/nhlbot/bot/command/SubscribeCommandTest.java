@@ -3,7 +3,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +33,7 @@ import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -46,11 +46,11 @@ import sx.blah.discord.handle.obj.Permissions;
 public class SubscribeCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SubscribeCommandTest.class);
 
-	private static final String GUILD_ID = RandomStringUtils.randomNumeric(10);
+	private static final long GUILD_ID = Utils.getRandomLong();
 	private static final String CHANNEL_NAME = "ChannelName";
 	private static final Team TEAM = Team.COLORADO_AVALANCH;
-	private static final String USER_ID_AUTHOR = RandomStringUtils.randomNumeric(10);
-	private static final String USER_ID_OWNER = RandomStringUtils.randomNumeric(10);
+	private static final long USER_ID_AUTHOR = Utils.getRandomLong();
+	private static final long USER_ID_OWNER = Utils.getRandomLong();
 
 	@Mock
 	private NHLBot mockNHLBot;
@@ -88,11 +88,11 @@ public class SubscribeCommandTest {
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
-		when(mockGuild.getID()).thenReturn(GUILD_ID);
+		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
 		when(mockGuild.getOwner()).thenReturn(mockOwnerUser);
-		when(mockAuthorUser.getID()).thenReturn(USER_ID_AUTHOR);
-		when(mockOwnerUser.getID()).thenReturn(USER_ID_OWNER);
+		when(mockAuthorUser.getLongID()).thenReturn(USER_ID_AUTHOR);
+		when(mockOwnerUser.getLongID()).thenReturn(USER_ID_OWNER);
 	}
 
 	@Test
@@ -120,7 +120,7 @@ public class SubscribeCommandTest {
 	public void hasPermissionShouldReturnTrueWhenUserIsOwner() {
 		LOGGER.info("hasPermissionShouldReturnTrueWhenUserIsOwner");
 		when(mockAuthorUser.getRolesForGuild(mockGuild)).thenReturn(Collections.emptyList());
-		when(mockOwnerUser.getID()).thenReturn(USER_ID_AUTHOR);
+		when(mockOwnerUser.getLongID()).thenReturn(USER_ID_AUTHOR);
 
 		assertTrue(subscribeCommand.hasPermission(mockMessage));
 	}
@@ -165,7 +165,7 @@ public class SubscribeCommandTest {
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "help" });
 
 		verify(mockGameScheduler, never()).removeAllChannels(any(IGuild.class));
-		verify(mockPreferencesManager, never()).subscribeGuild(anyString(), any(Team.class));
+		verify(mockPreferencesManager, never()).subscribeGuild(anyLong(), any(Team.class));
 		verify(mockGameScheduler, never()).initChannels(any(IGuild.class));
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		String message = captorString.getValue();
@@ -214,7 +214,7 @@ public class SubscribeCommandTest {
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "ZZZ" });
 
 		verify(mockGameScheduler, never()).removeAllChannels(any(IGuild.class));
-		verify(mockPreferencesManager, never()).subscribeGuild(anyString(), any(Team.class));
+		verify(mockPreferencesManager, never()).subscribeGuild(anyLong(), any(Team.class));
 		verify(mockGameScheduler, never()).initChannels(any(IGuild.class));
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		assertTrue(captorString.getValue().contains("`@NHLBot subscribe help`"));

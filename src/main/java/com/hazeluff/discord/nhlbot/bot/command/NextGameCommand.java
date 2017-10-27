@@ -21,9 +21,9 @@ public class NextGameCommand extends Command {
 		IChannel channel = message.getChannel();
 		Team preferredTeam;
 		if (channel.isPrivate()) {
-			preferredTeam = nhlBot.getPreferencesManager().getTeamByUser(message.getAuthor().getID());
+			preferredTeam = nhlBot.getPreferencesManager().getTeamByUser(message.getAuthor().getLongID());
 		} else {
-			preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(message.getGuild().getID());			
+			preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(message.getGuild().getLongID());			
 		}
 		
 		if (preferredTeam == null) {

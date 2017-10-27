@@ -454,13 +454,13 @@ public class DiscordManagerTest {
 	public void isAuthorOfMessageShouldReturnTrueIfClientIsAuthor() {
 		LOGGER.info("isAuthorOfMessageShouldReturnTrueIfClientIsAuthor");
 		IUser authorUser = mock(IUser.class);
-		String authorID = "12345";
+		long authorID = 12345678;
 		when(mockMessage.getAuthor()).thenReturn(authorUser);
-		when(authorUser.getID()).thenReturn(authorID);
+		when(authorUser.getLongID()).thenReturn(authorID);
 		IUser clientUser = mock(IUser.class);
-		String clientID = "12345";
+		long clientID = authorID;
 		when(mockClient.getOurUser()).thenReturn(clientUser);
-		when(clientUser.getID()).thenReturn(clientID);
+		when(clientUser.getLongID()).thenReturn(clientID);
 
 		boolean result = discordManager.isAuthorOfMessage(mockMessage);
 
@@ -471,13 +471,13 @@ public class DiscordManagerTest {
 	public void isAuthorOfMessageShouldReturnTrueIfClientIsNotAuthor() {
 		LOGGER.info("isAuthorOfMessageShouldReturnTrueIfClientIsAuthor");
 		IUser authorUser = mock(IUser.class);
-		String authorID = "12345";
+		long authorID = 12345;
 		when(mockMessage.getAuthor()).thenReturn(authorUser);
-		when(authorUser.getID()).thenReturn(authorID);
+		when(authorUser.getLongID()).thenReturn(authorID);
 		IUser clientUser = mock(IUser.class);
-		String clientID = "not" + authorID;
+		long clientID = ~authorID;
 		when(mockClient.getOurUser()).thenReturn(clientUser);
-		when(clientUser.getID()).thenReturn(clientID);
+		when(clientUser.getLongID()).thenReturn(clientID);
 
 		boolean result = discordManager.isAuthorOfMessage(mockMessage);
 

@@ -227,7 +227,7 @@ public class GameScheduler {
 	 */
 	public void initChannels(IGuild guild) {
 		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
-		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getID());
+		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getLongID());
 
 		// Create game channels of latest game for current subscribed team
 		for (Game game : getActiveGames(team)) {
