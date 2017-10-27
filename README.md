@@ -2,7 +2,7 @@
 
 During a upgrade, I ran a script to update the database, without backing it up. Those who are affected, should have their guild unsubscribed from NHLBot. To resubscribe please use:
 
-> @NHLBot#7894 subscribe <team>
+> @NHLBot#7894 subscribe \<team\>
 
 Deepest Appologies,
 [Hazeluff](https://twitter.com/hazeluff)
