@@ -18,14 +18,22 @@ public class HelpCommand extends Command {
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
 		nhlBot.getDiscordManager().sendMessage(channel,
-				"Here are a list of commands:\n\n" + "`subscribe [team]` - Subscribes you to games of a team. "
+				"Here are a list of commands:\n\n" 
+						+ "`subscribe [team]` - Subscribes you to a team. "
 						+ "[team] is the three letter code of your team. **(+)**\n"
+
+						+ "`unsubscribe` - Unsubscribes you from a team.\n"
+
 						+ "`nextgame` - Displays information of the next game.\n"
+
 						+ "`score` - Displays the score of the game. "
 						+ "You must be in a 'Game Day Channel' to use this command.\n"
+
 						+ "`goals` - Displays the goals of the game. "
 						+ "You must be in a 'Game Day Channel' to use this command.\n"
+
 						+ "`about` - Displays information about me.\n\n"
+
 						+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
 						+ "`@NHLBot [command] help`");
 	}

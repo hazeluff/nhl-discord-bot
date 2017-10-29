@@ -10,6 +10,7 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.Permissions;
 
 /**
  * Interface for commands that the NHLBot can accept and the replies to those commands.
@@ -83,5 +84,20 @@ public abstract class Command {
 	String getRunInGameDayChannelMessage(IGuild guild, Team team) {
 		return String.format("Please run this command in a 'Game Day Channel'.\nLatest game channel: %s",
 				getLatestGameChannelMention(guild, team));
+	}
+
+	/**
+	 * Determines if the author of the message has permissions to subscribe the guild to a team. The author of the
+	 * message must either have the ADMIN role permission or be the owner of the guild.
+	 * 
+	 * @param message
+	 *            message the user sent. Used to get role permissions and owner of guild.
+	 * @return true, if user has permissions<br>
+	 *         false, otherwise
+	 */
+	boolean hasAdminPermission(IMessage message) {
+		return message.getAuthor().getRolesForGuild(message.getGuild()).stream().anyMatch(
+				role -> role.getPermissions().stream().anyMatch(permission -> permission == Permissions.ADMINISTRATOR))
+				|| message.getGuild().getOwner().getLongID() == message.getAuthor().getLongID();
 	}
 }

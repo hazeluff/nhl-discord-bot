@@ -113,7 +113,7 @@ public class SubscribeCommandTest {
 		List<IRole> userRoles = Arrays.asList(mock(IRole.class));
 		when(userRoles.get(0).getPermissions()).thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
 
-		assertFalse(subscribeCommand.hasPermission(mockMessage));
+		assertFalse(subscribeCommand.hasAdminPermission(mockMessage));
 	}
 
 	@Test
@@ -122,7 +122,7 @@ public class SubscribeCommandTest {
 		when(mockAuthorUser.getRolesForGuild(mockGuild)).thenReturn(Collections.emptyList());
 		when(mockOwnerUser.getLongID()).thenReturn(USER_ID_AUTHOR);
 
-		assertTrue(subscribeCommand.hasPermission(mockMessage));
+		assertTrue(subscribeCommand.hasAdminPermission(mockMessage));
 	}
 
 	@Test
@@ -134,13 +134,13 @@ public class SubscribeCommandTest {
 				.thenReturn(EnumSet.of(Permissions.CHANGE_NICKNAME, Permissions.ADMINISTRATOR));
 		when(mockAuthorUser.getRolesForGuild(mockGuild)).thenReturn(userRoles);
 
-		assertTrue(subscribeCommand.hasPermission(mockMessage));
+		assertTrue(subscribeCommand.hasAdminPermission(mockMessage));
 	}
 
 	@Test
 	public void replyToShouldSendUserMustBeAdminToSubscribeMessageWhenUserDoesNotHavePermissions() {
 		LOGGER.info("replyToShouldSendUserMustBeAdminToSubscribeMessageWhenUserDoesNotHavePermissions");
-		doReturn(false).when(spySubscribeCommand).hasPermission(mockMessage);
+		doReturn(false).when(spySubscribeCommand).hasAdminPermission(mockMessage);
 
 		spySubscribeCommand.replyTo(mockMessage, null);
 		
@@ -150,7 +150,7 @@ public class SubscribeCommandTest {
 	@Test
 	public void replyToShouldSendSpecifyTeamMessageWhenMissingTeamArgument() {
 		LOGGER.info("replyToShouldSendSpecifyTeamMessageWhenMissingTeamArgument");
-		doReturn(true).when(spySubscribeCommand).hasPermission(mockMessage);
+		doReturn(true).when(spySubscribeCommand).hasAdminPermission(mockMessage);
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe" });
 
@@ -160,7 +160,7 @@ public class SubscribeCommandTest {
 	@Test
 	public void replyToShouldSendHelpMessageWhenArgumentIsHelp() {
 		LOGGER.info("replyToShouldSendHelpMessageWhenArgumentIsHelp");
-		doReturn(true).when(spySubscribeCommand).hasPermission(mockMessage);
+		doReturn(true).when(spySubscribeCommand).hasAdminPermission(mockMessage);
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "help" });
 
@@ -180,7 +180,7 @@ public class SubscribeCommandTest {
 	public void replyToShouldSendMessageAndInvokeClassesWhenChannelIsPrivateAndTeamIsValid() {
 		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenChannelIsPrivateAndTeamIsValid");
 		when(mockChannel.isPrivate()).thenReturn(true);
-		doReturn(false).when(spySubscribeCommand).hasPermission(mockMessage);
+		doReturn(false).when(spySubscribeCommand).hasAdminPermission(mockMessage);
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
 
@@ -195,7 +195,7 @@ public class SubscribeCommandTest {
 	public void replyToShouldSendMessageAndInvokeClassesWhenChannelIsNotPrivateAndTeamIsValid() {
 		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenChannelIsNotPrivateAndTeamIsValid");
 		when(mockChannel.isPrivate()).thenReturn(false);
-		doReturn(true).when(spySubscribeCommand).hasPermission(mockMessage);
+		doReturn(true).when(spySubscribeCommand).hasAdminPermission(mockMessage);
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
 
@@ -209,7 +209,7 @@ public class SubscribeCommandTest {
 	@Test
 	public void replyToShouldSendMessageAndInvokeClassesWhenTeamIsNotValid() {
 		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenTeamIsNotValid");
-		doReturn(true).when(spySubscribeCommand).hasPermission(mockMessage);
+		doReturn(true).when(spySubscribeCommand).hasAdminPermission(mockMessage);
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "ZZZ" });
 

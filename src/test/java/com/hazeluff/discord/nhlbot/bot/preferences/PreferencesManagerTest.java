@@ -6,6 +6,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,6 +15,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -199,6 +201,35 @@ public class PreferencesManagerTest {
 				any(UpdateOptions.class));
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void unsubscribeGuildShouldCreatePreferenceWhenItExists() {
+		LOGGER.info("unsubscribeGuildShouldCreatePreferenceWhenItExists");
+		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getGuildCollection();
+		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID));
+
+		spyPreferencesManager.subscribeGuild(GUILD_ID, TEAM2);
+		reset(spyPreferencesManager.getGuildCollection());
+		spyPreferencesManager.unsubscribeGuild(GUILD_ID);
+
+		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+		verify(spyPreferencesManager.getGuildCollection()).updateOne(any(Document.class), any(Document.class),
+				any(UpdateOptions.class));
+	}
+
+	@Test
+	public void unsubscribeGuildShouldCreatePreferenceWhenItDoesNotExist() {
+		LOGGER.info("unsubscribeGuildShouldCreatePreferenceWhenItDoesNotExist");
+		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getGuildCollection();
+		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID));
+
+		spyPreferencesManager.unsubscribeGuild(GUILD_ID);
+
+		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+		verify(spyPreferencesManager.getGuildCollection()).updateOne(any(Document.class), any(Document.class),
+				any(UpdateOptions.class));
+	}
+
 	@SuppressWarnings("serial")
 	@Test
 	public void subscribeUserShouldUpdateExistingPreferenceWhenItExists() {
@@ -229,6 +260,35 @@ public class PreferencesManagerTest {
 		spyPreferencesManager.subscribeUser(USER_ID, TEAM2);
 
 		assertEquals(TEAM2, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
+		verify(spyPreferencesManager.getUserCollection()).updateOne(any(Document.class), any(Document.class),
+				any(UpdateOptions.class));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void unsubscribeUserShouldCreatePreferenceWhenItExists() {
+		LOGGER.info("unsubscribeUserShouldCreatePreferenceWhenItExists");
+		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getUserCollection();
+		assertNull(preferencesManager.getUserPreferences().get(USER_ID));
+
+		spyPreferencesManager.subscribeUser(USER_ID, TEAM2);
+		reset(spyPreferencesManager.getUserCollection());
+		spyPreferencesManager.unsubscribeUser(USER_ID);
+
+		assertNull(preferencesManager.getUserPreferences().get(USER_ID).getTeam());
+		verify(spyPreferencesManager.getUserCollection()).updateOne(any(Document.class), any(Document.class),
+				any(UpdateOptions.class));
+	}
+
+	@Test
+	public void unsubscribeUserShouldCreatePreferenceWhenItDoesNotExist() {
+		LOGGER.info("unsubscribeUserShouldCreatePreferenceWhenItDoesNotExist");
+		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getUserCollection();
+		assertNull(preferencesManager.getUserPreferences().get(USER_ID));
+
+		spyPreferencesManager.unsubscribeUser(USER_ID);
+
+		assertNull(preferencesManager.getUserPreferences().get(USER_ID).getTeam());
 		verify(spyPreferencesManager.getUserCollection()).updateOne(any(Document.class), any(Document.class),
 				any(UpdateOptions.class));
 	}

@@ -32,7 +32,7 @@ public class PreferencesManagerIT {
 	static MongoClient mongoClient;
 	MongoDatabase mongoDatabase;
 
-	PreferencesManager guildPreferencesManager;
+	PreferencesManager preferencesManager;
 
 	@BeforeClass
 	public static void beforeClass() {
@@ -49,7 +49,7 @@ public class PreferencesManagerIT {
 	@Before
 	public void before() {
 		mongoDatabase = mongoClient.getDatabase(Config.MONGO_TEST_DATABASE_NAME);
-		guildPreferencesManager = new PreferencesManager(null, mongoDatabase);
+		preferencesManager = new PreferencesManager(null, mongoDatabase);
 	}
 
 	@After
@@ -60,25 +60,55 @@ public class PreferencesManagerIT {
 	@Test
 	public void subscribeGuildShouldWriteToDatabase() {
 		LOGGER.info("subscribeGuildShouldWriteToDatabase");
-		guildPreferencesManager.subscribeGuild(GUILD_ID, TEAM);
+		preferencesManager.subscribeGuild(GUILD_ID, TEAM);
 
-		guildPreferencesManager = new PreferencesManager(null, mongoDatabase);
-		assertFalse(guildPreferencesManager.getGuildPreferences().containsKey(GUILD_ID));
-		guildPreferencesManager.loadPreferences();
+		// Reload
+		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
+		preferencesManager.loadPreferences();
 
-		assertEquals(TEAM, guildPreferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+		assertEquals(TEAM, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+	}
+
+	@Test
+	public void unsubscribeGuildShouldWriteToDatabase() {
+		LOGGER.info("unsubscribeGuildShouldWriteToDatabase");
+		preferencesManager.subscribeGuild(GUILD_ID, TEAM);
+		preferencesManager.unsubscribeGuild(GUILD_ID);
+
+		// Reload
+		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
+		preferencesManager.loadPreferences();
+
+		assertEquals(null, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
 	}
 
 	@Test
 	public void subscribeUserShouldWriteToDatabase() {
 		LOGGER.info("subscribeUserShouldWriteToDatabase");
-		guildPreferencesManager.subscribeUser(USER_ID, TEAM);
+		preferencesManager.subscribeUser(USER_ID, TEAM);
 
-		guildPreferencesManager = new PreferencesManager(null, mongoDatabase);
-		assertFalse(guildPreferencesManager.getUserPreferences().containsKey(USER_ID));
-		guildPreferencesManager.loadPreferences();
+		// Reload
+		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
+		preferencesManager.loadPreferences();
 
-		assertEquals(TEAM, guildPreferencesManager.getUserPreferences().get(USER_ID).getTeam());
+		assertEquals(TEAM, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
+	}
+
+	@Test
+	public void unsubscribeUserShouldWriteToDatabase() {
+		LOGGER.info("unsubscribeUserShouldWriteToDatabase");
+		preferencesManager.subscribeUser(USER_ID, TEAM);
+		preferencesManager.unsubscribeUser(USER_ID);
+
+		// Reload
+		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
+		preferencesManager.loadPreferences();
+
+		assertEquals(null, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
 	}
 
 }

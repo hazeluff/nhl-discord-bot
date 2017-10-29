@@ -23,7 +23,7 @@ public class SubscribeCommand extends Command {
 	@Override
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
-		if (channel.isPrivate() || hasPermission(message)) {
+		if (channel.isPrivate() || hasAdminPermission(message)) {
 			if (arguments.length < 3) {
 				nhlBot.getDiscordManager().sendMessage(channel, SPECIFY_TEAM_MESSAGE);
 			} else if (arguments[2].equalsIgnoreCase("help")) {
@@ -34,7 +34,9 @@ public class SubscribeCommand extends Command {
 				for (Team team : Team.values()) {
 					response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
 				}
-				response.append("```");
+				response.append("```\n");
+				response.append("You can unsbscribe using:\n");
+				response.append("`@NHLBot unsubscribe`");
 				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
 			} else if (Team.isValid(arguments[2])) {
 				Team team = Team.parse(arguments[2]);
@@ -74,7 +76,7 @@ public class SubscribeCommand extends Command {
 	 * @return true, if user has permissions<br>
 	 *         false, otherwise
 	 */
-	boolean hasPermission(IMessage message) {
+	boolean hasAdminPermission(IMessage message) {
 		return message.getAuthor().getRolesForGuild(message.getGuild()).stream()
 				.anyMatch(
 						role -> role.getPermissions().stream()

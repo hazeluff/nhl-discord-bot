@@ -109,7 +109,7 @@ public class PreferencesManager {
 	}
 
 	/**
-	 * Updates the team that the specified guild is subscribed to.
+	 * Updates the guild's subscribed team to the specified one.
 	 * 
 	 * @param guildId
 	 *            id of the guild
@@ -122,9 +122,25 @@ public class PreferencesManager {
 			guildPreferences.put(guildId, new GuildPreferences());
 		}
 		guildPreferences.get(guildId).setTeam(team);
+		getGuildCollection().updateOne(new Document("id", guildId),
+				new Document("$set", new Document("team", team.getId())), new UpdateOptions().upsert(true));
+	}
+
+	/**
+	 * Updates the guild to have no subscribed team.
+	 * 
+	 * @param guildId
+	 *            id of the guild
+	 */
+	public void unsubscribeGuild(long guildId) {
+		LOGGER.info(String.format("Unsubscribing guild from team. guildId=[%s]", guildId));
+		if (!guildPreferences.containsKey(guildId)) {
+			guildPreferences.put(guildId, new GuildPreferences());
+		}
+		guildPreferences.get(guildId).setTeam(null);
 		getGuildCollection().updateOne(
 				new Document("id", guildId), 
-				new Document("$set", new Document("team", team.getId())),
+				new Document("$unset", new Document("team", "")),
 				new UpdateOptions().upsert(true));
 	}
 
@@ -144,6 +160,22 @@ public class PreferencesManager {
 		userPreferences.get(userId).setTeam(team);
 		getUserCollection().updateOne(new Document("id", userId),
 				new Document("$set", new Document("team", team.getId())), new UpdateOptions().upsert(true));
+	}
+
+	/**
+	 * Updates the guild to have no subscribed team.
+	 * 
+	 * @param userId
+	 *            id of the guild
+	 */
+	public void unsubscribeUser(long userId) {
+		LOGGER.info(String.format("Unsubscribing user from team. userId=[%s]", userId));
+		if (!userPreferences.containsKey(userId)) {
+			userPreferences.put(userId, new UserPreferences());
+		}
+		userPreferences.get(userId).setTeam(null);
+		getUserCollection().updateOne(new Document("id", userId), new Document("$unset", new Document("team", "")),
+				new UpdateOptions().upsert(true));
 	}
 
 	/**
