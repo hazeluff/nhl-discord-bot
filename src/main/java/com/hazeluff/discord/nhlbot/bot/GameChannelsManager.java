@@ -395,21 +395,25 @@ public class GameChannelsManager {
 	public void removeChannel(Game game, IChannel channel) {
 		LOGGER.info("Removing channel [" + channel.getName() + "] for game [" + (game == null ? null : game.getGamePk())
 				+ "]");
-		long guildId = channel.getGuild().getLongID();
-		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guildId);
+		if (game != null) {
+			if (gameChannels.containsKey(game.getGamePk())) {
+				gameChannels.get(game.getGamePk()).entrySet().forEach(entry -> entry.getValue()
+						.removeIf(gameChannel -> gameChannel.getLongID() == channel.getLongID()));
+			}
+			if (eventMessages.containsKey(game.getGamePk())) {
+				eventMessages.get(game.getGamePk()).entrySet()
+						.forEach(entry -> entry.getValue().entrySet()
+								.forEach(eventMessagesEntry -> eventMessagesEntry.getValue()
+										.removeIf(message -> message.getChannel().getLongID() == channel.getLongID())));
+			}
+			if (endOfGameMessages.containsKey(game.getGamePk())) {
+				endOfGameMessages.get(game.getGamePk()).entrySet().forEach(entry -> entry.getValue()
+						.removeIf(message -> {
+							return message.getChannel().getLongID() == channel.getLongID();
+						}));
+			}
+		}
 
-		if (game != null && gameChannels.containsKey(game.getGamePk())) {
-			gameChannels.get(game.getGamePk()).get(team)
-					.removeIf(gameChannel -> gameChannel.getLongID() == channel.getLongID());
-		}
-		if (game != null && eventMessages.containsKey(game.getGamePk())) {
-			eventMessages.get(game.getGamePk()).get(team).forEach((eventId,
-					messages) -> messages.removeIf(message -> message.getChannel().getLongID() == channel.getLongID()));
-		}
-		if (game != null && endOfGameMessages.containsKey(game.getGamePk())) {
-			endOfGameMessages.get(game.getGamePk()).get(team)
-					.removeIf(message -> message.getChannel().getLongID() == channel.getLongID());
-		}
 
 		nhlBot.getDiscordManager().deleteChannel(channel);
 	}
