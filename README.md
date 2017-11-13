@@ -1,6 +1,8 @@
 # NHLBot
 [![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square&logo=twitter)](https://twitter.com/hazeluff)
 
+[![Donate](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/hazeluff/donate)
+
 # Announcement 2017-10-27
 
 During a upgrade, I ran a script to update the database, without backing it up. Those who are affected, should have their guild unsubscribed from NHLBot. To resubscribe please use:
