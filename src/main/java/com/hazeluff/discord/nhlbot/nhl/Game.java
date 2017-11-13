@@ -166,7 +166,7 @@ public class Game {
 				homeTeam.getCode(),
 				awayTeam.getCode(),
 				getShortDate(ZoneId.of("America/New_York")));
-		return channelName.toString();
+		return channelName.toLowerCase();
 	}
 
 	/**

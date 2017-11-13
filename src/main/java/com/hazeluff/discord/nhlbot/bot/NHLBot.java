@@ -75,7 +75,7 @@ public class NHLBot {
 			Utils.sleep(5000);
 		}
 		LOGGER.info("Client is ready.");
-		client.streaming(Config.STATUS_MESSAGE, Config.GIT_URL);
+		client.changePlayingText(Config.STATUS_MESSAGE);
 
 		return client;
 	}
