@@ -216,9 +216,9 @@ public class GameSchedulerTest {
 
 		spyGameScheduler.run();
 
-		verify(spyGameScheduler, times(2)).updateGameSchedule();
-		verify(spyGameScheduler, times(2)).updateTrackers();
-		verify(spyGameScheduler, times(3)).deleteInactiveChannels();
+		verify(spyGameScheduler, times(1)).updateGameSchedule();
+		verify(spyGameScheduler, times(1)).updateTrackers();
+		verify(spyGameScheduler, times(2)).deleteInactiveChannels();
 
 		verifyStatic(times(4));
 		Utils.sleep(GameScheduler.UPDATE_RATE);
