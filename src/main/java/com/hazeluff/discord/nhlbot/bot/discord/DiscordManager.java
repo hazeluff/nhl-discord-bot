@@ -11,6 +11,7 @@ import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
+import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -271,10 +272,11 @@ public class DiscordManager {
 	 * @return IChannel that was created
 	 */
 	public IChannel createChannel(IGuild guild, String channelName) {
-		LOGGER.debug("Creating channel [" + channelName + "] in [" + guild.getName() + "]");
+		String formattedChannelName = channelName.toLowerCase();
+		LOGGER.debug("Creating channel [" + formattedChannelName + "] in [" + guild.getName() + "]");
 		return performRequest(
-				() -> guild.createChannel(channelName),
-				"Could not create channel [" + channelName + "] in [" + guild.getName() + "]",
+				() -> guild.createChannel(formattedChannelName),
+				"Could not create channel [" + formattedChannelName + "] in [" + guild.getName() + "]",
 				null);
 	}
 
@@ -317,5 +319,51 @@ public class DiscordManager {
 	 */
 	public boolean isAuthorOfMessage(IMessage message) {
 		return message.getAuthor().getLongID() == client.getOurUser().getLongID();
+	}
+
+	/**
+	 * Creates a category with the given name.
+	 * 
+	 * @param guild
+	 *            guild to create the category in
+	 * @param categoryName
+	 *            name of the category
+	 */
+	public ICategory createCategory(IGuild guild, String categoryName) {
+		LOGGER.debug("Creating category in guild. guild={}, categoryName={}", guild.getName(), categoryName);
+		return performRequest(
+				() -> guild.createCategory(categoryName),
+				String.format("Could not create category [%s] in guild [%s]", categoryName, guild.getName()),
+				null);
+	}
+
+	/**
+	 * Gets the category with the given name.
+	 * 
+	 * @param guild
+	 *            guild to get the category from
+	 * @param categoryName
+	 *            name of the category
+	 * 
+	 */
+	public ICategory getCategory(IGuild guild, String categoryName) {
+		return guild.getCategories().stream()
+				.filter(category -> category.getName().equals(categoryName))
+				.findAny()
+				.orElse(null);
+	}
+
+	/**
+	 * Moves the given channel into the given category.
+	 * 
+	 * @param category
+	 *            category to move channel into
+	 * @param channel
+	 *            channel to move
+	 */
+	public void moveChannel(ICategory category, IChannel channel) {
+		LOGGER.debug("Moving channel into category. channel={}, category={}", channel.getName(), category.getName());
+		performRequest(() -> channel.changeCategory(category),
+				String.format("Could not move channel [%s] into category [%s]", channel.getName(), category.getName()));
 	}
 }

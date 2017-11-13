@@ -18,6 +18,7 @@ import com.hazeluff.discord.nhlbot.nhl.Player;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.nhl.custommessages.CanucksCustomMessages;
 
+import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -27,6 +28,8 @@ import sx.blah.discord.handle.obj.IMessage;
  */
 public class GameChannelsManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameChannelsManager.class);
+
+	static final String GAME_DAY_CHANNEL_CATEGORY_NAME = "Game Day Channels";
 
 	// Map<GameId, Map<Team, List<Channels>>>
 	private final Map<Integer, Map<Team, List<IChannel>>> gameChannels;
@@ -99,8 +102,31 @@ public class GameChannelsManager {
 		}
 
 		for (IGuild guild : nhlBot.getPreferencesManager().getSubscribedGuilds(team)) {
-			createChannel(game, guild);
+			IChannel channel = createChannel(game, guild);
+			if (channel != null) {
+				ICategory category = getCategory(guild, GAME_DAY_CHANNEL_CATEGORY_NAME);
+				if (category != null) {
+					nhlBot.getDiscordManager().moveChannel(category, channel);
+				}
+			}
 		}
+	}
+
+	/**
+	 * Gets the existing category in the guild. If the category does not already exist, it will be created.
+	 * 
+	 * @param guild
+	 *            guild to create the category in
+	 * @param categoryName
+	 *            name of the category
+	 * @return the {@link ICategory}
+	 */
+	public ICategory getCategory(IGuild guild, String categoryName) {
+		ICategory category = nhlBot.getDiscordManager().getCategory(guild, categoryName);
+		if (category == null) {
+			category = nhlBot.getDiscordManager().createCategory(guild, categoryName);
+		}
+		return category;
 	}
 
 	/**
@@ -111,7 +137,7 @@ public class GameChannelsManager {
 	 * @param guild
 	 *            guild to create channels in
 	 */
-	public void createChannel(Game game, IGuild guild) {
+	public IChannel createChannel(Game game, IGuild guild) {
 		String channelName = game.getChannelName();
 		Predicate<IChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		if (gameChannels.containsKey(game.getGamePk())) {
@@ -135,8 +161,10 @@ public class GameChannelsManager {
 					.anyMatch(gameChannel -> gameChannel.getLongID() == channel.getLongID())) {
 				gameChannels.get(game.getGamePk()).get(team).add(channel);
 			}
+			return channel;
 		} else {
 			LOGGER.warn("No channels exist for the game.");
+			return null;
 		}
 	}
 

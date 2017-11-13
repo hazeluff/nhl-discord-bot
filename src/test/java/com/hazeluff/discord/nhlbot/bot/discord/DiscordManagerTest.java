@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot.discord;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -41,6 +42,7 @@ import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
+import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -71,6 +73,8 @@ public class DiscordManagerTest {
 	@Mock
 	IMessage mockMessage2;
 	@Mock
+	ICategory mockCategory;
+	@Mock
 	RequestFuture<Object> mockRequestFuture;
 	@Mock
 	DiscordRequest<Object> mockDiscordRequest;
@@ -90,6 +94,7 @@ public class DiscordManagerTest {
 	private static final String MESSAGE = "Message";
 	private static final String NEW_MESSAGE = "New Message";
 	private static final String CHANNEL_NAME = "Channel";
+	private static final String CATEGORY_NAME = "Category";
 	private static final String TOPIC = "Topic";
 
 	DiscordManager discordManager;
@@ -421,7 +426,7 @@ public class DiscordManagerTest {
 		// Verify DiscordRequest's invocations are correct
 		result = (IChannel) captorDiscordRequest.getValue().perform();
 		assertEquals(mockChannel, result);
-		verify(mockGuild).createChannel(CHANNEL_NAME);
+		verify(mockGuild).createChannel(CHANNEL_NAME.toLowerCase());
 	}
 
 	@Test
@@ -482,5 +487,50 @@ public class DiscordManagerTest {
 		boolean result = discordManager.isAuthorOfMessage(mockMessage);
 
 		assertFalse(result);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void createCategoryShouldInvokePerformRequest() {
+		LOGGER.info("createCategoryShouldInvokePerformRequest");
+		doReturn(mockCategory).when(spyDiscordManager).performRequest(any(VoidDiscordRequest.class),
+				anyString(), any());
+
+		spyDiscordManager.createCategory(mockGuild, CATEGORY_NAME);
+
+		verify(spyDiscordManager).performRequest(captorDiscordRequest.capture(), anyString(), eq(null));
+
+		// Verify DiscordRequest's invocations are correct
+		captorDiscordRequest.getValue().perform();
+		verify(mockGuild).createCategory(CATEGORY_NAME);
+	}
+
+	@Test
+	public void getCategoryShouldCategoryWithSameName() {
+		LOGGER.info("getCategoryShouldCategoryWithSameName");
+		String categoryName = "CategoryName";
+		ICategory mockCategory = mock(ICategory.class);
+		when(mockCategory.getName()).thenReturn(categoryName);
+		String categoryName2 = "CategoryName2";
+		ICategory mockCategory2 = mock(ICategory.class);
+		when(mockCategory2.getName()).thenReturn(categoryName2);
+		when(mockGuild.getCategories()).thenReturn(Arrays.asList(mockCategory, mockCategory2));
+		
+		assertEquals(mockCategory, discordManager.getCategory(mockGuild, categoryName));
+		assertEquals(mockCategory2, discordManager.getCategory(mockGuild, categoryName2));
+		assertNull(discordManager.getCategory(mockGuild, " asdfasdf"));
+	}
+
+	@Test
+	public void moveChannelShouldInvokePerformRequest() {
+		LOGGER.info("moveChannelShouldInvokePerformRequest");
+
+		spyDiscordManager.moveChannel(mockCategory, mockChannel);
+
+		verify(spyDiscordManager).performRequest(captorVoidDiscordRequest.capture(), anyString());
+
+		// Verify DiscordRequest's invocations are correct
+		captorVoidDiscordRequest.getValue().perform();
+		verify(mockChannel).changeCategory(mockCategory);
 	}
 }

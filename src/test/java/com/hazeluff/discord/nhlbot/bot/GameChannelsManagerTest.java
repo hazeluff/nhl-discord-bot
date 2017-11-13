@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
@@ -48,6 +49,7 @@ import com.hazeluff.discord.nhlbot.nhl.custommessages.CanucksCustomMessages;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
+import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -57,6 +59,7 @@ import sx.blah.discord.handle.obj.IMessage;
 public class GameChannelsManagerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameChannelsManagerTest.class);
 
+	private static final String CATEGORY_NAME = "CategoryName";
 	private static final Team HOME_TEAM = Team.VANCOUVER_CANUCKS;
 	private static final long HOME_GUILD_ID = Utils.getRandomLong();
 	private static final Team AWAY_TEAM = Team.EDMONTON_OILERS;
@@ -101,6 +104,8 @@ public class GameChannelsManagerTest {
 	private IChannel mockChannel, mockChannel2, mockHomeChannel1, mockHomeChannel2, mockAwayChannel1, mockAwayChannel2;
 	@Mock
 	private IMessage mockMessage, mockMessage2, mockMessage3;
+	@Mock
+	private ICategory mockCategory;
 
 	@Captor
 	private ArgumentCaptor<String> captorString;
@@ -150,9 +155,31 @@ public class GameChannelsManagerTest {
 	}
 
 	@Test
+	public void getCategoryShouldReturnExistingCategory() {
+		LOGGER.info("getCategoryShouldReturnExistingCategory");
+		when(mockDiscordManager.getCategory(mockHomeGuild, CATEGORY_NAME)).thenReturn(mockCategory);
+
+		ICategory result = gameChannelsManager.getCategory(mockHomeGuild, CATEGORY_NAME);
+
+		assertEquals(mockCategory, result);
+		verify(mockDiscordManager, never()).createCategory(any(IGuild.class), anyString());
+	}
+
+	@Test
+	public void getCategoryShouldReturnNewCategory() {
+		LOGGER.info("getCategoryShouldReturnNewCategory");
+		when(mockDiscordManager.getCategory(mockHomeGuild, CATEGORY_NAME)).thenReturn(null);
+		when(mockDiscordManager.createCategory(mockHomeGuild, CATEGORY_NAME)).thenReturn(mockCategory);
+
+		ICategory result = gameChannelsManager.getCategory(mockHomeGuild, CATEGORY_NAME);
+
+		assertEquals(mockCategory, result);
+	}
+
+	@Test
 	public void createChannelsShouldAddGameKeysToMapsAndInvokeClasses() {
 		LOGGER.info("createChannelsShouldAddGameKeysToMapsAndInvokeClasses");
-		doNothing().when(spyGameChannelsManager).createChannel(any(Game.class), any(IGuild.class));
+		doReturn(null).when(spyGameChannelsManager).createChannel(any(Game.class), any(IGuild.class));
 		
 		assertFalse(spyGameChannelsManager.getGameChannels().containsKey(mockGame.getGamePk()));
 		assertFalse(spyGameChannelsManager.getEventMessages().containsKey(mockGame.getGamePk()));
@@ -222,7 +249,7 @@ public class GameChannelsManagerTest {
 		
 		spyGameChannelsManager = spy(
 				new GameChannelsManager(mockNHLBot, gameChannels, gameEventMessages, gameEndOfGameMessages));
-		doNothing().when(spyGameChannelsManager).createChannel(any(Game.class), any(IGuild.class));
+		doReturn(null).when(spyGameChannelsManager).createChannel(any(Game.class), any(IGuild.class));
 		
 		spyGameChannelsManager.createChannels(mockGame, HOME_TEAM);
 
@@ -236,6 +263,27 @@ public class GameChannelsManagerTest {
 				spyGameChannelsManager.getEndOfGameMessages().get(mockGame.getGamePk()).get(HOME_TEAM));
 		assertEquals(awayEndOfGameMessages,
 				spyGameChannelsManager.getEndOfGameMessages().get(mockGame.getGamePk()).get(AWAY_TEAM));
+	}
+
+	@Test
+	public void createChannelsShouldMoveChannelIntoCategoryIfCategoryIsNotNull() {
+		doReturn(mockChannel).when(spyGameChannelsManager).createChannel(any(Game.class), any(IGuild.class));
+		doReturn(mockCategory).when(spyGameChannelsManager).getCategory(any(IGuild.class), anyString());
+
+		spyGameChannelsManager.createChannels(mockGame, HOME_TEAM);
+
+		verify(mockDiscordManager).moveChannel(mockCategory, mockChannel);
+	}
+
+	@Test
+	public void createChannelsShouldNotMoveChannelIntoCategoryIfCategoryIsNull() {
+		doReturn(mockChannel).when(spyGameChannelsManager).createChannel(any(Game.class), any(IGuild.class));
+		doReturn(null).when(spyGameChannelsManager).getCategory(any(IGuild.class), anyString());
+
+		spyGameChannelsManager.createChannels(mockGame, HOME_TEAM);
+
+		verify(mockDiscordManager, never()).moveChannel(any(ICategory.class), any(IChannel.class));
+
 	}
 
 	@SuppressWarnings("serial")
@@ -256,8 +304,9 @@ public class GameChannelsManagerTest {
 		}});
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
 
-		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+		IChannel result = gameChannelsManager.createChannel(mockGame, mockHomeGuild);
 
+		assertEquals(newHomeChannel, result);
 		verify(mockDiscordManager).changeTopic(newHomeChannel, HOME_TEAM.getCheer());
 		verify(mockDiscordManager).sendMessage(newHomeChannel, HOME_DETAILS_MESSAGE);
 		verify(mockDiscordManager).pinMessage(newHomeChannel, newHomeMessage);
@@ -278,7 +327,9 @@ public class GameChannelsManagerTest {
 		}});
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
 
-		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+		IChannel result = gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+
+		assertNull(result);
 	}
 
 	@SuppressWarnings("serial")
@@ -293,9 +344,11 @@ public class GameChannelsManagerTest {
 				put(AWAY_TEAM, new ArrayList<>());
 		}});
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
+		when(mockHomeGuild.getChannels()).thenReturn(Arrays.asList(mockHomeChannel1));
 
-		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
-		
+		IChannel result = gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+
+		assertEquals(mockHomeChannel1, result);
 		verify(mockDiscordManager, never()).changeTopic(any(IChannel.class), anyString());
 		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
 		verify(mockDiscordManager, never()).pinMessage(any(IChannel.class), any(IMessage.class));
@@ -319,8 +372,9 @@ public class GameChannelsManagerTest {
 			}});
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
 
-		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+		IChannel result = gameChannelsManager.createChannel(mockGame, mockHomeGuild);
 
+		assertEquals(mockHomeChannel1, result);
 		List<IChannel> channels = gameChannels.get(GAME_PK).get(HOME_TEAM);
 		assertEquals(1, channels.size());
 		assertTrue(channels.contains(mockHomeChannel1));
@@ -338,8 +392,9 @@ public class GameChannelsManagerTest {
 			}});
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, gameChannels, null, null);
 
-		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+		IChannel result = gameChannelsManager.createChannel(mockGame, mockHomeGuild);
 
+		assertEquals(mockHomeChannel1, result);
 		List<IChannel> channels = gameChannels.get(GAME_PK).get(HOME_TEAM);
 		assertEquals(1, channels.size());
 		assertTrue(channels.contains(mockHomeChannel1));
@@ -350,8 +405,9 @@ public class GameChannelsManagerTest {
 		LOGGER.info("createChannelShouldDoNothingIfKeyDoesNotExist");
 		gameChannelsManager = new GameChannelsManager(mockNHLBot, new HashMap<>(), null, null);
 
-		gameChannelsManager.createChannel(mockGame, mockHomeGuild);
+		IChannel result = gameChannelsManager.createChannel(mockGame, mockHomeGuild);
 		
+		assertNull(result);
 		verifyNoMoreInteractions(mockDiscordManager);
 		assertFalse(gameChannelsManager.getGameChannels().containsKey(GAME_PK));
 	}
