@@ -34,8 +34,13 @@ public class GameScheduler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 
-	private final NHLBot nhlBot;
+	static final long GAME_SCHEDULE_UPDATE_RATE = 43200000L;
 
+	// Poll for if the day has rolled over every 30 minutes
+	static final long UPDATE_RATE = 1800000L;
+
+	// I want to use TreeSet, but it removes a lot of elements for some reason...
+	private Set<Game> games = new TreeSet<>(GAME_COMPARATOR);
 	/**
 	 * To be applied to the overall games list, so that it removes duplicates and sorts all games in order. Duplicates
 	 * are determined by the gamePk being identicle. Games are sorted by game date.
@@ -50,15 +55,9 @@ public class GameScheduler {
 		}
 	};
 
-	static final long GAME_SCHEDULE_UPDATE_RATE = 43200000L;
-
-	// Poll for if the day has rolled over every 30 minutes
-	static final long UPDATE_RATE = 1800000L;
-
-	// I want to use TreeSet, but it removes a lot of elements for some reason...
-	private Set<Game> games = new TreeSet<>(GAME_COMPARATOR);
 	private List<GameTracker> gameTrackers = new ArrayList<>(); // TODO Change to HashMap<Integer(GamePk), GameTracker>
 
+	private final NHLBot nhlBot;
 
 	/**
 	 * Constructor for injecting private members (Use only for testing).
@@ -96,7 +95,7 @@ public class GameScheduler {
 		 * Start threads to maintain the games, trackers, guild channels
 		 */
 
-		LocalDate lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE).minusDays(1);
+		LocalDate lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
 
 		while (!isStop()) {
 			LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
