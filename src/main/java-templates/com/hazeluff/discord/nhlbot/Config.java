@@ -27,7 +27,7 @@ public class Config {
 	public static final String HAZELUFF_ID = "225742618422673409";
 	public static final String HAZELUFF_MENTION = "<@" + HAZELUFF_ID + ">";
 	public static final String HAZELUFF_SITE = "http://www.hazeluff.com";
-	public static final String HAZELUFF_EMAIL = "me@hazeluff.com";
+	public static final String HAZELUFF_EMAIL = "eugene@hazeluff.com";
 	public static final String VERSION = "${project.version}";
 	public static final String MONGO_HOST = "localhost";
 	public static final int MONGO_PORT = 27017;
