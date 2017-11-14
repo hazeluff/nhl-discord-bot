@@ -57,7 +57,8 @@ public class NHLBot {
 		dispatcher.registerListener(new CommandListener(this));
 
 		if (Config.Debug.isLoadGames()) {
-			gameScheduler.run();
+			LOGGER.info("Loading the games...");
+			new Thread(gameScheduler).start();
 		}
 		
 		LOGGER.info("Posting update to Discord channel.");

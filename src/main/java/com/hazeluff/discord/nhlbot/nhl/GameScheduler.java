@@ -30,7 +30,7 @@ import sx.blah.discord.handle.obj.IGuild;
 /**
  * This class is used to start GameTrackers for games and to maintain the channels in discord for those games.
  */
-public class GameScheduler {
+public class GameScheduler implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 

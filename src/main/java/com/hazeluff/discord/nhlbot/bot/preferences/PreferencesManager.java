@@ -62,7 +62,7 @@ public class PreferencesManager {
 	}
 
 	void loadPreferences() {
-		LOGGER.info("Loading preferences.");
+		LOGGER.info("Loading preferences...");
 		MongoCursor<Document> iterator = getGuildCollection().find().iterator();
 		// Load Guild preferences
 		while (iterator.hasNext()) {
@@ -78,6 +78,7 @@ public class PreferencesManager {
 			userPreferences.put(doc.getLong("id"),
 					new UserPreferences(Team.parse(doc.containsKey("team") ? doc.getInteger("team") : null)));
 		}
+		LOGGER.info("Preferences loaded.");
 	}
 
 	/**
