@@ -22,8 +22,16 @@ public class AboutCommand extends Command {
 	@Override
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
+		sendFile(channel);
+	}
+
+	@Override
+	public boolean isAccept(String[] arguments) {
+		return arguments[1].equalsIgnoreCase("about");
+	}
+
+	public void sendFile(IChannel channel) {
 		DiscordManager discordManager = nhlBot.getDiscordManager();
-		
 		EmbedObject embed = new EmbedBuilder()
 				.withColor(0xba9ddf)
 				.withThumbnail("attachment://hazeluff.png")
@@ -40,11 +48,6 @@ public class AboutCommand extends Command {
 				.appendField("GitHub", Config.GIT_URL, true)
 				.build();
 		discordManager.sendFile(channel, ResourceLoader.get().getHazeluffAvatar(), embed);
-	}
-
-	@Override
-	public boolean isAccept(String[] arguments) {
-		return arguments[1].equalsIgnoreCase("about");
 	}
 
 }

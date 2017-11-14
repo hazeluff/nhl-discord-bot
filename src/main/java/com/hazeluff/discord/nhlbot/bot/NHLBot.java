@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
+import com.hazeluff.discord.nhlbot.bot.command.AboutCommand;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
@@ -58,6 +59,23 @@ public class NHLBot {
 		if (Config.Debug.isLoadGames()) {
 			gameScheduler.run();
 		}
+		
+		LOGGER.info("Posting update to Discord channel.");
+		discordClient.getGuilds().stream()
+			.filter(guild -> {
+				long id = guild.getLongID();
+				return id == 268247727400419329l || id == 276953120964083713l;
+			})
+			.forEach(guild -> guild.getChannelsByName("welcome")
+						.forEach(channel -> {
+							channel.getFullMessageHistory().stream()
+									.filter(message -> discordManager.isAuthorOfMessage(message))
+									.forEach(message -> discordManager.deleteMessage(message));
+							discordManager.sendMessage(channel, "I was just deployed. Version: " + Config.VERSION);
+							new AboutCommand(this).sendFile(channel);
+						}
+					)
+			);
 	}
 
 	static IDiscordClient getClient(String token) {
