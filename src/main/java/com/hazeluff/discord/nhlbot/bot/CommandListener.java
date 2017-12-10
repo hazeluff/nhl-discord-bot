@@ -10,6 +10,11 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.chat.FriendlyTopic;
+import com.hazeluff.discord.nhlbot.bot.chat.LovelyTopic;
+import com.hazeluff.discord.nhlbot.bot.chat.RudeTopic;
+import com.hazeluff.discord.nhlbot.bot.chat.Topic;
+import com.hazeluff.discord.nhlbot.bot.chat.WhatsUpTopic;
 import com.hazeluff.discord.nhlbot.bot.command.AboutCommand;
 import com.hazeluff.discord.nhlbot.bot.command.Command;
 import com.hazeluff.discord.nhlbot.bot.command.FuckMessierCommand;
@@ -38,7 +43,8 @@ public class CommandListener {
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
-	private List<Command> commands;
+	private final List<Command> commands;
+	private final List<Topic> topics;
 
 	private final NHLBot nhlBot;
 
@@ -53,11 +59,18 @@ public class CommandListener {
 		commands.add(new NextGameCommand(nhlBot));
 		commands.add(new ScoreCommand(nhlBot));
 		commands.add(new GoalsCommand(nhlBot));
+
+		topics = new ArrayList<>();
+		topics.add(new FriendlyTopic(nhlBot));
+		topics.add(new LovelyTopic(nhlBot));
+		topics.add(new RudeTopic(nhlBot));
+		topics.add(new WhatsUpTopic(nhlBot));
 	}
 
-	CommandListener(NHLBot nhlBot, List<Command> commands) {
+	CommandListener(NHLBot nhlBot, List<Command> commands, List<Topic> topics) {
 		this.nhlBot = nhlBot;
 		this.commands = commands;
+		this.topics = topics;
 	}
 
 	@EventSubscriber
@@ -122,6 +135,7 @@ public class CommandListener {
 						message.getAuthor().getName(),
 						"Command:" + Arrays.toString(arguments)));
 			}
+
 			Optional<Command> matchedCommand = commands
 					.stream()
 					.filter(command -> command.isAccept(arguments))
@@ -157,32 +171,12 @@ public class CommandListener {
 						message.getAuthor().getName(), 
 						message.getContent()));
 			}
-			String strMessage = message.getContent();
-			
-			String response = null;
-			// Reply to rude phrases
-			if (response == null && BotPhrases.isRude(strMessage)) {
-				response = Utils.getRandom(BotPhrases.COMEBACK);
-			}
-
-			// Hi
-			if (response == null && BotPhrases.isFriendly(strMessage)) {
-				response = Utils.getRandom(BotPhrases.FRIENDLY);
-			}
-
-			// Sup
-			if (response == null && BotPhrases.isWhatsup(strMessage)) {
-				response = Utils.getRandom(BotPhrases.WHATSUP_RESPONSE);
-			}
-
-			// <3
-			if (response == null && BotPhrases.isLovely(strMessage)) {
-				response = Utils.getRandom(BotPhrases.LOVELY_RESPONSE);
-			}
-
-			if (response != null) {
-				nhlBot.getDiscordManager().sendMessage(message.getChannel(),
-						String.format("<@%s> %s", message.getAuthor().getLongID(), response));
+			Optional<Topic> matchedCommand = topics
+					.stream()
+					.filter(topic -> topic.isReplyTo(message))
+					.findFirst();
+			if (matchedCommand.isPresent()) {
+				matchedCommand.get().replyTo(message);
 				return true;
 			}
 		}		

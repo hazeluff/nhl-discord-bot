@@ -14,7 +14,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +31,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.chat.Topic;
 import com.hazeluff.discord.nhlbot.bot.command.Command;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
@@ -117,7 +117,7 @@ public class CommandListenerTest {
 	
 	// onReceivedMessageEvent
 	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
+	@PrepareForTest({ Utils.class, CommandListener.class })
 	public void onReceivedMessageEventShouldReturnWhenReplyToCommandReturnsTrue() {
 		LOGGER.info("onReceivedMessageEventShouldReturnWhenReplyToCommandReturnsTrue");
 		doReturn(true).when(spyCommandListener).replyToCommand(any(IMessage.class));
@@ -131,7 +131,7 @@ public class CommandListenerTest {
 	}
 
 	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
+	@PrepareForTest({ Utils.class, CommandListener.class })
 	public void onReceivedMessageEventShouldReturnWhenReplyToMentionReturnsTrue() {
 		LOGGER.info("onReceivedMessageEventShouldReturnWhenReplyToMentionReturnsTrue");
 		doReturn(false).when(spyCommandListener).replyToCommand(any(IMessage.class));
@@ -146,7 +146,7 @@ public class CommandListenerTest {
 	}
 
 	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
+	@PrepareForTest({ Utils.class, CommandListener.class })
 	public void onReceivedMessageEventShouldReturnWhenReplyingToUnknownCommand() {
 		LOGGER.info("onReceivedMessageEventShouldReturnWhenReplyingToUnknownCommand");
 		doReturn(false).when(spyCommandListener).replyToCommand(any(IMessage.class));
@@ -164,7 +164,7 @@ public class CommandListenerTest {
 	}
 
 	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
+	@PrepareForTest({ Utils.class, CommandListener.class })
 	public void onReceivedMessageEventShouldInvokeFuckMessierWhenNotACommandOrMentioned() {
 		LOGGER.info("onReceivedMessageEventShouldInvokeFuckMessierWhenNotACommandOrMentioned");
 		doReturn(false).when(spyCommandListener).replyToCommand(any(IMessage.class));
@@ -188,7 +188,7 @@ public class CommandListenerTest {
 		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsOne");
 		String[] arguments = new String[1];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		commandListener = new CommandListener(mockNHLBot, commands);
+		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
 
@@ -208,7 +208,7 @@ public class CommandListenerTest {
 		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsZero");
 		String[] arguments = new String[0];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		commandListener = new CommandListener(mockNHLBot, commands);
+		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
 
@@ -232,7 +232,7 @@ public class CommandListenerTest {
 		when(commands.get(0).isAccept(arguments)).thenReturn(false);
 		when(commands.get(1).isAccept(arguments)).thenReturn(true);
 		when(commands.get(2).isAccept(arguments)).thenReturn(false);
-		commandListener = new CommandListener(mockNHLBot, commands);
+		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
 
@@ -253,7 +253,7 @@ public class CommandListenerTest {
 		when(commands.get(0).isAccept(arguments)).thenReturn(false);
 		when(commands.get(1).isAccept(arguments)).thenReturn(false);
 		when(commands.get(2).isAccept(arguments)).thenReturn(false);
-		commandListener = new CommandListener(mockNHLBot, commands);
+		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
 		
@@ -267,165 +267,51 @@ public class CommandListenerTest {
 
 	// replyToMention
 	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
-	public void replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsRude() {
-		LOGGER.info("replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsRude");
-		doReturn(true).when(spyCommandListener).isBotMentioned(any(IMessage.class));
-		mockStatic(BotPhrases.class, Utils.class);
-		when(BotPhrases.isRude(MESSAGE_CONTENT)).thenReturn(true);
-		String response = "response";
-		when(Utils.getRandom(BotPhrases.COMEBACK)).thenReturn(response);
-
-		boolean result = spyCommandListener.replyToMention(mockMessage);
-
-		assertTrue(result);
-		verify(spyCommandListener).isBotMentioned(mockMessage);
-		String fullResponse = String.format("<@%s> %s", AUTHOR_USER_ID, response);
-		verifyStatic();
-		BotPhrases.isRude(anyString());
-		verifyStatic(never());
-		BotPhrases.isFriendly(anyString());
-		verifyStatic(never());
-		BotPhrases.isWhatsup(anyString());
-		verifyStatic(never());
-		BotPhrases.isLovely(anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
-		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
-	}
-
-	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
-	public void replyToMentionShouldReturnFalseWhenIsBotMentionedReturnsFalse() {
-		LOGGER.info("replyToMentionShouldReturnFalseWhenIsBotMentionedReturnsFalse");
-		doReturn(false).when(spyCommandListener).isBotMentioned(any(IMessage.class));
-		mockStatic(BotPhrases.class, Utils.class);
+	public void replyToMentionShouldReturnFalseWhenBotIsNotMentioned() {
+		LOGGER.info("replyToMentionShouldReplyToAcceptedTopics");
+		doReturn(false).when(spyCommandListener).isBotMentioned(mockMessage);
 
 		boolean result = spyCommandListener.replyToMention(mockMessage);
 
 		assertFalse(result);
-		verify(spyCommandListener).isBotMentioned(mockMessage);
-		verifyStatic(never());
-		BotPhrases.isRude(anyString());
-		verifyStatic(never());
-		BotPhrases.isFriendly(anyString());
-		verifyStatic(never());
-		BotPhrases.isWhatsup(anyString());
-		verifyStatic(never());
-		BotPhrases.isLovely(anyString());
-		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
 	}
 
 	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
-	public void replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsFriendly() {
-		LOGGER.info("replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsFriendly");
-		doReturn(true).when(spyCommandListener).isBotMentioned(any(IMessage.class));
-		mockStatic(BotPhrases.class, Utils.class);
-		when(BotPhrases.isRude(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isFriendly(MESSAGE_CONTENT)).thenReturn(true);
-		String response = "response";
-		when(Utils.getRandom(BotPhrases.FRIENDLY)).thenReturn(response);
+	public void replyToMentionShouldReplyToAcceptedTopics() {
+		LOGGER.info("replyToMentionShouldReplyToAcceptedTopics");
+
+		List<Topic> topics = Arrays.asList(mock(Topic.class), mock(Topic.class), mock(Topic.class));
+		when(topics.get(0).isReplyTo(mockMessage)).thenReturn(false);
+		when(topics.get(1).isReplyTo(mockMessage)).thenReturn(true);
+		when(topics.get(2).isReplyTo(mockMessage)).thenReturn(false);
+		spyCommandListener = spy(new CommandListener(mockNHLBot, null, topics));
+		doReturn(true).when(spyCommandListener).isBotMentioned(mockMessage);
 
 		boolean result = spyCommandListener.replyToMention(mockMessage);
 
 		assertTrue(result);
-		verify(spyCommandListener).isBotMentioned(mockMessage);
-		String fullResponse = String.format("<@%s> %s", AUTHOR_USER_ID, response);
-		verifyStatic();
-		BotPhrases.isRude(anyString());
-		verifyStatic();
-		BotPhrases.isFriendly(anyString());
-		verifyStatic(never());
-		BotPhrases.isWhatsup(anyString());
-		verifyStatic(never());
-		BotPhrases.isLovely(anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
-		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(topics.get(0), never()).replyTo(any(IMessage.class));
+		verify(topics.get(1)).replyTo(mockMessage);
+		verify(topics.get(2), never()).replyTo(any(IMessage.class));
 	}
 
 	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
-	public void replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsWhatsup() {
-		LOGGER.info("replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsFriendly");
-		doReturn(true).when(spyCommandListener).isBotMentioned(any(IMessage.class));
-		mockStatic(BotPhrases.class, Utils.class);
-		when(BotPhrases.isRude(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isFriendly(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isWhatsup(MESSAGE_CONTENT)).thenReturn(true);
-		String response = "response";
-		when(Utils.getRandom(BotPhrases.WHATSUP_RESPONSE)).thenReturn(response);
+	public void replyToMentionShouldNotReplyToNotAcceptedTopics() {
+		LOGGER.info("replyToMentionShouldNotReplyToNotAcceptedTopics");
 
-		boolean result = spyCommandListener.replyToMention(mockMessage);
-
-		assertTrue(result);
-		verify(spyCommandListener).isBotMentioned(mockMessage);
-		String fullResponse = String.format("<@%s> %s", AUTHOR_USER_ID, response);
-		verifyStatic();
-		BotPhrases.isRude(anyString());
-		verifyStatic();
-		BotPhrases.isFriendly(anyString());
-		verifyStatic();
-		BotPhrases.isWhatsup(anyString());
-		verifyStatic(never());
-		BotPhrases.isLovely(anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
-		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
-	}
-
-	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
-	public void replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsLovely() {
-		LOGGER.info("replyToMentionShouldSendMessageWhenMentionedWhenPhraseIsLovely");
-		doReturn(true).when(spyCommandListener).isBotMentioned(any(IMessage.class));
-		mockStatic(BotPhrases.class, Utils.class);
-		when(BotPhrases.isRude(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isFriendly(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isWhatsup(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isLovely(MESSAGE_CONTENT)).thenReturn(true);
-		String response = "response";
-		when(Utils.getRandom(BotPhrases.LOVELY_RESPONSE)).thenReturn(response);
-
-		boolean result = spyCommandListener.replyToMention(mockMessage);
-
-		assertTrue(result);
-		verify(spyCommandListener).isBotMentioned(mockMessage);
-		String fullResponse = String.format("<@%s> %s", AUTHOR_USER_ID, response);
-		verifyStatic();
-		BotPhrases.isRude(anyString());
-		verifyStatic();
-		BotPhrases.isFriendly(anyString());
-		verifyStatic();
-		BotPhrases.isWhatsup(anyString());
-		verifyStatic();
-		BotPhrases.isLovely(anyString());
-		verify(mockDiscordManager).sendMessage(mockChannel, fullResponse);
-		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
-	}
-
-	@Test
-	@PrepareForTest({ BotPhrases.class, Utils.class, CommandListener.class })
-	public void replyToMentionShouldReturnFalseWhenThereAreNoMatches() {
-		LOGGER.info("replyToMentionShouldReturnFalseWhenThereAreNoMatches");
-		doReturn(true).when(spyCommandListener).isBotMentioned(any(IMessage.class));
-		mockStatic(BotPhrases.class, Utils.class);
-		when(BotPhrases.isRude(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isFriendly(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isWhatsup(MESSAGE_CONTENT)).thenReturn(false);
-		when(BotPhrases.isLovely(MESSAGE_CONTENT)).thenReturn(false);
+		List<Topic> topics = Arrays.asList(mock(Topic.class), mock(Topic.class), mock(Topic.class));
+		when(topics.get(0).isReplyTo(mockMessage)).thenReturn(false);
+		when(topics.get(1).isReplyTo(mockMessage)).thenReturn(false);
+		when(topics.get(2).isReplyTo(mockMessage)).thenReturn(false);
+		spyCommandListener = spy(new CommandListener(mockNHLBot, null, topics));
+		doReturn(true).when(spyCommandListener).isBotMentioned(mockMessage);
 
 		boolean result = spyCommandListener.replyToMention(mockMessage);
 
 		assertFalse(result);
-		verify(spyCommandListener).isBotMentioned(mockMessage);
-		verifyStatic();
-		BotPhrases.isRude(anyString());
-		verifyStatic();
-		BotPhrases.isFriendly(anyString());
-		verifyStatic();
-		BotPhrases.isWhatsup(anyString());
-		verifyStatic();
-		BotPhrases.isLovely(anyString());
-		verify(mockDiscordManager, never()).sendMessage(any(IChannel.class), anyString());
+		verify(topics.get(0), never()).replyTo(any(IMessage.class));
+		verify(topics.get(1), never()).replyTo(any(IMessage.class));
+		verify(topics.get(2), never()).replyTo(any(IMessage.class));
 	}
 
 	// getBotCommand
