@@ -3,15 +3,6 @@
 
 [![Donate](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/hazeluff/donate)
 
-# Announcement 2017-10-27
-
-During a upgrade, I ran a script to update the database, without backing it up. Those who are affected, should have their guild unsubscribed from NHLBot. To resubscribe please use:
-
-> @NHLBot#7894 subscribe \<team\>
-
-Deepest Appologies,
-[Hazeluff](https://twitter.com/hazeluff)
-
 # Add NHLBot to your server:
 
 ### [Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=93200)
