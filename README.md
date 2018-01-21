@@ -41,6 +41,3 @@
 ### In 'Game Day Channels' only
 - `score` Displays score of that game.
 - `goals` Displays goals of that game.
-
-# Support / Contact Me
-[![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square&logo=twitter)](https://twitter.com/hazeluff)
