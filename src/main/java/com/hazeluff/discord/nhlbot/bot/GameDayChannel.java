@@ -617,14 +617,28 @@ public class GameDayChannel extends Thread {
 
 	/**
 	 * Gets the message that NHLBot will respond with when queried about the score
-	 * of this game
+	 * of the game
 	 * 
 	 * @return message in the format : "Home Team **homeScore** - **awayScore** Away
 	 *         Team"
 	 */
 	public String getScoreMessage() {
+		return getScoreMessage(game);
+	}
+	
+	/**
+	 * Gets the message that NHLBot will respond with when queried about the score
+	 * of the game
+	 * 
+	 * @param game
+	 * 		The game to get the score message of
+	 * @return message in the format : "Home Team **homeScore** - **awayScore** Away
+	 *         Team"
+	 */
+	public static String getScoreMessage(Game game) {
 		return String.format("%s **%s** - **%s** %s", game.getHomeTeam().getName(), game.getHomeScore(),
 				game.getAwayScore(), game.getAwayTeam().getName());
+		
 	}
 
 	/**

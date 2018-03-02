@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ import sx.blah.discord.handle.obj.Permissions;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GameDayChannel.class)
+@PowerMockIgnore({ "org.apache.xerces.*", "javax.xml.parsers.*", "org.xml.sax.*" })
 public class CommandTest {
 
 	private class TestCommand extends Command {

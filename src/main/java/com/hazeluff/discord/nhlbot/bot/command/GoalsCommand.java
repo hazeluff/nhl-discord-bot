@@ -1,5 +1,6 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
@@ -35,7 +36,7 @@ public class GoalsCommand extends Command {
 				nhlBot.getDiscordManager().sendMessage(channel, GAME_NOT_STARTED_MESSAGE);
 			} else {
 				nhlBot.getDiscordManager().sendMessage(channel,
-						String.format("%s\n%s", game.getScoreMessage(), game.getGoalsMessage()));
+						String.format("%s\n%s", GameDayChannel.getScoreMessage(game), game.getGoalsMessage()));
 			}
 		}
 	}
