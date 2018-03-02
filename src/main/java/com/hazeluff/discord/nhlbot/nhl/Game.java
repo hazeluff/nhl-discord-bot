@@ -1,17 +1,15 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
 import java.net.URISyntaxException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +21,6 @@ import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 public class Game {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
 
-	// Number of retries to do when NHL API returns no events.
-	static final int NHL_EVENTS_RETRIES = 5;
-
 	private final ZonedDateTime date;
 	private final int gamePk;
 	private final Team awayTeam;
@@ -33,16 +28,10 @@ public class Game {
 	private int awayScore;
 	private int homeScore;
 	private GameStatus status;
-	private final List<GameEvent> events = new ArrayList<>();
-	private final List<GameEvent> newEvents = new ArrayList<>();
-	private final List<GameEvent> updatedEvents = new ArrayList<>();
-	private final List<GameEvent> removedEvents = new ArrayList<>();
-	private int eventsRetries = 0;
-	
+	private List<GameEvent> events = new ArrayList<>();
 
 	Game(ZonedDateTime date, int gamePk, Team awayTeam, Team homeTeam, int awayScore, int homeScore,
-			GameStatus status, List<GameEvent> events, List<GameEvent> newEvents, List<GameEvent> updatedEvents,
-			List<GameEvent> removedEvents) {
+			GameStatus status) {
 		this.date = date;
 		this.gamePk = gamePk;
 		this.awayTeam = awayTeam;
@@ -50,10 +39,6 @@ public class Game {
 		this.awayScore = awayScore;
 		this.homeScore = homeScore;
 		this.status = status;
-		this.events.addAll(events);
-		this.newEvents.addAll(newEvents);
-		this.updatedEvents.addAll(updatedEvents);
-		this.removedEvents.addAll(removedEvents);
 	}
 
 	public Game (JSONObject jsonGame) {
@@ -64,49 +49,10 @@ public class Game {
 		homeTeam = Team
 				.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
 		updateInfo(jsonGame);
-		updateEvents(jsonGame);
-		newEvents.clear();
-		updatedEvents.clear();
 	}
 
 	public ZonedDateTime getDate() {
 		return date;
-	}
-
-	/**
-	 * Gets the date in the format "YY-MM-DD"
-	 * 
-	 * @param zone
-	 *            time zone to convert the time to
-	 * @return the date in the format "YY-MM-DD"
-	 */
-	public String getShortDate(ZoneId zone) {
-		return date.withZoneSameInstant(zone)
-				.format(DateTimeFormatter.ofPattern("yy-MM-dd"));
-	}
-
-	/**
-	 * Gets the date in the format "EEEE dd MMM yyyy"
-	 * 
-	 * @param zone
-	 *            time zone to convert the time to
-	 * @return the date in the format "EEEE dd MMM yyyy"
-	 */
-	public String getNiceDate(ZoneId zone) {
-		return date.withZoneSameInstant(zone)
-				.format(DateTimeFormatter.ofPattern("EEEE d/MMM/yyyy"));
-	}
-
-	/**
-	 * Gets the time in the format "HH:mm aaa"
-	 * 
-	 * @param zone
-	 *            time zone to convert the time to
-	 * @return the time in the format "HH:mm aaa"
-	 */
-	public String getTime(ZoneId zone) {
-		return date.withZoneSameInstant(zone)
-				.format(DateTimeFormatter.ofPattern("H:mm z"));
 	}
 
 	public int getGamePk() {
@@ -153,52 +99,6 @@ public class Game {
 		return homeScore;
 	}
 
-	/**
-	 * Gets the name that a channel in Discord related to this game would have.
-	 * 
-	 * @return channel name in format: "AAA_vs_BBB-yy-MM-DD". <br>
-	 *         AAA is the 3 letter code of home team<br>
-	 *         BBB is the 3 letter code of away team<br>
-	 *         yy-MM-DD is a date format
-	 */
-	public String getChannelName() {
-		String channelName = String.format("%.3s_vs_%.3s_%s",
-				homeTeam.getCode(),
-				awayTeam.getCode(),
-				getShortDate(ZoneId.of("America/New_York")));
-		return channelName.toLowerCase();
-	}
-
-	/**
-	 * Gets the message that NHLBot will respond with when queried about this game
-	 * 
-	 * @param timeZone
-	 *            the time zone to localize to
-	 * 
-	 * @return message in the format: "The next game is:\n<br>
-	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
-	 */
-	public String getDetailsMessage(ZoneId timeZone) {
-		String message = String.format("**%s** vs **%s** at **%s** on **%s**",
-				homeTeam.getFullName(),
-				awayTeam.getFullName(),
-				getTime(timeZone),
-				getNiceDate(timeZone));
-		return message.toString();
-	}
-
-	/**
-	 * Gets the message that NHLBot will respond with when queried about the
-	 * score of this game
-	 * 
-	 * @return message in the format : "Home Team **homeScore** - **awayScore**
-	 *         Away Team"
-	 */
-	public String getScoreMessage() {
-		return String.format("%s **%s** - **%s** %s", homeTeam.getName(), homeScore, awayScore,
-				awayTeam.getName());
-	}
-
 	public GameStatus getStatus() {
 		return status;
 	}
@@ -206,18 +106,6 @@ public class Game {
 	public List<GameEvent> getEvents() {
 		List<GameEvent> value = new ArrayList<>(events);
 		return value;
-	}
-
-	public List<GameEvent> getNewEvents() {
-		return new ArrayList<>(newEvents);
-	}
-
-	public List<GameEvent> getUpdatedEvents() {
-		return new ArrayList<>(updatedEvents);
-	}
-
-	List<GameEvent> getRemovedEvents() {
-		return new ArrayList<>(removedEvents);
 	}
 
 	@Override
@@ -290,7 +178,6 @@ public class Game {
 			JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
 					.getJSONObject(0);
 			updateInfo(jsonGame);
-			updateEvents(jsonGame);
 		} catch (URISyntaxException e) {
 			LOGGER.error("Error building URI", e);
 		}
@@ -301,6 +188,7 @@ public class Game {
 	 * <UL>
 	 * <LI>Scores</LI>
 	 * <LI>Status</LI>
+	 * <LI>Events (Goals)</LI>
 	 * </UL>
 	 * 
 	 * @param jsonGame
@@ -309,61 +197,12 @@ public class Game {
 		awayScore = jsonGame.getJSONObject("teams").getJSONObject("away").getInt("score");
 		homeScore = jsonGame.getJSONObject("teams").getJSONObject("home").getInt("score");
 		status = GameStatus.parse(Integer.parseInt(jsonGame.getJSONObject("status").getString("statusCode")));
-	}
 
-	/**
-	 * Updates about events in the game
-	 */
-	void updateEvents(JSONObject jsonGame) {
-		newEvents.clear();
-		updatedEvents.clear();
-		removedEvents.clear();
-		JSONArray jsonScoringPlays = jsonGame.getJSONArray("scoringPlays");
-		List<GameEvent> retrievedEvents = new ArrayList<>();
-		for (int i = 0; i < jsonScoringPlays.length(); i++) {
-			retrievedEvents.add(new GameEvent(jsonScoringPlays.getJSONObject(i)));
-		}
-
-		if (retrievedEvents.isEmpty()) {
-			if (events.size() > 1) {
-				LOGGER.warn("NHL api returned no events, but we have stored more than one event.");
-				return;
-			} else if (events.size() == 1) {
-				LOGGER.warn("NHL api returned no events, but we have stored one event.");
-				if (eventsRetries++ < NHL_EVENTS_RETRIES) {
-					LOGGER.warn(String.format("Could be a rescinded goal or NHL api issue. "
-							+ "Retrying %s time(s) out of %s", eventsRetries, NHL_EVENTS_RETRIES));
-					return;
-				}
-			}
-		}
-		eventsRetries = 0;
-
-		retrievedEvents.forEach(retrievedEvent -> {
-			if (!retrievedEvent.getPlayers().isEmpty()
-					&& !events.stream().anyMatch(event -> event.equals(retrievedEvent))) {
-				if (events.removeIf(event -> event.getId() == retrievedEvent.getId())) {
-					// Updated events
-					LOGGER.debug("Updated event: [" + retrievedEvent + "]");
-					updatedEvents.add(retrievedEvent);
-				} else {
-					// New events
-					LOGGER.debug("New event: [" + retrievedEvent + "]");
-					newEvents.add(retrievedEvent);
-				}
-				events.add(retrievedEvent);
-			}
-		});
-
-		// Deleted events
-		events.removeIf(event -> {
-			if (!retrievedEvents.contains(event)) {
-				LOGGER.debug("Removed event: [" + event + "]");
-				removedEvents.add(event);
-				return true;
-			}
-			return false;
-		});
+		events = jsonGame.getJSONArray("scoringPlays").toList().stream()
+				.map(HashMap.class::cast)
+				.map(JSONObject::new)
+				.map(GameEvent::new)
+				.collect(Collectors.toList());
 	}
 
 	public String getGoalsMessage() {
@@ -412,22 +251,5 @@ public class Game {
 	 */
 	public boolean isEnded() {
 		return status == GameStatus.FINAL;
-	}
-
-	/**
-	 * Determines if the given channel name is that of a possible game. Does not factor into account whether or not the
-	 * game is real.
-	 * 
-	 * @param channelName
-	 *            name of the channel
-	 * @return true, if is of game channel format;<br>
-	 *         false, otherwise.
-	 */
-	public static boolean isFormatted(String channelName) {
-		String teamRegex = String.join("|", Arrays.asList(Team.values()).stream()
-				.map(team -> team.getCode().toLowerCase()).collect(Collectors.toList()));
-		teamRegex = String.format("(%s)", teamRegex);
-		String regex = String.format("%1$s_vs_%1$s_[0-9]{2}-[0-9]{2}-[0-9]{2}", teamRegex);
-		return channelName.matches(regex);
 	}
 }

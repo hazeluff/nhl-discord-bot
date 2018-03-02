@@ -54,7 +54,7 @@ public class NHLBotTest {
 	@Mock
 	PreferencesManager mockPreferencesManager;
 	@Mock
-	GameChannelsManager mockGameChannelsManager;
+	GameDayChannelsManager mockGameChannelsManager;
 	@Mock
 	GameScheduler mockGameScheduler;
 	@Mock
@@ -71,7 +71,7 @@ public class NHLBotTest {
 		whenNew(ClientBuilder.class).withNoArguments().thenReturn(mockClientBuilder);
 		whenNew(CommandListener.class).withAnyArguments().thenReturn(mockCommandListener);
 		whenNew(DiscordManager.class).withArguments(mockDiscordClient).thenReturn(mockDiscordManager);
-		whenNew(GameChannelsManager.class).withAnyArguments().thenReturn(mockGameChannelsManager);
+		whenNew(GameDayChannelsManager.class).withAnyArguments().thenReturn(mockGameChannelsManager);
 		whenNew(GameScheduler.class).withAnyArguments().thenReturn(mockGameScheduler);
 		when(mockDiscordClient.getDispatcher()).thenReturn(mockEventDispatcher);
 		when(mockDiscordClient.getApplicationClientID()).thenReturn(ID);

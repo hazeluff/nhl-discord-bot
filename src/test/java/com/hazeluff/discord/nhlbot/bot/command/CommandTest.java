@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,10 +24,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
@@ -42,6 +45,7 @@ import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
 
 @RunWith(PowerMockRunner.class)
+@PrepareForTest(GameDayChannel.class)
 public class CommandTest {
 
 	private class TestCommand extends Command {
@@ -103,14 +107,17 @@ public class CommandTest {
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
 		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
 		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
-		when(mockCurrentGame.getChannelName()).thenReturn(CHANNEL_NAME_CURRENT);
-		when(mockLastGame.getChannelName()).thenReturn(CHANNEL_NAME_LAST);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
 		when(mockGuild.getOwner()).thenReturn(mockOwnerUser);
 		when(mockAuthorUser.getLongID()).thenReturn(USER_ID_AUTHOR);
 		when(mockOwnerUser.getLongID()).thenReturn(USER_ID_OWNER);
+		
+		mockStatic(GameDayChannel.class);
+
+		when(GameDayChannel.getChannelName(mockCurrentGame)).thenReturn(CHANNEL_NAME_CURRENT);
+		when(GameDayChannel.getChannelName(mockLastGame)).thenReturn(CHANNEL_NAME_LAST);
 	}
 
 	@Test
@@ -131,7 +138,7 @@ public class CommandTest {
 		command.getLatestGameChannelMention(mockGuild, TEAM);
 		
 		verify(mockGameScheduler, never()).getLastGame(TEAM);
-		verify(mockGuild).getChannelsByName(mockCurrentGame.getChannelName().toLowerCase());
+		verify(mockGuild).getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase());
 	}
 
 	@Test
@@ -140,13 +147,13 @@ public class CommandTest {
 
 		command.getLatestGameChannelMention(mockGuild, TEAM);
 
-		verify(mockGuild).getChannelsByName(mockLastGame.getChannelName().toLowerCase());
+		verify(mockGuild).getChannelsByName(CHANNEL_NAME_LAST.toLowerCase());
 	}
 
 	@Test
 	public void getLatestGameChannelMentionShouldReturnMentionIfChannelExists() {
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
-		when(mockGuild.getChannelsByName(mockCurrentGame.getChannelName().toLowerCase()))
+		when(mockGuild.getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase()))
 				.thenReturn(Arrays.asList(mockChannel));
 		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
 		
@@ -158,13 +165,13 @@ public class CommandTest {
 	@Test
 	public void getLatestGameChannelMentionShouldReturnMentionIfChannelDoesNotExist() {
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
-		when(mockGuild.getChannelsByName(mockCurrentGame.getChannelName().toLowerCase()))
+		when(mockGuild.getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase()))
 				.thenReturn(Collections.emptyList());
 		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
 
 		String result = command.getLatestGameChannelMention(mockGuild, TEAM);
 
-		assertEquals("#" + mockCurrentGame.getChannelName().toLowerCase(), result);
+		assertEquals("#" + CHANNEL_NAME_CURRENT.toLowerCase(), result);
 	}
 
 	@Test

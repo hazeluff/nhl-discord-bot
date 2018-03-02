@@ -25,13 +25,16 @@ public class NHLBot {
 	private final MongoDatabase mongoDatabase;
 	private final PreferencesManager preferencesManager;
 	private final DiscordManager discordManager;
-	private final GameChannelsManager gameChannelsManager;
 	private final GameScheduler gameScheduler;
+	private final GameDayChannelsManager gameDayChannelsManager;
 	private final String id;
 
-	public NHLBot(String botToken) {
+	public NHLBot(String botToken, GameScheduler gameScheduler) {
 		LOGGER.info("Running NHLBot v" + Config.VERSION);
 		Thread.currentThread().setName("NHLBot");
+
+		this.gameScheduler = gameScheduler;
+
 		// Init DiscordClient
 		discordClient = getClient(botToken);
 
@@ -49,17 +52,15 @@ public class NHLBot {
 
 		// Init other classes
 		discordManager = new DiscordManager(discordClient);
-		gameChannelsManager = new GameChannelsManager(this);
-		gameScheduler = new GameScheduler(this);
+
+		// Start the Game Day Channels Manager
+		gameDayChannelsManager = new GameDayChannelsManager(this);
+		gameDayChannelsManager.start();
+
 
 		// Register listeners
 		EventDispatcher dispatcher = discordClient.getDispatcher();
 		dispatcher.registerListener(new CommandListener(this));
-
-		if (Config.Debug.isLoadGames()) {
-			LOGGER.info("Loading the games...");
-			new Thread(gameScheduler).start();
-		}
 		
 		LOGGER.info("Posting update to Discord channel.");
 		discordClient.getGuilds().stream()
@@ -121,12 +122,12 @@ public class NHLBot {
 		return discordManager;
 	}
 
-	public GameChannelsManager getGameChannelsManager() {
-		return gameChannelsManager;
-	}
-
 	public GameScheduler getGameScheduler() {
 		return gameScheduler;
+	}
+
+	public GameDayChannelsManager getGameDayChannelsManager() {
+		return gameDayChannelsManager;
 	}
 
 	public String getId() {
