@@ -178,7 +178,7 @@ public class GameTest {
 		LOGGER.info("getChannelNameShouldReturnFormattedString");
 		String result = game.getChannelName();
 
-		assertEquals("fla_vs_van_00-12-31", result);
+		assertEquals("fla-vs-van-00-12-31", result);
 	}
 
 	@Test

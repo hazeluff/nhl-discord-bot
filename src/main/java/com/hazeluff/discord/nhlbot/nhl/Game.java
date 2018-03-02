@@ -162,7 +162,7 @@ public class Game {
 	 *         yy-MM-DD is a date format
 	 */
 	public String getChannelName() {
-		String channelName = String.format("%.3s_vs_%.3s_%s",
+		String channelName = String.format("%.3s-vs-%.3s-%s",
 				homeTeam.getCode(),
 				awayTeam.getCode(),
 				getShortDate(ZoneId.of("America/New_York")));
