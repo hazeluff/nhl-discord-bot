@@ -427,7 +427,7 @@ public class Game {
 		String teamRegex = String.join("|", Arrays.asList(Team.values()).stream()
 				.map(team -> team.getCode().toLowerCase()).collect(Collectors.toList()));
 		teamRegex = String.format("(%s)", teamRegex);
-		String regex = String.format("%1$s_vs_%1$s_[0-9]{2}-[0-9]{2}-[0-9]{2}", teamRegex);
+		String regex = String.format("%1$s-vs-%1$s-[0-9]{2}-[0-9]{2}-[0-9]{2}", teamRegex);
 		return channelName.matches(regex);
 	}
 }

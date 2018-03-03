@@ -535,16 +535,16 @@ public class GameSchedulerTest {
 	public void deleteInactiveChannelsShouldRemoveChannels() {
 		LOGGER.info("deleteInactiveChannelsShouldRemoveChannels");
 		String channelName1 = String
-				.format("%s_vs_%s_02-46-80", Team.ANAHEIM_DUCKS.getCode(), Team.ARIZONA_COYOTES.getCode())
+				.format("%s-vs-%s-02-46-80", Team.ANAHEIM_DUCKS.getCode(), Team.ARIZONA_COYOTES.getCode())
 				.toLowerCase();
 		String channelName2 = String
-				.format("%s_vs_%s_02-46-80", Team.BOSTON_BRUINS.getCode(), Team.BUFFALO_SABRES.getCode())
+				.format("%s-vs-%s-02-46-80", Team.BOSTON_BRUINS.getCode(), Team.BUFFALO_SABRES.getCode())
 				.toLowerCase();
 		String channelName3 = String
-				.format("%s_vs_%s_02-46-80", Team.CALGARY_FLAMES.getCode(), Team.CAROLINA_HURRICANES.getCode())
+				.format("%s-vs-%s-02-46-80", Team.CALGARY_FLAMES.getCode(), Team.CAROLINA_HURRICANES.getCode())
 				.toLowerCase();
 		String channelName4 = String
-				.format("%s_vs_%s_02-46-80", Team.CHICAGO_BLACKHAWKS.getCode(), Team.COLORADO_AVALANCH.getCode())
+				.format("%s-vs-%s-02-46-80", Team.CHICAGO_BLACKHAWKS.getCode(), Team.COLORADO_AVALANCH.getCode())
 				.toLowerCase();
 		when(mockGame1.getChannelName()).thenReturn(channelName1);
 		when(mockGame2.getChannelName()).thenReturn(channelName2);
