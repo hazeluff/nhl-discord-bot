@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -13,10 +14,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
@@ -31,6 +34,7 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
 
 @RunWith(PowerMockRunner.class)
+@PrepareForTest(GameDayChannel.class)
 public class ScoreCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ScoreCommandTest.class);
 
@@ -72,7 +76,9 @@ public class ScoreCommandTest {
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
 		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
-		when(mockGame.getScoreMessage()).thenReturn(SCORE_MESSAGE);
+		
+		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.getScoreMessage(mockGame)).thenReturn(SCORE_MESSAGE);
 	}
 
 	@Test
