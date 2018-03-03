@@ -599,13 +599,13 @@ public class GameDayChannel extends Thread {
 	 * 
 	 * @param game
 	 *            game to get channel name for
-	 * @return channel name in format: "AAA_vs_BBB-yy-MM-DD". <br>
+	 * @return channel name in format: "AAA-vs-BBB-yy-MM-DD". <br>
 	 *         AAA is the 3 letter code of home team<br>
 	 *         BBB is the 3 letter code of away team<br>
 	 *         yy-MM-DD is a date format
 	 */
 	public static String getChannelName(Game game) {
-		String channelName = String.format("%.3s_vs_%.3s_%s", game.getHomeTeam().getCode(),
+		String channelName = String.format("%.3s-vs-%.3s-%s", game.getHomeTeam().getCode(),
 				game.getAwayTeam().getCode(), getShortDate(game, ZoneId.of("America/New_York")));
 		return channelName.toLowerCase();
 
@@ -690,7 +690,7 @@ public class GameDayChannel extends Thread {
 		String teamRegex = String.join("|", Arrays.asList(Team.values()).stream()
 				.map(team -> team.getCode().toLowerCase()).collect(Collectors.toList()));
 		teamRegex = String.format("(%s)", teamRegex);
-		String regex = String.format("%1$s_vs_%1$s_[0-9]{2}-[0-9]{2}-[0-9]{2}", teamRegex);
+		String regex = String.format("%1$s-vs-%1$s-[0-9]{2}-[0-9]{2}-[0-9]{2}", teamRegex);
 		return channelName.matches(regex);
 	}
 }
