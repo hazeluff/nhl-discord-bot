@@ -6,6 +6,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -13,10 +14,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
@@ -114,13 +117,15 @@ public class NextGameCommandTest {
 	}
 
 	@Test
+	@PrepareForTest(GameDayChannel.class)
 	public void replyToShouldSendMessageIfChannelIsPrivate() {
 		LOGGER.info("replyToShouldSendMessageIfChannelIsPrivate");
 		when(mockChannel.isPrivate()).thenReturn(true);
 		when(mockPreferencesManager.getTeamByUser(USER_ID)).thenReturn(USER_TEAM);
 		when(mockGameScheduler.getNextGame(USER_TEAM)).thenReturn(mockGame);
 		String detailsMessage = "DetailsMessage";
-		when(mockGame.getDetailsMessage(USER_TEAM.getTimeZone())).thenReturn(detailsMessage);
+		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.getDetailsMessage(mockGame, USER_TEAM.getTimeZone())).thenReturn(detailsMessage);
 
 		spyNextGameCommand.replyTo(mockMessage, null);
 
@@ -129,13 +134,15 @@ public class NextGameCommandTest {
 	}
 
 	@Test
+	@PrepareForTest(GameDayChannel.class)
 	public void replyToShouldSendMessageIfChannelIsNotPrivate() {
 		LOGGER.info("replyToShouldSendMessageIfChannelIsNotPrivate");
 		when(mockChannel.isPrivate()).thenReturn(false);
 		when(mockPreferencesManager.getTeamByGuild(GUILD_ID)).thenReturn(GUILD_TEAM);
 		when(mockGameScheduler.getNextGame(GUILD_TEAM)).thenReturn(mockGame);
 		String detailsMessage = "DetailsMessage";
-		when(mockGame.getDetailsMessage(GUILD_TEAM.getTimeZone())).thenReturn(detailsMessage);
+		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.getDetailsMessage(mockGame, GUILD_TEAM.getTimeZone())).thenReturn(detailsMessage);
 
 		spyNextGameCommand.replyTo(mockMessage, null);
 

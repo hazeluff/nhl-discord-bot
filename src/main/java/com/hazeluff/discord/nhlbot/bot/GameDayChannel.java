@@ -537,12 +537,38 @@ public class GameDayChannel extends Thread {
 	/**
 	 * Gets the date in the format "EEEE dd MMM yyyy"
 	 * 
+	 * @param game
+	 *            game to get the date for
+	 * @param zone
+	 *            time zone to convert the time to
+	 * @return the date in the format "EEEE dd MMM yyyy"
+	 */
+	public static String getNiceDate(Game game, ZoneId zone) {
+		return game.getDate().withZoneSameInstant(zone).format(DateTimeFormatter.ofPattern("EEEE d/MMM/yyyy"));
+	}
+
+	/**
+	 * Gets the date in the format "EEEE dd MMM yyyy"
+	 * 
 	 * @param zone
 	 *            time zone to convert the time to
 	 * @return the date in the format "EEEE dd MMM yyyy"
 	 */
 	public String getNiceDate(ZoneId zone) {
-		return game.getDate().withZoneSameInstant(zone).format(DateTimeFormatter.ofPattern("EEEE d/MMM/yyyy"));
+		return getNiceDate(game, zone);
+	}
+
+	/**
+	 * Gets the time in the format "HH:mm aaa"
+	 * 
+	 * @param game
+	 * 			  game to get the time from
+	 * @param zone
+	 *            time zone to convert the time to
+	 * @return the time in the format "HH:mm aaa"
+	 */
+	public static String getTime(Game game, ZoneId zone) {
+		return game.getDate().withZoneSameInstant(zone).format(DateTimeFormatter.ofPattern("H:mm z"));
 	}
 
 	/**
@@ -553,7 +579,7 @@ public class GameDayChannel extends Thread {
 	 * @return the time in the format "HH:mm aaa"
 	 */
 	public String getTime(ZoneId zone) {
-		return game.getDate().withZoneSameInstant(zone).format(DateTimeFormatter.ofPattern("H:mm z"));
+		return getTime(game, zone);
 	}
 
 	/**
@@ -588,16 +614,18 @@ public class GameDayChannel extends Thread {
 	/**
 	 * Gets the message that NHLBot will respond with when queried about this game
 	 * 
+	 * @param game
+	 * 		      the game to get the message for
 	 * @param timeZone
 	 *            the time zone to localize to
 	 * 
 	 * @return message in the format: "The next game is:\n<br>
 	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
 	 */
-	public String getDetailsMessage(Game game, ZoneId timeZone) {
+	public static String getDetailsMessage(Game game, ZoneId timeZone) {
 		String message = String.format("**%s** vs **%s** at **%s** on **%s**", game.getHomeTeam().getFullName(),
-				game.getAwayTeam().getFullName(), getTime(timeZone), getNiceDate(timeZone));
-		return message.toString();
+				game.getAwayTeam().getFullName(), getTime(game, timeZone), getNiceDate(game, timeZone));
+		return message;
 	}
 
 	/**
@@ -610,9 +638,7 @@ public class GameDayChannel extends Thread {
 	 *         **Home Team** vs **Away Team** at HH:mm aaa on EEEE dd MMM yyyy"
 	 */
 	public String getDetailsMessage(ZoneId timeZone) {
-		String message = String.format("**%s** vs **%s** at **%s** on **%s**", game.getHomeTeam().getFullName(),
-				game.getAwayTeam().getFullName(), getTime(timeZone), getNiceDate(timeZone));
-		return message.toString();
+		return getDetailsMessage(game, timeZone);
 	}
 
 	/**
