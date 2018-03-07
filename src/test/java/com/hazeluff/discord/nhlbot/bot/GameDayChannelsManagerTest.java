@@ -33,7 +33,6 @@ import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
-import com.hazeluff.discord.nhlbot.nhl.GameTracker;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
@@ -67,11 +66,11 @@ public class GameDayChannelsManagerTest {
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
 		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
-
+		
 		gameDayChannelsManager = new GameDayChannelsManager(mockNHLBot);
 		spyGameDayChannelsManager = spy(gameDayChannelsManager);
 	}
-
+	
 	@Test
 	public void mapFunctionsShouldWorkProperly() {
 		LOGGER.info("mapFunctionsShouldWorkProperly");
@@ -157,8 +156,12 @@ public class GameDayChannelsManagerTest {
 	}
 
 	@Test
+	@PrepareForTest(GameDayChannel.class)
 	public void createChannelsByGameShouldInvokeMethods() {
 		LOGGER.info("createChannelsByGameShouldInvokeMethods");
+		
+		mockStatic(GameDayChannel.class);
+		
 		Team team1 = Team.ANAHEIM_DUCKS;
 		Team team2 = Team.BOSTON_BRUINS;
 		IGuild t1guild1 = mock(IGuild.class);
@@ -193,13 +196,17 @@ public class GameDayChannelsManagerTest {
 	}
 
 	@Test
+	@PrepareForTest(GameDayChannel.class)
 	public void createChannelShouldReturnNullIfGameTrackerDoesNotExist() {
 		LOGGER.info("createChannelShouldReturnNullIfGameTrackerDoesNotExist");
 		IGuild guild = mock(IGuild.class);
 		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
 		Game game = mock(Game.class);
 		when(game.getGamePk()).thenReturn(Utils.getRandomInt());
-		when(mockGameScheduler.getGameTracker(any(Game.class))).thenReturn(null);
+		GameDayChannel gameDayChannel = mock(GameDayChannel.class);
+		Team team = Utils.getRandom(Team.class);
+		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.get(mockNHLBot, game, guild, team)).thenReturn(gameDayChannel);
 
 		GameDayChannel result = gameDayChannelsManager.createChannel(game, guild);
 
@@ -214,11 +221,11 @@ public class GameDayChannelsManagerTest {
 		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
 		Game game = mock(Game.class);
 		when(game.getGamePk()).thenReturn(Utils.getRandomInt());
-		GameTracker gameTracker = mock(GameTracker.class);
-		when(mockGameScheduler.getGameTracker(any(Game.class))).thenReturn(gameTracker);
 		GameDayChannel gameDayChannel = mock(GameDayChannel.class);
+		Team team = Utils.getRandom(Team.class);
+		when(mockNHLBot.getPreferencesManager().getTeamByGuild(guild.getLongID())).thenReturn(team);
 		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.get(mockNHLBot, gameTracker, guild)).thenReturn(gameDayChannel);
+		when(GameDayChannel.get(mockNHLBot, game, guild, team)).thenReturn(gameDayChannel);
 
 		GameDayChannel result = gameDayChannelsManager.createChannel(game, guild);
 
