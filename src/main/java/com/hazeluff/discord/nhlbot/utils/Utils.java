@@ -58,6 +58,18 @@ public class Utils {
 	}
 
 	/**
+	 * Gets a random enum value from an enum class.
+	 * 
+	 * @param enumClass
+	 *            class to get random enum from
+	 * @return random enum
+	 */
+	public static <T extends Enum<?>> T getRandom(Class<T> enumClass) {
+		int x = random.nextInt(enumClass.getEnumConstants().length);
+		return enumClass.getEnumConstants()[x];
+	}
+
+	/**
 	 * Gets the current epoch time in ms.
 	 * 
 	 * @return current epoch time in ms
