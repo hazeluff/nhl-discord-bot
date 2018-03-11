@@ -20,6 +20,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -28,10 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -52,14 +50,8 @@ public class SubscribeCommandTest {
 	private static final long USER_ID_AUTHOR = Utils.getRandomLong();
 	private static final long USER_ID_OWNER = Utils.getRandomLong();
 
-	@Mock
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
-	@Mock
-	private DiscordManager mockDiscordManager;
-	@Mock
-	private PreferencesManager mockPreferencesManager;
-	@Mock
-	private GameScheduler mockGameScheduler;
 	@Mock
 	private IMessage mockMessage;
 	@Mock
@@ -82,9 +74,6 @@ public class SubscribeCommandTest {
 	public void setup() {
 		subscribeCommand = new SubscribeCommand(mockNHLBot);
 		spySubscribeCommand = spy(subscribeCommand);
-		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
-		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
@@ -144,7 +133,8 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, null);
 		
-		verify(mockDiscordManager).sendMessage(mockChannel, SubscribeCommand.MUST_BE_ADMIN_TO_SUBSCRIBE_MESSAGE);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel,
+				SubscribeCommand.MUST_BE_ADMIN_TO_SUBSCRIBE_MESSAGE);
 	}
 
 	@Test
@@ -154,7 +144,7 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe" });
 
-		verify(mockDiscordManager).sendMessage(mockChannel, SubscribeCommand.SPECIFY_TEAM_MESSAGE);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, SubscribeCommand.SPECIFY_TEAM_MESSAGE);
 	}
 
 	@Test
@@ -164,10 +154,10 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "help" });
 
-		verify(mockGameScheduler, never()).removeAllChannels(any(IGuild.class));
-		verify(mockPreferencesManager, never()).subscribeGuild(anyLong(), any(Team.class));
-		verify(mockGameScheduler, never()).initChannels(any(IGuild.class));
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).removeAllChannels(any(IGuild.class));
+		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
+		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
 		String message = captorString.getValue();
 		assertTrue(message.contains("`@NHLBot subscribe [team]`"));
 		for(Team team: Team.values()) {
@@ -184,10 +174,10 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
 
-		verify(mockGameScheduler, never()).removeAllChannels(any(IGuild.class));
-		verify(mockPreferencesManager).subscribeUser(USER_ID_AUTHOR, TEAM);
-		verify(mockGameScheduler, never()).initChannels(mockGuild);
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).removeAllChannels(any(IGuild.class));
+		verify(mockNHLBot.getPreferencesManager()).subscribeUser(USER_ID_AUTHOR, TEAM);
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(mockGuild);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
 		assertTrue(captorString.getValue().contains(TEAM.getFullName()));
 	}
 
@@ -199,10 +189,10 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
 
-		verify(mockGameScheduler).removeAllChannels(any(IGuild.class));
-		verify(mockPreferencesManager).subscribeGuild(GUILD_ID, TEAM);
-		verify(mockGameScheduler).initChannels(mockGuild);
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
+		verify(mockNHLBot.getGameDayChannelsManager()).removeAllChannels(any(IGuild.class));
+		verify(mockNHLBot.getPreferencesManager()).subscribeGuild(GUILD_ID, TEAM);
+		verify(mockNHLBot.getGameDayChannelsManager()).initChannels(mockGuild);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
 		assertTrue(captorString.getValue().contains(TEAM.getFullName()));
 	}
 
@@ -213,10 +203,10 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "ZZZ" });
 
-		verify(mockGameScheduler, never()).removeAllChannels(any(IGuild.class));
-		verify(mockPreferencesManager, never()).subscribeGuild(anyLong(), any(Team.class));
-		verify(mockGameScheduler, never()).initChannels(any(IGuild.class));
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).removeAllChannels(any(IGuild.class));
+		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
+		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
 		assertTrue(captorString.getValue().contains("`@NHLBot subscribe help`"));
 	}
 }
