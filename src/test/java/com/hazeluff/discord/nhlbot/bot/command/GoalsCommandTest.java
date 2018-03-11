@@ -78,9 +78,9 @@ public class GoalsCommandTest {
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
 		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
-		when(mockGame.getGoalsMessage()).thenReturn(GOALS_MESSAGE);
 		
 		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.getGoalsMessage(mockGame)).thenReturn(GOALS_MESSAGE);
 		when(GameDayChannel.getScoreMessage(mockGame)).thenReturn(SCORE_MESSAGE);
 	}
 
