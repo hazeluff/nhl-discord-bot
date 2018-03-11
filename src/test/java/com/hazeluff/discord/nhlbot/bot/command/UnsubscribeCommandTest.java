@@ -13,16 +13,14 @@ import static org.mockito.Mockito.when;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.IChannel;
@@ -38,14 +36,8 @@ public class UnsubscribeCommandTest {
 	private static final String CHANNEL_NAME = "ChannelName";
 	private static final long USER_ID_AUTHOR = Utils.getRandomLong();
 
-	@Mock
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
-	@Mock
-	private DiscordManager mockDiscordManager;
-	@Mock
-	private PreferencesManager mockPreferencesManager;
-	@Mock
-	private GameScheduler mockGameScheduler;
 	@Mock
 	private IMessage mockMessage;
 	@Mock
@@ -66,9 +58,6 @@ public class UnsubscribeCommandTest {
 	public void setup() {
 		unsubscribeCommand = new UnsubscribeCommand(mockNHLBot);
 		spyUnsubscribeCommand = spy(unsubscribeCommand);
-		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
-		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
@@ -97,7 +86,8 @@ public class UnsubscribeCommandTest {
 
 		spyUnsubscribeCommand.replyTo(mockMessage, null);
 		
-		verify(mockDiscordManager).sendMessage(mockChannel, UnsubscribeCommand.MUST_BE_ADMIN_TO_UNSUBSCRIBE_MESSAGE);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel,
+				UnsubscribeCommand.MUST_BE_ADMIN_TO_UNSUBSCRIBE_MESSAGE);
 	}
 
 	@Test
@@ -107,9 +97,9 @@ public class UnsubscribeCommandTest {
 
 		spyUnsubscribeCommand.replyTo(mockMessage, null);
 
-		verify(mockPreferencesManager).unsubscribeUser(USER_ID_AUTHOR);
-		verify(mockGameScheduler, never()).removeAllChannels(mockGuild);
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), anyString());
+		verify(mockNHLBot.getPreferencesManager()).unsubscribeUser(USER_ID_AUTHOR);
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).removeAllChannels(mockGuild);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), anyString());
 	}
 
 	@Test
@@ -120,9 +110,9 @@ public class UnsubscribeCommandTest {
 
 		spyUnsubscribeCommand.replyTo(mockMessage, null);
 
-		verify(mockPreferencesManager).unsubscribeGuild(GUILD_ID);
-		verify(mockGameScheduler).removeAllChannels(mockGuild);
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), anyString());
+		verify(mockNHLBot.getPreferencesManager()).unsubscribeGuild(GUILD_ID);
+		verify(mockNHLBot.getGameDayChannelsManager()).removeAllChannels(mockGuild);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), anyString());
 	}
 
 }
