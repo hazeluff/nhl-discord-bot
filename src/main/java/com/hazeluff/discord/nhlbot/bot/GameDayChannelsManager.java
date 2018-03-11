@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameTracker;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -150,10 +149,12 @@ public class GameDayChannelsManager extends Thread {
 	 * @param gamePk
 	 * @param channel
 	 */
-	void deleteChannel(Long guildId, Integer gamePk, IChannel channel) {
-		if (guildId != null && gamePk != null) {
-			removeGameDayChannel(guildId, gamePk);
-		}
+	void deleteChannel(long guildId, int gamePk, IChannel channel) {
+		removeGameDayChannel(guildId, gamePk);
+		deleteChannel(channel);
+	}
+
+	void deleteChannel(IChannel channel) {
 		nhlBot.getDiscordManager().deleteChannel(channel);
 	}
 
@@ -172,7 +173,7 @@ public class GameDayChannelsManager extends Thread {
 					if (GameDayChannel.isInCategory(channel) && GameDayChannel.isChannelNameFormat(channelName)) {
 						if (activeGames.stream()
 								.noneMatch(game -> channelName.equalsIgnoreCase(GameDayChannel.getChannelName(game)))) {
-							deleteChannel(guild.getLongID(), null, channel);
+							deleteChannel(channel);
 						}
 					}
 				});
@@ -224,7 +225,7 @@ public class GameDayChannelsManager extends Thread {
 	public void removeAllChannels(IGuild guild) {
 		guild.getChannels().forEach(channel -> {
 			if (GameDayChannel.isChannelNameFormat(channel.getName())) {
-				deleteChannel(null, null, channel);
+				deleteChannel(channel);
 			}
 		});
 		gameDayChannels.remove(guild.getLongID());

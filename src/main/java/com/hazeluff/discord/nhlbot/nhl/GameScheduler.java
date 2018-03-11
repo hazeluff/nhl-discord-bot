@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -213,7 +214,7 @@ public class GameScheduler implements Runnable {
 		List<Game> games = new ArrayList<>();
 		for (int i = 0; i < jsonDates.length(); i++) {
 			JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
-			Game game = new Game(jsonGame);
+			Game game = Game.parse(jsonGame);
 			if (game.getStatus() != GameStatus.SCHEDULED) {
 				LOGGER.debug("Adding additional game [" + game + "]");
 				games.add(game);
@@ -420,6 +421,10 @@ public class GameScheduler implements Runnable {
 				.filter(game -> game.containsTeam(team))
 				.filter(game -> !getActiveGames(team).contains(game))
 				.collect(Collectors.toList());
+	}
+
+	Map<Game, GameTracker> getActiveGameTrackers() {
+		return new HashMap<>(activeGameTrackers);
 	}
 
 	/**

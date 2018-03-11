@@ -17,10 +17,13 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -29,14 +32,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
+import sx.blah.discord.handle.impl.obj.Guild;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 
@@ -45,28 +46,17 @@ import sx.blah.discord.handle.obj.IGuild;
 public class GameDayChannelsManagerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameDayChannelsManagerTest.class);
 
-	@Mock
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
-	@Mock
-	private DiscordManager mockDiscordManager;
-	@Mock
-	private GameScheduler mockGameScheduler;
-	@Mock
-	private PreferencesManager mockPreferencesManager;
 
 	@Captor
 	private ArgumentCaptor<String> captorString;
-
 	private GameDayChannelsManager gameDayChannelsManager;
 	private GameDayChannelsManager spyGameDayChannelsManager;
 
 
 	@Before
 	public void before() {
-		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
-		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
-		
 		gameDayChannelsManager = new GameDayChannelsManager(mockNHLBot);
 		spyGameDayChannelsManager = spy(gameDayChannelsManager);
 	}
@@ -117,7 +107,8 @@ public class GameDayChannelsManagerTest {
 		LocalDate tomorrow = today.plusDays(1);
 		doReturn(false).doReturn(false).doReturn(false).doReturn(false).doReturn(false).doReturn(false).doReturn(false)
 				.doReturn(true).when(spyGameDayChannelsManager).isStop();
-		when(mockGameScheduler.getLastUpdate()).thenReturn(null, null, today, today, tomorrow, tomorrow, tomorrow);
+		when(mockNHLBot.getGameScheduler().getLastUpdate()).thenReturn(null, null, today, today, tomorrow, tomorrow,
+				tomorrow);
 		
 		spyGameDayChannelsManager.run();
 		verifyStatic(times(2));
@@ -140,11 +131,12 @@ public class GameDayChannelsManagerTest {
 		Game game2 = mock(Game.class);
 		Game game3 = mock(Game.class);
 		doReturn(null).when(spyGameDayChannelsManager).createChannel(any(Game.class), any(IGuild.class));
-		when(mockGameScheduler.getActiveGames(team1)).thenReturn(Arrays.asList(game1));
-		when(mockGameScheduler.getActiveGames(team2)).thenReturn(Arrays.asList(game2, game3));
-		when(mockPreferencesManager.getSubscribedGuilds(any(Team.class))).thenReturn(new ArrayList<>());
-		when(mockPreferencesManager.getSubscribedGuilds(team1)).thenReturn(Arrays.asList(t1guild1));
-		when(mockPreferencesManager.getSubscribedGuilds(team2)).thenReturn(Arrays.asList(t2guild1, t2guild2));
+		when(mockNHLBot.getGameScheduler().getActiveGames(team1)).thenReturn(Arrays.asList(game1));
+		when(mockNHLBot.getGameScheduler().getActiveGames(team2)).thenReturn(Arrays.asList(game2, game3));
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(any(Team.class))).thenReturn(new ArrayList<>());
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team1)).thenReturn(Arrays.asList(t1guild1));
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team2))
+				.thenReturn(Arrays.asList(t2guild1, t2guild2));
 
 		spyGameDayChannelsManager.createChannels();
 
@@ -170,8 +162,9 @@ public class GameDayChannelsManagerTest {
 		Game game = mock(Game.class);
 		when(game.getTeams()).thenReturn(Arrays.asList(team1, team2));
 		doReturn(null).when(spyGameDayChannelsManager).createChannel(any(Game.class), any(IGuild.class));
-		when(mockPreferencesManager.getSubscribedGuilds(team1)).thenReturn(Arrays.asList(t1guild1));
-		when(mockPreferencesManager.getSubscribedGuilds(team2)).thenReturn(Arrays.asList(t2guild1, t2guild2));
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team1)).thenReturn(Arrays.asList(t1guild1));
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team2))
+				.thenReturn(Arrays.asList(t2guild1, t2guild2));
 		
 		spyGameDayChannelsManager.createChannels(game);
 
@@ -233,34 +226,41 @@ public class GameDayChannelsManagerTest {
 	}
 
 	@Test
-	public void deleteChannelShouldInvokeMethods() {
-		LOGGER.info("deleteChannelShouldInvokeMethods");
-		IChannel channel = mock(IChannel.class);
-		long guildId = Utils.getRandomLong();
-		int gamePk = Utils.getRandomInt();
+	@PrepareForTest(GameDayChannel.class)
+	public void deleteInactiveChannelsShouldRemoveChannels() {
+		LOGGER.info("deleteInactiveChannelsShouldRemoveChannels");
+		IChannel[] mockChannels = new IChannel[8];
+		Team team = Utils.getRandom(Team.class);
+		Game[] mockGames = new Game[2];
+		when(mockNHLBot.getGameScheduler().getActiveGames(any(Team.class))).thenReturn(Collections.emptyList());
+		IGuild guild = mock(Guild.class);
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team)).thenReturn(Arrays.asList(guild));
+		when(guild.getChannels()).thenReturn(Arrays.asList(mockChannels));
+		String matchingChannelName = RandomStringUtils.random(5);
+		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.getChannelName(mockGames[0])).thenReturn(RandomStringUtils.random(3));
+		when(GameDayChannel.getChannelName(mockGames[1])).thenReturn(matchingChannelName);
+		mockStatic(GameDayChannel.class);
+		for (int i = 0; i < mockChannels.length; i++) {
+			mockChannels[i] = mock(IChannel.class);
+			if (i % 2 == 0) {
+				when(GameDayChannel.isInCategory(mockChannels[0])).thenReturn(true);
+			}
+			if ((i / 2) % 2 == 0) {
+				when(GameDayChannel.isChannelNameFormat(mockChannels[0].getName())).thenReturn(true);
+			}
+			if ((i / 4) % 2 == 0) {
+				when(mockChannels[i].getName()).thenReturn(matchingChannelName);
+			} else {
+				when(mockChannels[i].getName()).thenReturn(RandomStringUtils.random(4));
+			}
+		}
 
-		// null, null
-		spyGameDayChannelsManager.deleteChannel(null, null, channel);
+		spyGameDayChannelsManager.deleteInactiveChannels();
 
-		verify(spyGameDayChannelsManager, never()).removeGameDayChannel(any(Long.class), any(Integer.class));
-		verify(mockDiscordManager).deleteChannel(channel);
-
-		// guildId, null
-		spyGameDayChannelsManager.deleteChannel(guildId, null, channel);
-
-		verify(spyGameDayChannelsManager, never()).removeGameDayChannel(any(Long.class), any(Integer.class));
-		verify(mockDiscordManager, times(2)).deleteChannel(channel);
-
-		// null, gamePk
-		spyGameDayChannelsManager.deleteChannel(null, gamePk, channel);
-
-		verify(spyGameDayChannelsManager, never()).removeGameDayChannel(any(Long.class), any(Integer.class));
-		verify(mockDiscordManager, times(3)).deleteChannel(channel);
-
-		// guildId, gamePk
-		spyGameDayChannelsManager.deleteChannel(guildId, gamePk, channel);
-
-		verify(spyGameDayChannelsManager).removeGameDayChannel(guildId, gamePk);
-		verify(mockDiscordManager, times(4)).deleteChannel(channel);
+		verify(spyGameDayChannelsManager).deleteChannel(mockChannels[0]);
+		for (int i = 1; i < mockChannels.length; i++) {
+			verify(spyGameDayChannelsManager, never()).deleteChannel(mockChannels[i]);
+		}
 	}
 }
