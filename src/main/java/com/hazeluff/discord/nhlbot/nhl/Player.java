@@ -51,7 +51,7 @@ public class Player {
 		return new Player(
 				jsonPlayer.getJSONObject("player").getInt("id"), 
 				jsonPlayer.getJSONObject("player").getString("fullName"), 
-				EventRole.parse(jsonPlayer.getString("playerType"));
+				EventRole.parse(jsonPlayer.getString("playerType")));
 	}
 
 	public int getId() {

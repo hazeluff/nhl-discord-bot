@@ -29,7 +29,7 @@ public class PlayerTest {
 		jsonPlayer.put("player", jsonPlayerPlayer);
 		jsonPlayer.put("playerType", ROLE.toString());
 
-		Player player = new Player(jsonPlayer);
+		Player player = Player.parse(jsonPlayer);
 		assertEquals(ID, player.getId());
 		assertEquals(FULL_NAME, player.getFullName());
 		assertEquals(ROLE, player.getRole());
