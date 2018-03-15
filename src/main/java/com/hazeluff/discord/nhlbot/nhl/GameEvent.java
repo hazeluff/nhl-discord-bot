@@ -53,8 +53,8 @@ public class GameEvent {
 
 		List<Player> players = jsonScoringPlay.getJSONArray("players").toList().stream()
 				.map(HashMap.class::cast)
-				.map(JSONObject.class::cast)
-				.map(Player::new)
+				.map(JSONObject::new)
+				.map(Player::parse)
 				.collect(Collectors.toList());
 		
 		players.removeIf(player -> player.getRole() == EventRole.GOALIE);
