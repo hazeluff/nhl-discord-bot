@@ -263,4 +263,22 @@ public class GameDayChannelsManagerTest {
 			verify(spyGameDayChannelsManager, never()).deleteChannel(mockChannels[i]);
 		}
 	}
+
+	@Test
+	public void initChannelsShouldInvokeMethods() {
+		LOGGER.info("initChannelsShouldInvokeGameChannelsManager");
+		IGuild guild = mock(IGuild.class);
+		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
+		Team team = Utils.getRandom(Team.class);
+		when(mockNHLBot.getPreferencesManager().getTeamByGuild(guild.getLongID())).thenReturn(team);
+		Game game1 = mock(Game.class);
+		Game game2 = mock(Game.class);
+		when(mockNHLBot.getGameScheduler().getActiveGames(team)).thenReturn(Arrays.asList(game1, game2));
+		doReturn(null).when(spyGameDayChannelsManager).createChannel(any(Game.class), any(IGuild.class));
+
+		spyGameDayChannelsManager.initChannels(guild);
+
+		verify(spyGameDayChannelsManager).createChannel(game1, guild);
+		verify(spyGameDayChannelsManager).createChannel(game2, guild);
+	}
 }
