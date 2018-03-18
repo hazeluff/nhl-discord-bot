@@ -43,7 +43,7 @@ public class GameTracker extends Thread {
 	private boolean started = false;
 	private boolean finished = false;
 
-	private GameTracker(Game game) {
+	GameTracker(Game game) {
 		this.game = game;
 	}
 
