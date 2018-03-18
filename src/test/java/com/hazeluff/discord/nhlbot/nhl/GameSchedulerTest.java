@@ -25,12 +25,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,7 +91,6 @@ public class GameSchedulerTest {
 	private Map<Game, GameTracker> GAME_TRACKERS;
 	private static final long GUILD_ID1 = Utils.getRandomLong();
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Before
 	public void setup() throws Exception {
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
@@ -162,12 +163,12 @@ public class GameSchedulerTest {
 	}
 	
 	@Test
-	@PrepareForTest(Utils.class)
+	@PrepareForTest({ Utils.class, GameDayChannel.class })
 	public void initGamesShouldAddAllGamesInOrder() throws Exception {
 		LOGGER.info("initGamesShouldAddAllGamesInOrder");
 		mockStatic(Utils.class);
 		when(Utils.getCurrentTime()).thenReturn(0L, GameScheduler.GAME_SCHEDULE_UPDATE_RATE + 1);
-		gameScheduler = new GameScheduler(null, new HashMap<>());
+		gameScheduler = new GameScheduler(new HashSet<>(), new HashMap<>());
 		spyGameScheduler = spy(gameScheduler);
 
 		Map<Team, Game> expectedGames = new HashMap<>();
@@ -200,7 +201,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	@PrepareForTest(Utils.class)
+	@PrepareForTest({ Utils.class, GameDayChannel.class })
 	public void runShouldLoopAndInvokeMethodsWhenNewDayHasPassed() {
 		LOGGER.info("runShouldLoopAndInvokeMethods");
 		mockStatic(Utils.class);
@@ -265,7 +266,7 @@ public class GameSchedulerTest {
 
 	@SuppressWarnings("serial")
 	@Test
-	@PrepareForTest(Utils.class)
+	@PrepareForTest({ Utils.class, GameDayChannel.class })
 	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToSet() {		
 		LOGGER.info("updateGameScheduleShouldGetGamesFromAllTeamsAndAddToSet");
 		mockStatic(Utils.class);
@@ -287,7 +288,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	@PrepareForTest({ HttpUtils.class, GameScheduler.class })
+	@PrepareForTest({ GameScheduler.class, HttpUtils.class, Game.class, GameDayChannel.class })
 	public void getGamesShouldReturnListOfGames() throws Exception {
 		LOGGER.info("getGamesShouldReturnListOfGames");
 		ZonedDateTime startDate = ZonedDateTime.of(2016, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
@@ -298,27 +299,27 @@ public class GameSchedulerTest {
 		URI mockURI = new URI("mockURI");
 		when(mockURIBuilder.build()).thenReturn(mockURI);
 		
-		mockStatic(HttpUtils.class);
+		mockStatic(HttpUtils.class, Game.class);
 		when(HttpUtils.get(mockURI)).thenReturn("{"
 				+ "dates:["
 				+ "{"
 					+ "games:["
-				+ "{}"
+						+ "{game:1}"
 					+ "]"
 				+ "},"
 				+ "{"
 					+ "games:["
-				+ "{}"
+						+ "{game:2}"
 					+ "]"
 				+ "},"
 				+ "{"
 					+ "games:["
-				+ "{}"
+						+ "{game:3}"
 					+ "]"
 				+ "}"
 			+ "]"
 		+ "}");
-		whenNew(Game.class).withAnyArguments().thenReturn(mockGame1, mockGame2, mockGame3);
+		when(Game.parse(any(JSONObject.class))).thenReturn(mockGame1, mockGame2, mockGame3);
 		
 		List<Game> result = gameScheduler.getGames(TEAM, startDate, endDate);
 
@@ -328,7 +329,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	@PrepareForTest({ HttpUtils.class, GameScheduler.class })
+	@PrepareForTest({ HttpUtils.class, GameScheduler.class, GameDayChannel.class })
 	public void getGamesShouldLimitEndDate() throws Exception {
 		LOGGER.info("getGamesShouldLimitEndDate");
 		ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
@@ -464,7 +465,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	@PrepareForTest(GameTracker.class)
+	@PrepareForTest({ GameTracker.class, GameDayChannel.class })
 	public void createGameTrackerShouldReturnExistingGameTracker() {
 		LOGGER.info("createGameTrackerShouldReturnExistingGameTracker");
 		when(mockGame1.getGamePk()).thenReturn(1);
@@ -486,7 +487,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	@PrepareForTest(GameTracker.class)
+	@PrepareForTest({ GameTracker.class, GameDayChannel.class })
 	public void createGameTrackerShouldReturnNewGameTrackerAndAddToGameTrackersListWhenGameDoesNotExistAndIsNotEnded()
 			throws Exception {
 		LOGGER.info(
@@ -495,7 +496,6 @@ public class GameSchedulerTest {
 		GameTracker newGameTracker = mock(GameTracker.class);
 		mockStatic(GameTracker.class);
 		when(GameTracker.get(newGame)).thenReturn(newGameTracker);
-		whenNew(GameTracker.class).withArguments(mockGameChannelsManager, newGame).thenReturn(newGameTracker);
 		when(newGame.isEnded()).thenReturn(false);
 
 		GameScheduler gameScheduler = new GameScheduler(null, new HashMap<>());
@@ -503,35 +503,9 @@ public class GameSchedulerTest {
 		GameTracker result = gameScheduler.createGameTracker(newGame);
 
 		assertEquals(newGameTracker, result);
-		verify(newGameTracker).start();
 		Map<Game, GameTracker> expected = new HashMap<>();
 		expected.put(newGame, newGameTracker);
 		assertEquals(expected, gameScheduler.getActiveGameTrackers());
-	}
-
-	@Test
-	public void removeAllChannelsShouldInvokeGameChannelsManager() {
-		LOGGER.info("removeAllChannelsShouldInvokeGameChannelsManager");
-		gameScheduler = new GameScheduler(mockNHLBot, Utils.asSet(mockGame1, mockGame2), null);
-
-		gameScheduler.removeAllChannels(mockGuild1);
-
-		verify(mockGameChannelsManager).removeChannel(mockGame1, mockChannel1);
-		verify(mockGameChannelsManager).removeChannel(mockGame2, mockChannel2);
-		verify(mockGameChannelsManager, never()).removeChannel(mockGame3, mockChannel3);
-		verify(mockGameChannelsManager, never()).createChannel(mockGame1, mockGuild1);
-
-	}
-
-	@Test
-	public void initChannelsShouldInvokeGameChannelsManager() {
-		LOGGER.info("initChannelsShouldInvokeGameChannelsManager");
-		doReturn(Arrays.asList(mockGame1, mockGame2)).when(spyGameScheduler).getActiveGames(TEAM);
-
-		spyGameScheduler.initChannels(mockGuild1);
-
-		verify(mockGameChannelsManager).createChannel(mockGame1, mockGuild1);
-		verify(mockGameChannelsManager).createChannel(mockGame2, mockGuild1);
 	}
 
 	@Test
