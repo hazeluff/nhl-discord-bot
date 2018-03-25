@@ -56,7 +56,6 @@ public class CommandListenerTest {
 	private static final long AUTHOR_USER_ID = Utils.getRandomLong();
 	private static final long OWNER_USER_ID = Utils.getRandomLong();
 	private static final String MESSAGE_CONTENT = "Message Content";
-	private static final String CHANNEL_NAME = "ChannelName";
 	private static final long CHANNEL_ID = Utils.getRandomLong();
 	private static final long GUILD_ID = Utils.getRandomLong();
 
@@ -105,7 +104,6 @@ public class CommandListenerTest {
 		when(mockNHLBot.getId()).thenReturn(BOT_ID);
 		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
 		when(mockNHLBot.getNicknameMentionId()).thenReturn(BOT_NICKNAME_MENTION_ID);
-		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
 		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
 		when(mockAuthorUser.getLongID()).thenReturn(AUTHOR_USER_ID);

@@ -45,9 +45,6 @@ public class Game {
 		this.gamePk = gamePk;
 		this.awayTeam = awayTeam;
 		this.homeTeam = homeTeam;
-		this.awayScore = awayScore;
-		this.homeScore = homeScore;
-		this.status = status;
 	}
 
 	public static Game parse(JSONObject jsonGame) {
