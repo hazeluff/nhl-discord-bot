@@ -54,7 +54,7 @@ public class NHLBotTest {
 	@Mock
 	PreferencesManager mockPreferencesManager;
 	@Mock
-	GameDayChannelsManager mockGameChannelsManager;
+	GameDayChannelsManager mockGameDaysChannelsManager;
 	@Mock
 	GameScheduler mockGameScheduler;
 	@Mock
@@ -71,8 +71,7 @@ public class NHLBotTest {
 		whenNew(ClientBuilder.class).withNoArguments().thenReturn(mockClientBuilder);
 		whenNew(CommandListener.class).withAnyArguments().thenReturn(mockCommandListener);
 		whenNew(DiscordManager.class).withArguments(mockDiscordClient).thenReturn(mockDiscordManager);
-		whenNew(GameDayChannelsManager.class).withAnyArguments().thenReturn(mockGameChannelsManager);
-		whenNew(GameScheduler.class).withAnyArguments().thenReturn(mockGameScheduler);
+		whenNew(GameDayChannelsManager.class).withAnyArguments().thenReturn(mockGameDaysChannelsManager);
 		when(mockDiscordClient.getDispatcher()).thenReturn(mockEventDispatcher);
 		when(mockDiscordClient.getApplicationClientID()).thenReturn(ID);
 		mockStatic(PreferencesManager.class);
@@ -86,7 +85,7 @@ public class NHLBotTest {
 		mockStatic(NHLBot.class, PreferencesManager.class);
 		when(NHLBot.getClient(TOKEN)).thenReturn(mockDiscordClient);
 
-		new NHLBot(TOKEN);
+		new NHLBot(TOKEN, mockGameScheduler);
 
 		verify(mockEventDispatcher).registerListener(mockCommandListener);
 	}
@@ -98,13 +97,13 @@ public class NHLBotTest {
 		when(NHLBot.getClient(TOKEN)).thenReturn(mockDiscordClient);
 		when(NHLBot.getMongoDatabaseInstance()).thenReturn(mockMongoDatabase);
 
-		NHLBot nlhBotBot = new NHLBot(TOKEN);
+		NHLBot nlhBotBot = new NHLBot(TOKEN, mockGameScheduler);
 
 		assertEquals(mockDiscordClient, nlhBotBot.getDiscordClient());
 		assertEquals(mockMongoDatabase, nlhBotBot.getMongoDatabase());
 		assertEquals(mockDiscordManager, nlhBotBot.getDiscordManager());
 		assertEquals(mockPreferencesManager, nlhBotBot.getPreferencesManager());
-		assertEquals(mockGameChannelsManager, nlhBotBot.getGameChannelsManager());
+		assertEquals(mockGameDaysChannelsManager, nlhBotBot.getGameDayChannelsManager());
 		assertEquals(mockGameScheduler, nlhBotBot.getGameScheduler());
 		assertEquals(ID, nlhBotBot.getId());
 	}
@@ -115,7 +114,7 @@ public class NHLBotTest {
 		when(NHLBot.getClient(TOKEN)).thenReturn(mockDiscordClient);
 		doThrow(DiscordException.class).when(mockDiscordClient).getApplicationClientID();
 
-		new NHLBot(TOKEN);
+		new NHLBot(TOKEN, mockGameScheduler);
 	}
 
 	@Test
