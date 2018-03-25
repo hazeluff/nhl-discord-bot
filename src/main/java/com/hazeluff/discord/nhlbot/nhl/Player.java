@@ -41,7 +41,7 @@ public class Player {
 		}
 	}
 
-	private Player(int id, String fullName, EventRole role) {
+	Player(int id, String fullName, EventRole role) {
 		this.id = id;
 		this.fullName = fullName;
 		this.role = role;
