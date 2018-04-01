@@ -2,7 +2,13 @@ package com.hazeluff.discord.nhlbot.bot;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZoneId;
@@ -25,6 +31,7 @@ import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameEvent;
 import com.hazeluff.discord.nhlbot.nhl.GamePeriod;
 import com.hazeluff.discord.nhlbot.nhl.GamePeriod.Type;
+import com.hazeluff.discord.nhlbot.nhl.Player;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
@@ -255,4 +262,94 @@ public class GameDayChannelTest {
 		assertEquals(expected, staticResult);
 	}
 
+	@Test
+	public void updateMessagesShouldSendMessagesForNewNewEvents() {
+		LOGGER.info("updateMessagesShouldSendMessagesForNewNewEvents");
+		List<GameEvent> events = new ArrayList<>();
+		GameEvent gameEvent = mock(GameEvent.class);
+		when(gameEvent.getId()).thenReturn(Utils.getRandomInt());
+		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
+		when(mockGame.getEvents()).thenReturn(Arrays.asList(gameEvent));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		doNothing().when(gameDayChannel).sendEventMessage(any());
+		doNothing().when(gameDayChannel).updateEventMessage(any());
+		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
+		
+		gameDayChannel.updateMessages();
+		
+		verify(gameDayChannel).sendEventMessage(gameEvent);
+		verify(gameDayChannel, never()).updateEventMessage(any());
+		verify(gameDayChannel, never()).sendDeletedEventMessage(any());
+	}
+
+	@Test
+	public void updateMessagesShouldDoNothingWhenMessageAlreadyExists() {
+		LOGGER.info("updateMessagesShouldDoNothingWhenMessageAlreadyExists");
+		GameEvent gameEvent = mock(GameEvent.class);
+		when(gameEvent.getId()).thenReturn(Utils.getRandomInt());
+		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
+		List<GameEvent> events = new ArrayList<>();
+		events.add(gameEvent);
+		when(mockGame.getEvents()).thenReturn(events);
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		doNothing().when(gameDayChannel).sendEventMessage(any());
+		doNothing().when(gameDayChannel).updateEventMessage(any());
+		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
+
+		gameDayChannel.updateMessages();
+
+		verify(gameDayChannel, never()).sendEventMessage(any());
+		verify(gameDayChannel, never()).updateEventMessage(any());
+		verify(gameDayChannel, never()).sendDeletedEventMessage(any());
+	}
+
+	@Test
+	public void updateMessagesShouldDeleteMessageIfItNoLongerExists() {
+		LOGGER.info("updateMessagesShouldDeleteMessageIfItNoLongerExists");
+		GameEvent gameEvent = mock(GameEvent.class);
+		when(gameEvent.getId()).thenReturn(Utils.getRandomInt());
+		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
+		GameEvent gameEvent2 = mock(GameEvent.class);
+		when(gameEvent2.getId()).thenReturn(Utils.getRandomInt());
+		when(gameEvent2.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
+		List<GameEvent> events = Arrays.asList(gameEvent, gameEvent2);
+		List<GameEvent> retrievedEvents = Arrays.asList(gameEvent2);
+		when(mockGame.getEvents()).thenReturn(retrievedEvents);
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		doNothing().when(gameDayChannel).sendEventMessage(any());
+		doNothing().when(gameDayChannel).updateEventMessage(any());
+		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
+
+		gameDayChannel.updateMessages();
+
+		verify(gameDayChannel, never()).sendEventMessage(any());
+		verify(gameDayChannel, never()).updateEventMessage(any());
+		verify(gameDayChannel).sendDeletedEventMessage(gameEvent);
+	}
+
+	@Test
+	public void updateMessagesShouldTryAgainWhenNoEventsAreReturned() {
+		LOGGER.info("updateMessagesShouldTryAgainWhenNoEventsAreReturned");
+		GameEvent gameEvent = mock(GameEvent.class);
+		when(gameEvent.getId()).thenReturn(Utils.getRandomInt());
+		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
+		List<GameEvent> events = Arrays.asList(gameEvent);
+		List<GameEvent> retrievedEvents = new ArrayList<>();
+		when(mockGame.getEvents()).thenReturn(retrievedEvents);
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		doNothing().when(gameDayChannel).sendEventMessage(any());
+		doNothing().when(gameDayChannel).updateEventMessage(any());
+		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
+
+		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages();
+
+		verify(gameDayChannel, never()).sendEventMessage(any());
+		verify(gameDayChannel, never()).updateEventMessage(any());
+		verify(gameDayChannel, times(1)).sendDeletedEventMessage(gameEvent);
+	}
 }
