@@ -75,17 +75,23 @@ public class GameDayChannel extends Thread {
 
 	private boolean started = false;
 
-	GameDayChannel(NHLBot nhlBot, Game game, IGuild guild, Team team) {
+	GameDayChannel(NHLBot nhlBot, Game game, List<GameEvent> events, IGuild guild, Team team) {
 		this.nhlBot = nhlBot;
 		this.game = game;
+		this.events = events;
 		this.guild = guild;
 		this.team = team;
+	}
+
+	GameDayChannel(NHLBot nhlBot, Game game, IGuild guild, Team team) {
+		this(nhlBot, game, game.getEvents(), guild, team);
 	}
 
 	public static GameDayChannel get(NHLBot nhlBot, Game game, IGuild guild, Team team) {
 		// Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getLongID());
 		GameDayChannel gameDayChannel = new GameDayChannel(nhlBot, game, guild, team);
 		gameDayChannel.createChannel();
+		gameDayChannel.start();
 		return gameDayChannel;
 	}
 
@@ -118,7 +124,7 @@ public class GameDayChannel extends Thread {
 	@Override
 	public void run() {
 		String channelName = getChannelName();
-		setName(String.format("<%s>-%s", guild.getName(), channelName));
+		setName(String.format("<%s> <%s>", guild.getName(), channelName));
 		LOGGER.info("Started thread for channel [{}] in guild [{}]", channelName, guild.getName());
 
 		try {
@@ -314,30 +320,32 @@ public class GameDayChannel extends Thread {
 		eventsRetries = 0;
 
 		retrievedEvents.forEach(retrievedEvent -> {
-			if (!retrievedEvent.getPlayers().isEmpty()
-					&& !events.stream().anyMatch(event -> event.equals(retrievedEvent))) {
-				if (events.removeIf(event -> event.getId() == retrievedEvent.getId())) {
-					// Updated events
-					LOGGER.debug("Updated event: [" + retrievedEvent + "]");
-					updateEventMessage(retrievedEvent);
-				} else {
-					// New events
-					LOGGER.debug("New event: [" + retrievedEvent + "]");
-					sendEventMessage(retrievedEvent);
-				}
-				events.add(retrievedEvent);
+			if (retrievedEvent.getPlayers().isEmpty()) {
+				return;
+			}
+
+			GameEvent existingEvent = events.stream().filter(event -> event.getId() == retrievedEvent.getId()).findAny()
+					.orElse(null);
+			if (existingEvent == null) {
+				// New events
+				LOGGER.debug("New event: [" + retrievedEvent + "]");
+				sendEventMessage(retrievedEvent);
+			} else if (!existingEvent.equals(retrievedEvent)) {
+				// Updated events
+				LOGGER.debug("Updated event: [" + retrievedEvent + "]");
+				updateEventMessage(retrievedEvent);
 			}
 		});
 
 		// Deleted events
 		events.forEach(event -> {
-			if (!retrievedEvents.contains(event)) {
+			if (retrievedEvents.stream().noneMatch(retrievedEvent -> event.getId() == retrievedEvent.getId())) {
 				LOGGER.debug("Removed event: [" + event + "]");
 				sendDeletedEventMessage(event);
 			}
 		});
 
-		events = game.getEvents();
+		events = retrievedEvents;
 	}
 
 	/**
@@ -715,7 +723,8 @@ public class GameDayChannel extends Thread {
 	 * @return true, if part of the category; false, otherwise.
 	 */
 	public static boolean isInCategory(IChannel channel) {
-		return channel.getCategory().getName().equalsIgnoreCase(GAME_DAY_CHANNEL_CATEGORY_NAME);
+		ICategory category = channel.getCategory();
+		return category == null ? false : GAME_DAY_CHANNEL_CATEGORY_NAME.equalsIgnoreCase(category.getName());
 	}
 
 	/**

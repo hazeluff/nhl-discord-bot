@@ -73,7 +73,7 @@ public class NHLBot {
 							channel.getFullMessageHistory().stream()
 									.filter(message -> discordManager.isAuthorOfMessage(message))
 									.forEach(message -> discordManager.deleteMessage(message));
-							discordManager.sendMessage(channel, "I was just deployed.");
+							discordManager.sendMessage(channel, "I was just deployed/restarted.");
 							new AboutCommand(this).sendFile(channel);
 						}
 					)

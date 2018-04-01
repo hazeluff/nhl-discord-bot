@@ -148,7 +148,17 @@ public class GameScheduler implements Runnable {
 		for (Team team : Team.values()) {
 			ZonedDateTime startDate = ZonedDateTime.now();
 			ZonedDateTime endDate = startDate.plusDays(7);
-			games.addAll(getGames(team, startDate, endDate));
+			List<Game> updatedGames = getGames(team, startDate, endDate);
+			updatedGames.forEach(updatedGame -> {
+				Game existingGame = games.stream()
+						.filter(game -> game.getGamePk() == updatedGame.getGamePk()).findAny()
+						.orElse(null);
+				if (existingGame == null) {
+					games.add(updatedGame);
+				} else {
+					existingGame.updateTo(updatedGame);
+				}
+			});
 		}
 	}
 

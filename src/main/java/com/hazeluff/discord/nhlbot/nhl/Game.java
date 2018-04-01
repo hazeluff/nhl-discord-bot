@@ -61,6 +61,19 @@ public class Game {
 	}
 
 	/**
+	 * Clones the values (that are dynamic) in the provided game, and applies it to
+	 * this game.
+	 * 
+	 * @param updatedGame
+	 */
+	public void updateTo(Game updatedGame) {
+		awayScore = updatedGame.getAwayScore();
+		homeScore = updatedGame.getHomeScore();
+		status = updatedGame.getStatus();
+		updatedGame.getEvents();
+	}
+
+	/**
 	 * Calls the NHL API and gets the current information of the game.
 	 */
 	public void update() {
