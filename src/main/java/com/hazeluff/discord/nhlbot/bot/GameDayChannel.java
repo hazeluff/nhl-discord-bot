@@ -25,6 +25,7 @@ import com.hazeluff.discord.nhlbot.nhl.Player;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.nhl.custommessages.CanucksCustomMessages;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
@@ -75,16 +76,17 @@ public class GameDayChannel extends Thread {
 
 	private boolean started = false;
 
-	GameDayChannel(NHLBot nhlBot, Game game, List<GameEvent> events, IGuild guild, Team team) {
+	GameDayChannel(NHLBot nhlBot, Game game, List<GameEvent> events, IGuild guild, IChannel channel, Team team) {
 		this.nhlBot = nhlBot;
 		this.game = game;
 		this.events = events;
 		this.guild = guild;
+		this.channel = channel;
 		this.team = team;
 	}
 
 	GameDayChannel(NHLBot nhlBot, Game game, IGuild guild, Team team) {
-		this(nhlBot, game, game.getEvents(), guild, team);
+		this(nhlBot, game, game.getEvents(), guild, null, team);
 	}
 
 	public static GameDayChannel get(NHLBot nhlBot, Game game, IGuild guild, Team team) {
@@ -96,8 +98,7 @@ public class GameDayChannel extends Thread {
 	}
 
 	/**
-	 * Gets a {@link GameDayChannel} object for any game. Required objects are taken
-	 * from the current object.
+	 * Gets a {@link GameDayChannel} object for any game.
 	 * 
 	 * @param game
 	 *            game to get {@link GameDayChannel} for. The game should have teams
@@ -124,7 +125,8 @@ public class GameDayChannel extends Thread {
 	@Override
 	public void run() {
 		String channelName = getChannelName();
-		setName(String.format("<%s> <%s>", guild.getName(), channelName));
+		String threadName = String.format("<%s> <%s>", guild.getName(), channelName);
+		setName(threadName);
 		LOGGER.info("Started thread for channel [{}] in guild [{}]", channelName, guild.getName());
 
 		try {
@@ -254,9 +256,9 @@ public class GameDayChannel extends Thread {
 				if (isInterrupted()) {
 					return;
 				}
-				Thread.sleep(IDLE_POLL_RATE_MS);
+				Utils.uncaughtSleep(IDLE_POLL_RATE_MS);
 			}
-		} while (!closeToStart);
+		} while (!closeToStart && !isInterrupted());
 	}
 
 	/**
@@ -275,7 +277,7 @@ public class GameDayChannel extends Thread {
 			started = game.getStatus() != GameStatus.PREVIEW;
 			if (!started && !isInterrupted()) {
 				LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
-				Thread.sleep(ACTIVE_POLL_RATE_MS);
+				Utils.uncaughtSleep(ACTIVE_POLL_RATE_MS);
 			}
 		} while (!started && !isInterrupted());
 		return alreadyStarted;
@@ -292,7 +294,7 @@ public class GameDayChannel extends Thread {
 
 			if (game.getStatus() != GameStatus.FINAL && !isInterrupted()) {
 				LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
-				Thread.sleep(ACTIVE_POLL_RATE_MS);
+				Utils.uncaughtSleep(ACTIVE_POLL_RATE_MS);
 			}
 		}
 	}
@@ -449,7 +451,7 @@ public class GameDayChannel extends Thread {
 			updateEndOfGameMessage();
 			updatePinnedMessage();
 			if (game.getStatus() == GameStatus.FINAL && !isInterrupted()) {
-				Thread.sleep(IDLE_POLL_RATE_MS);
+				Utils.uncaughtSleep(IDLE_POLL_RATE_MS);
 			}
 		}
 	}

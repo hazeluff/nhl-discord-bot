@@ -70,7 +70,7 @@ public class Game {
 		awayScore = updatedGame.getAwayScore();
 		homeScore = updatedGame.getHomeScore();
 		status = updatedGame.getStatus();
-		updatedGame.getEvents();
+		events = updatedGame.getEvents();
 	}
 
 	/**
@@ -166,8 +166,7 @@ public class Game {
 	}
 
 	public List<GameEvent> getEvents() {
-		List<GameEvent> value = new ArrayList<>(events);
-		return value;
+		return new ArrayList<>(events);
 	}
 
 	@Override

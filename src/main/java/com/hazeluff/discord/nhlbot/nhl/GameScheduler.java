@@ -90,12 +90,8 @@ public class GameScheduler implements Runnable {
 		initGames();
 		initTrackers();
 
-		/*
-		 * Start threads to maintain the games, trackers
-		 */
 
 		lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
-
 		while (!isStop()) {
 			LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
 			if (today.compareTo(lastUpdate) > 0) {
@@ -399,8 +395,8 @@ public class GameScheduler implements Runnable {
 	}
 
 	/**
-	 * Gets the existing GameTracker for the specified game, if it exists. If the GameTracker does not exist, null is
-	 * returned.
+	 * Gets the existing GameTracker for the specified game, if it exists. If the
+	 * GameTracker does not exist, a new one is created.
 	 * 
 	 * @param game
 	 *            game to find NHLGameTracker for
@@ -415,7 +411,7 @@ public class GameScheduler implements Runnable {
 			return activeGameTrackers.get(game);
 		} else {
 			LOGGER.debug("NHLGameTracker does not exist: " + game);
-			return null;
+			return GameTracker.get(game);
 		}
 	}
 	

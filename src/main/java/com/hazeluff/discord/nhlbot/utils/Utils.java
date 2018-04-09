@@ -31,7 +31,19 @@ public class Utils {
 	}
 	
 	/**
+	 * Invokes Thread.sleep() and does not catch the exception.
+	 * 
+	 * @param duration
+	 *            duration in ms to sleep
+	 * @throws InterruptedException
+	 */
+	public static void uncaughtSleep(long duration) throws InterruptedException {
+		Thread.sleep(duration);
+	}
+
+	/**
 	 * Gets a random int value.
+	 * 
 	 * @return random value
 	 */
 	public static int getRandomInt() {

@@ -78,7 +78,7 @@ public class GameDayChannelsManager extends Thread {
 		while (!isStop()) {
 			LocalDate schedulerUpdate = nhlBot.getGameScheduler().getLastUpdate();
 			if (schedulerUpdate == null) {
-				LOGGER.info("Waiting for GameScheduler to initialize...");
+				LOGGER.debug("Waiting for GameScheduler to initialize...");
 				Utils.sleep(INIT_UPDATE_RATE);
 			} else if (lastUpdate == null || schedulerUpdate.compareTo(lastUpdate) > 0) {
 				LOGGER.info("Updating Channels...");
@@ -86,7 +86,7 @@ public class GameDayChannelsManager extends Thread {
 				deleteInactiveChannels();
 				lastUpdate = schedulerUpdate;
 			} else {
-				LOGGER.info("Waiting for GameScheduler to update...");
+				LOGGER.trace("Waiting for GameScheduler to update...");
 				Utils.sleep(UPDATE_RATE);
 			}
 		}
@@ -127,7 +127,7 @@ public class GameDayChannelsManager extends Thread {
 	 * @param guild
 	 */
 	public GameDayChannel createChannel(Game game, IGuild guild) {
-		LOGGER.info("Creating channel. game={}, guild={}", game.getGamePk(), guild.getName());
+		LOGGER.info("Creating channel. channelName={}, guild={}", GameDayChannel.getChannelName(game), guild.getName());
 		int gamePk = game.getGamePk();
 		long guildId = guild.getLongID();
 		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getLongID());

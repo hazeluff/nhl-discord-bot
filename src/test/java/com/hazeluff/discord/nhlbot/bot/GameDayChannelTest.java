@@ -4,12 +4,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -21,6 +24,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -36,6 +41,7 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 
 @RunWith(PowerMockRunner.class)
@@ -51,17 +57,18 @@ public class GameDayChannelTest {
 	private static final ZonedDateTime DATE = ZonedDateTime.of(2000, 12, 31, 12, 56, 42, 100, ZoneOffset.UTC);
 	private List<GameEvent> events;
 
-	@Mock
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	NHLBot mockNHLBot;
 	@Mock
 	Game mockGame;
 	@Mock
 	IGuild mockGuild;
+	@Mock
+	IChannel mockChannel;
 
 	Team team = Utils.getRandom(Team.class);
 
 	GameDayChannel gameDayChannel;
-	GameDayChannel spyGameDayChannel;
 
 	@Before
 	public void before() {
@@ -74,7 +81,7 @@ public class GameDayChannelTest {
 		when(mockGame.getHomeScore()).thenReturn(HOME_SCORE);
 		when(mockGame.getDate()).thenReturn(DATE);
 
-		gameDayChannel = new GameDayChannel(mockNHLBot, mockGame, mockGuild, team);
+		gameDayChannel = new GameDayChannel(mockNHLBot, mockGame, null, mockGuild, mockChannel, team);
 	}
 
 	@Test
@@ -270,7 +277,7 @@ public class GameDayChannelTest {
 		when(gameEvent.getId()).thenReturn(Utils.getRandomInt());
 		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
 		when(mockGame.getEvents()).thenReturn(Arrays.asList(gameEvent));
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -291,7 +298,7 @@ public class GameDayChannelTest {
 		List<GameEvent> events = new ArrayList<>();
 		events.add(gameEvent);
 		when(mockGame.getEvents()).thenReturn(events);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -315,7 +322,7 @@ public class GameDayChannelTest {
 		List<GameEvent> events = Arrays.asList(gameEvent, gameEvent2);
 		List<GameEvent> retrievedEvents = Arrays.asList(gameEvent2);
 		when(mockGame.getEvents()).thenReturn(retrievedEvents);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -336,7 +343,7 @@ public class GameDayChannelTest {
 		List<GameEvent> events = Arrays.asList(gameEvent);
 		List<GameEvent> retrievedEvents = new ArrayList<>();
 		when(mockGame.getEvents()).thenReturn(retrievedEvents);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -351,5 +358,63 @@ public class GameDayChannelTest {
 		verify(gameDayChannel, never()).sendEventMessage(any());
 		verify(gameDayChannel, never()).updateEventMessage(any());
 		verify(gameDayChannel, times(1)).sendDeletedEventMessage(gameEvent);
+	}
+
+	@Test
+	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
+	public void sendRemindersShouldSendMessages() throws InterruptedException {
+		LOGGER.info("sendRemindersShouldSendMessages");
+		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime mockGameTime = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		mockStatic(DateUtils.class, ZonedDateTime.class, Utils.class);
+		when(ZonedDateTime.now()).thenReturn(mockCurrentTime);
+		when(mockGame.getDate()).thenReturn(mockGameTime);
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(7200000l, 3500000l,
+				3400000l, 1700000l, 1600000l, 500000l, 400000l, 0l);
+
+		gameDayChannel.sendReminders();
+
+		InOrder inOrder = inOrder(mockNHLBot.getDiscordManager());
+		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "60 minutes till puck drop.");
+		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "30 minutes till puck drop.");
+		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "10 minutes till puck drop.");
+	}
+
+	@Test
+	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
+	public void sendRemindersShouldSkipMessageIfStartedAfterRemindersPassed() throws InterruptedException {
+		LOGGER.info("sendRemindersShouldSkipMessageIfStartedAfterRemindersPassed");
+		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime mockGameTime = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		mockStatic(DateUtils.class, ZonedDateTime.class, Utils.class);
+		when(ZonedDateTime.now()).thenReturn(mockCurrentTime);
+		when(mockGame.getDate()).thenReturn(mockGameTime);
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(1900000l, 1700000l,
+				500000l, 0l);
+
+		gameDayChannel.sendReminders();
+
+		InOrder inOrder = inOrder(mockNHLBot.getDiscordManager());
+		inOrder.verify(mockNHLBot.getDiscordManager(), never()).sendMessage(mockChannel, "60 minutes till puck drop.");
+		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "30 minutes till puck drop.");
+		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "10 minutes till puck drop.");
+	}
+
+	@Test
+	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
+	public void sendRemindersShouldSleepUntilNearStartOfGame() throws InterruptedException {
+		LOGGER.info("sendRemindersShouldSleepUntilNearStartOfGame");
+		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime mockGameTime = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
+		mockStatic(DateUtils.class, ZonedDateTime.class, Utils.class);
+		when(ZonedDateTime.now()).thenReturn(mockCurrentTime);
+		when(mockGame.getDate()).thenReturn(mockGameTime);
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(
+				GameDayChannel.CLOSE_TO_START_THRESHOLD_MS + 1, GameDayChannel.CLOSE_TO_START_THRESHOLD_MS + 1,
+				GameDayChannel.CLOSE_TO_START_THRESHOLD_MS + 1, GameDayChannel.CLOSE_TO_START_THRESHOLD_MS - 1);
+
+		gameDayChannel.sendReminders();
+		verifyStatic(times(3));
+		Utils.uncaughtSleep(GameDayChannel.IDLE_POLL_RATE_MS);
 	}
 }
