@@ -231,6 +231,10 @@ public class GameDayChannel extends Thread {
 			timeTillGameMs = DateUtils.diffMs(ZonedDateTime.now(), game.getDate());
 			closeToStart = timeTillGameMs < CLOSE_TO_START_THRESHOLD_MS;
 			if (!closeToStart) {
+				if (isInterrupted()) {
+					return;
+				}
+
 				// Check to see if message should be sent.
 				long lowestThreshold = Long.MAX_VALUE;
 				String message = null;
@@ -253,9 +257,7 @@ public class GameDayChannel extends Thread {
 				message = null;
 				firstPass = false;
 				LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE_MS + "]");
-				if (isInterrupted()) {
-					return;
-				}
+
 				Utils.uncaughtSleep(IDLE_POLL_RATE_MS);
 			}
 		} while (!closeToStart && !isInterrupted());

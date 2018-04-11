@@ -25,6 +25,6 @@ public class BotRunner {
 			gameScheduler.start();
 		}
 
-		NHLBot bot = new NHLBot(args[0], gameScheduler);
+		NHLBot bot = NHLBot.create(args[0], gameScheduler);
     }
 }

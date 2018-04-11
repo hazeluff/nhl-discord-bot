@@ -415,6 +415,6 @@ public class GameDayChannelTest {
 
 		gameDayChannel.sendReminders();
 		verifyStatic(times(3));
-		Utils.uncaughtSleep(GameDayChannel.IDLE_POLL_RATE_MS);
+		Utils.sleep(GameDayChannel.IDLE_POLL_RATE_MS);
 	}
 }
