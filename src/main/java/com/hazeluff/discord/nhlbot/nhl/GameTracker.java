@@ -92,13 +92,21 @@ public class GameTracker extends Thread {
 			// Game has started
 			LOGGER.info("Game has started.");
 
-			// If the game is not final after the post game updates, then it will loop back and continue to track the
-			// game as if it hasn't ended yet.
-			while (game.getStatus() != GameStatus.FINAL) {
+			// The thread terminates when the GameStatus is Final and 10 minutes has elapsed
+			ZonedDateTime lastFinal = null;
+			long timeAfterLast = 0l;
+			while (timeAfterLast < POST_GAME_UPDATE_DURATION) {
 				updateGame();
 
-				// Keep checking if game is actually over.
-				updatePostGame();
+				if (game.getStatus() == GameStatus.FINAL) {
+					if (lastFinal == null) {
+						lastFinal = ZonedDateTime.now();
+					}
+					timeAfterLast = DateUtils.diffMs(ZonedDateTime.now(), lastFinal);
+				} else {
+					lastFinal = null;
+				}
+				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}
 		} else {
 			LOGGER.info("Game is already finished");
@@ -149,20 +157,6 @@ public class GameTracker extends Thread {
 			if (game.getStatus() != GameStatus.FINAL) {
 				LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
 				Utils.sleep(ACTIVE_POLL_RATE_MS);
-			}
-		}
-	}
-
-	/**
-	 * Update the game for a duration after the end of the game.
-	 */
-	void updatePostGame() {
-		int iterations = 0;
-		while (iterations * IDLE_POLL_RATE_MS < POST_GAME_UPDATE_DURATION && game.getStatus() == GameStatus.FINAL) {
-			iterations++;
-			game.update();
-			if (game.getStatus() == GameStatus.FINAL) {
-				Utils.sleep(IDLE_POLL_RATE_MS);
 			}
 		}
 	}

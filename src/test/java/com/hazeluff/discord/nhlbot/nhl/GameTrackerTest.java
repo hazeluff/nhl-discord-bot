@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.nhl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -14,6 +15,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -106,18 +108,21 @@ public class GameTrackerTest {
 		verify(spyGameTracker, never()).idleUntilNearStart();
 		verify(spyGameTracker, never()).waitForStart();
 		verify(spyGameTracker, never()).updateGame();
-		verify(spyGameTracker, never()).updatePostGame();
 		verifyNoMoreInteractions(mockGameChannelsManager);
 	}
 
 	@Test
-	public void runShouldInvokeMethodsWhenStatusIsNotFinal() throws Exception {
-		LOGGER.info("runInvokeMethodsWhenStatusIsNotFinal");
-		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.FINAL);
+	@PrepareForTest({ DateUtils.class, GameDayChannel.class, Utils.class })
+	public void runShouldInvokeMethodsUntilConditionsAreMet() throws Exception {
+		LOGGER.info("runShouldInvokeMethodsUntilConditionsAreMet");
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.LIVE, GameStatus.FINAL,
+				GameStatus.FINAL);
 		doNothing().when(spyGameTracker).idleUntilNearStart();
 		doNothing().when(spyGameTracker).waitForStart();
 		doNothing().when(spyGameTracker).updateGame();
-		doNothing().when(spyGameTracker).updatePostGame();
+		mockStatic(DateUtils.class, Utils.class);
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class)))
+				.thenReturn(0l, GameTracker.POST_GAME_UPDATE_DURATION + 1);
 
 		assertFalse(spyGameTracker.isFinished());
 		spyGameTracker.run();
@@ -126,25 +131,32 @@ public class GameTrackerTest {
 		InOrder inOrder = inOrder(spyGameTracker, mockGameChannelsManager);
 		inOrder.verify(spyGameTracker).idleUntilNearStart();
 		inOrder.verify(spyGameTracker).waitForStart();
-		inOrder.verify(spyGameTracker).updateGame();
-		inOrder.verify(spyGameTracker).updatePostGame();
+		// Invoke once per state that is not PREVIEW
+		inOrder.verify(spyGameTracker, times(4)).updateGame();
 	}
 
 	@Test
-	public void runShouldResumeUpdatingChannelIfGameIsNotActuallyFinal() throws Exception {
-		LOGGER.info("runShouldResumeUpdatingChannelIfGameIsNotActuallyFinal");
-		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.LIVE, GameStatus.FINAL);
+	@PrepareForTest({ DateUtils.class, GameDayChannel.class, Utils.class })
+	public void runShouldInvokeMethodsWhenStatusReverts() throws Exception {
+		LOGGER.info("runShouldInvokeMethodsWhenStatusReverts");
+		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.LIVE, GameStatus.LIVE, GameStatus.FINAL,
+				GameStatus.FINAL, GameStatus.LIVE, GameStatus.LIVE, GameStatus.FINAL, GameStatus.FINAL);
 		doNothing().when(spyGameTracker).idleUntilNearStart();
 		doNothing().when(spyGameTracker).waitForStart();
 		doNothing().when(spyGameTracker).updateGame();
-		doNothing().when(spyGameTracker).updatePostGame();
+		mockStatic(DateUtils.class, Utils.class);
+		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class)))
+				.thenReturn(0l, 0l, 0l, GameTracker.POST_GAME_UPDATE_DURATION + 1);
 
 		assertFalse(spyGameTracker.isFinished());
 		spyGameTracker.run();
 		assertTrue(spyGameTracker.isFinished());
 
-		verify(spyGameTracker, times(2)).updateGame();
-		verify(spyGameTracker, times(2)).updatePostGame();
+		InOrder inOrder = inOrder(spyGameTracker, mockGameChannelsManager);
+		inOrder.verify(spyGameTracker).idleUntilNearStart();
+		inOrder.verify(spyGameTracker).waitForStart();
+		// Invoke once per state that is not PREVIEW
+		inOrder.verify(spyGameTracker, times(8)).updateGame();
 	}
 	
 	@Test
@@ -209,38 +221,5 @@ public class GameTrackerTest {
 		spyGameTracker.start();
 
 		verify(spyGameTracker, times(1)).superStart();
-	}
-
-	@Test
-	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void updatePostGameShouldInvokeUpdatesUntilDurationOver() {
-		LOGGER.info("updatePostGameShouldInvokeUpdatesUntilDurationOver");
-		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
-		mockStatic(Utils.class);
-		
-		spyGameTracker.updatePostGame();
-		
-		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.IDLE_POLL_RATE_MS);
-		assertTrue(iterations > 0);
-		
-		verifyStatic(times(iterations));
-		Utils.sleep(GameTracker.IDLE_POLL_RATE_MS);
-	}
-
-	@Test
-	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void updatePostGameShouldInvokeUpdatesUntilGameIsNotFinal() {
-		LOGGER.info("updatePostGameShouldInvokeUpdatesUntilGameIsNotFinal");
-		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL, GameStatus.FINAL, GameStatus.FINAL, GameStatus.FINAL,
-				GameStatus.FINAL, GameStatus.LIVE, GameStatus.LIVE);
-		mockStatic(Utils.class);
-		
-		spyGameTracker.updatePostGame();
-		
-		int iterations = (int) (GameTracker.POST_GAME_UPDATE_DURATION / GameTracker.IDLE_POLL_RATE_MS);
-		assertTrue(iterations > 4);
-		
-		verifyStatic(times(2));
-		Utils.sleep(GameTracker.IDLE_POLL_RATE_MS);
 	}
 }
