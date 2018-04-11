@@ -36,13 +36,14 @@ public class GoalsCommand extends Command {
 				nhlBot.getDiscordManager().sendMessage(channel, GAME_NOT_STARTED_MESSAGE);
 			} else {
 				nhlBot.getDiscordManager().sendMessage(channel,
-						String.format("%s\n%s", GameDayChannel.getScoreMessage(game), GameDayChannel.getGoalsMessage(game)));
+						String.format("%s\n%s", GameDayChannel.getScoreMessage(game),
+								GameDayChannel.getGoalsMessage(game)));
 			}
 		}
 	}
 
 	@Override
-	public boolean isAccept(String[] arguments) {
+	public boolean isAccept(IMessage message, String[] arguments) {
 		return arguments[1].equalsIgnoreCase("goals");
 	}
 

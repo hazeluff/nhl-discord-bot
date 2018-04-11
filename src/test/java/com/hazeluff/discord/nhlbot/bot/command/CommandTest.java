@@ -61,7 +61,7 @@ public class CommandTest {
 		}
 
 		@Override
-		public boolean isAccept(String[] arguments) {
+		public boolean isAccept(IMessage message, String[] arguments) {
 			throw new NotImplementedException("Test Class. Not Implemented.");
 		}
 		

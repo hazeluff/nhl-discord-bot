@@ -84,13 +84,13 @@ public class ScoreCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsScore() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsScore");
-		assertTrue(scoreCommand.isAccept(new String[] { "<@NHLBOT>", "score" }));
+		assertTrue(scoreCommand.isAccept(null, new String[] { "<@NHLBOT>", "score" }));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotScore() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotScore");
-		assertFalse(scoreCommand.isAccept(new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(scoreCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
 	}
 
 	@Test

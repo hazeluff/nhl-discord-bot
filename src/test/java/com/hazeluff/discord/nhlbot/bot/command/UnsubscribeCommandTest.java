@@ -69,13 +69,13 @@ public class UnsubscribeCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsSubscribe() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsSubscribe");
-		assertTrue(unsubscribeCommand.isAccept(new String[] { "<@NHLBOT>", "unsubscribe" }));
+		assertTrue(unsubscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "unsubscribe" }));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotSubscribe() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotSubscribe");
-		assertFalse(unsubscribeCommand.isAccept(new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(unsubscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
 	}
 
 	@Test

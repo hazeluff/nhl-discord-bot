@@ -2,6 +2,8 @@ package com.hazeluff.discord.nhlbot.bot.preferences;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -12,10 +14,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
+import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
+
+import sx.blah.discord.api.IDiscordClient;
 
 /*
  * Note: We are not using @RunWith(PowerMockRunner.class) as it causes an ExceptionInInitializationError with
@@ -31,6 +36,7 @@ public class PreferencesManagerIT {
 
 	static MongoClient mongoClient;
 	MongoDatabase mongoDatabase;
+	NHLBot nhlBot;
 
 	PreferencesManager preferencesManager;
 
@@ -49,7 +55,10 @@ public class PreferencesManagerIT {
 	@Before
 	public void before() {
 		mongoDatabase = mongoClient.getDatabase(Config.MONGO_TEST_DATABASE_NAME);
-		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		nhlBot = mock(NHLBot.class);
+		when(nhlBot.getMongoDatabase()).thenReturn(mongoDatabase);
+		when(nhlBot.getDiscordClient()).thenReturn(mock(IDiscordClient.class));
+		preferencesManager = new PreferencesManager(nhlBot);
 	}
 
 	@After
@@ -63,7 +72,7 @@ public class PreferencesManagerIT {
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM);
 
 		// Reload
-		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		preferencesManager = new PreferencesManager(nhlBot);
 		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 		preferencesManager.loadPreferences();
 
@@ -77,7 +86,7 @@ public class PreferencesManagerIT {
 		preferencesManager.unsubscribeGuild(GUILD_ID);
 
 		// Reload
-		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		preferencesManager = new PreferencesManager(nhlBot);
 		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 		preferencesManager.loadPreferences();
 
@@ -90,7 +99,7 @@ public class PreferencesManagerIT {
 		preferencesManager.subscribeUser(USER_ID, TEAM);
 
 		// Reload
-		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		preferencesManager = new PreferencesManager(nhlBot);
 		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
 		preferencesManager.loadPreferences();
 
@@ -104,7 +113,7 @@ public class PreferencesManagerIT {
 		preferencesManager.unsubscribeUser(USER_ID);
 
 		// Reload
-		preferencesManager = new PreferencesManager(null, mongoDatabase);
+		preferencesManager = new PreferencesManager(nhlBot);
 		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
 		preferencesManager.loadPreferences();
 

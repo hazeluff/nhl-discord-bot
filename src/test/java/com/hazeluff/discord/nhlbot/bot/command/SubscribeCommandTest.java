@@ -87,13 +87,13 @@ public class SubscribeCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsSubscribe() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsSubscribe");
-		assertTrue(subscribeCommand.isAccept(new String[] { "<@NHLBOT>", "subscribe" }));
+		assertTrue(subscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "subscribe" }));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotSubscribe() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotSubscribe");
-		assertFalse(subscribeCommand.isAccept(new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(subscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
 	}
 
 	@Test

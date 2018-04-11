@@ -193,9 +193,9 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		verify(commands.get(0), never()).isAccept(any());
-		verify(commands.get(1), never()).isAccept(any());
-		verify(commands.get(2), never()).isAccept(any());
+		verify(commands.get(0), never()).isAccept(any(), any());
+		verify(commands.get(1), never()).isAccept(any(), any());
+		verify(commands.get(2), never()).isAccept(any(), any());
 		verify(commands.get(0), never()).replyTo(any(), any());
 		verify(commands.get(1), never()).replyTo(any(), any());
 		verify(commands.get(2), never()).replyTo(any(), any());
@@ -213,9 +213,9 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		verify(commands.get(0), never()).isAccept(any());
-		verify(commands.get(1), never()).isAccept(any());
-		verify(commands.get(2), never()).isAccept(any());
+		verify(commands.get(0), never()).isAccept(any(), any());
+		verify(commands.get(1), never()).isAccept(any(), any());
+		verify(commands.get(2), never()).isAccept(any(), any());
 		verify(commands.get(0), never()).replyTo(any(), any());
 		verify(commands.get(1), never()).replyTo(any(), any());
 		verify(commands.get(2), never()).replyTo(any(), any());
@@ -227,9 +227,9 @@ public class CommandListenerTest {
 
 		String[] arguments = new String[2];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		when(commands.get(0).isAccept(arguments)).thenReturn(false);
-		when(commands.get(1).isAccept(arguments)).thenReturn(true);
-		when(commands.get(2).isAccept(arguments)).thenReturn(false);
+		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
+		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(true);
+		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
 		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
@@ -248,9 +248,9 @@ public class CommandListenerTest {
 
 		String[] arguments = new String[2];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		when(commands.get(0).isAccept(arguments)).thenReturn(false);
-		when(commands.get(1).isAccept(arguments)).thenReturn(false);
-		when(commands.get(2).isAccept(arguments)).thenReturn(false);
+		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
+		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(false);
+		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
 		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);

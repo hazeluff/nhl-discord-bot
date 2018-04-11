@@ -20,21 +20,21 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IGuild;
 
 @RunWith(PowerMockRunner.class)
@@ -50,17 +50,15 @@ public class PreferencesManagerTest {
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 	private static final Team TEAM2 = Team.EDMONTON_OILERS;
 
-	@Mock
-	IDiscordClient mockDiscordClient;
-	@Mock
-	MongoDatabase mockMongoDB;
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
+	NHLBot nhlBot;
 
 	PreferencesManager preferencesManager;
 	PreferencesManager spyPreferencesManager;
 
 	@Before
 	public void before() {
-		preferencesManager = new PreferencesManager(mockDiscordClient, mockMongoDB);
+		preferencesManager = new PreferencesManager(nhlBot);
 		spyPreferencesManager = spy(preferencesManager);
 	}
 
@@ -69,10 +67,10 @@ public class PreferencesManagerTest {
 	public void getInstanceShouldReturnPreferencesManagerAndLoadPreferences() throws Exception {
 		LOGGER.info("getInstanceShouldReturnPreferencesManagerAndLoadPreferences");
 		doNothing().when(spyPreferencesManager).loadPreferences();
-		whenNew(PreferencesManager.class).withArguments(mockDiscordClient, mockMongoDB)
+		whenNew(PreferencesManager.class).withArguments(nhlBot)
 				.thenReturn(spyPreferencesManager);
 
-		PreferencesManager result = PreferencesManager.getInstance(mockDiscordClient, mockMongoDB);
+		PreferencesManager result = PreferencesManager.getInstance(nhlBot);
 
 		verify(spyPreferencesManager).loadPreferences();
 		assertEquals(spyPreferencesManager, result);
@@ -126,8 +124,7 @@ public class PreferencesManagerTest {
 	public void getTeamByGuildShouldReturnPreferedTeamOfGuild() {
 		LOGGER.info("getTeamByGuildShouldReturnPreferedTeamOfGuild");
 		preferencesManager = new PreferencesManager(
-				mockDiscordClient, 
-				mockMongoDB, 
+				nhlBot, 
 				new HashMap<Long, GuildPreferences>() {{
 					put(GUILD_ID, new GuildPreferences(TEAM));
 					put(GUILD_ID2, new GuildPreferences(TEAM2));
@@ -149,8 +146,7 @@ public class PreferencesManagerTest {
 	public void getTeamByUserShouldReturnPreferedTeamOfGuild() {
 		LOGGER.info("getTeamByUserShouldReturnPreferedTeamOfGuild");
 		preferencesManager = new PreferencesManager(
-				mockDiscordClient, 
-				mockMongoDB,
+				nhlBot,
 				null, 
 				new HashMap<Long, UserPreferences>() {{
 					put(USER_ID, new UserPreferences(TEAM));
@@ -172,8 +168,7 @@ public class PreferencesManagerTest {
 	public void subscribeGuildShouldUpdateExistingPreferenceWhenItExists() {
 		LOGGER.info("subscribeGuildShouldUpdateExistingPreferenceWhenItExists");
 		preferencesManager = new PreferencesManager(
-				mockDiscordClient, 
-				mockMongoDB, 
+				nhlBot, 
 				new HashMap<Long, GuildPreferences>() {{
 					put(GUILD_ID, new GuildPreferences(TEAM));
 				}},
@@ -235,8 +230,7 @@ public class PreferencesManagerTest {
 	public void subscribeUserShouldUpdateExistingPreferenceWhenItExists() {
 		LOGGER.info("subscribeUserShouldUpdateExistingPreferenceWhenItExists");
 		preferencesManager = new PreferencesManager(
-				mockDiscordClient, 
-				mockMongoDB,
+				nhlBot,
 				null, 
 				new HashMap<Long, UserPreferences>() {{
 					put(USER_ID, new UserPreferences(TEAM));
@@ -297,16 +291,15 @@ public class PreferencesManagerTest {
 	@Test
 	public void getSubscribedGuildsShouldReturnListOfGuilds() {
 		LOGGER.info("getSubscribedGuildsShouldReturnListOfGuilds");
-		when(mockDiscordClient.getGuilds()).thenReturn(
+		when(nhlBot.getDiscordClient().getGuilds()).thenReturn(
 				Arrays.asList(mock(IGuild.class), mock(IGuild.class), mock(IGuild.class), mock(IGuild.class)));
-		when(mockDiscordClient.getGuilds().get(0).getLongID()).thenReturn(GUILD_ID);
-		when(mockDiscordClient.getGuilds().get(1).getLongID()).thenReturn(GUILD_ID2);
-		when(mockDiscordClient.getGuilds().get(2).getLongID()).thenReturn(GUILD_ID3);
-		when(mockDiscordClient.getGuilds().get(3).getLongID()).thenReturn(GUILD_ID4);
+		when(nhlBot.getDiscordClient().getGuilds().get(0).getLongID()).thenReturn(GUILD_ID);
+		when(nhlBot.getDiscordClient().getGuilds().get(1).getLongID()).thenReturn(GUILD_ID2);
+		when(nhlBot.getDiscordClient().getGuilds().get(2).getLongID()).thenReturn(GUILD_ID3);
+		when(nhlBot.getDiscordClient().getGuilds().get(3).getLongID()).thenReturn(GUILD_ID4);
 
 		preferencesManager = new PreferencesManager(
-				mockDiscordClient, 
-				mockMongoDB, 
+				nhlBot, 
 				new HashMap<Long, GuildPreferences>() {{
 					put(GUILD_ID, new GuildPreferences(TEAM));
 					put(GUILD_ID2, new GuildPreferences(TEAM2));
@@ -314,9 +307,10 @@ public class PreferencesManagerTest {
 				}},
 				null);
 		
-		assertEquals(Arrays.asList(mockDiscordClient.getGuilds().get(0), mockDiscordClient.getGuilds().get(2)),
+		assertEquals(Arrays.asList(nhlBot.getDiscordClient().getGuilds().get(0),
+				nhlBot.getDiscordClient().getGuilds().get(2)),
 				preferencesManager.getSubscribedGuilds(TEAM));
-		assertEquals(Arrays.asList(mockDiscordClient.getGuilds().get(1)),
+		assertEquals(Arrays.asList(nhlBot.getDiscordClient().getGuilds().get(1)),
 				preferencesManager.getSubscribedGuilds(TEAM2));
 	}
 	

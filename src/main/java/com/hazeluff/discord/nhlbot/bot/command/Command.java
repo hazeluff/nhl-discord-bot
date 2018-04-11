@@ -41,14 +41,17 @@ public abstract class Command {
 	public abstract void replyTo(IMessage message, String[] arguments);
 
 	/**
-	 * Determines if the command arguments are accepted by this command. i.e the argument has the value for command.
+	 * Determines if the command arguments are accepted by this command. i.e the
+	 * argument has the value for command.
 	 * 
+	 * @param message
+	 *            message received
 	 * @param arguments
 	 *            command arguments
 	 * @return true, if accepted<br>
 	 *         false, otherwise
 	 */
-	public abstract boolean isAccept(String[] arguments);
+	public abstract boolean isAccept(IMessage message, String[] arguments);
 
 	/**
 	 * Gets the channel (mention) in the specified guild that represents the latest game of the team that guild is

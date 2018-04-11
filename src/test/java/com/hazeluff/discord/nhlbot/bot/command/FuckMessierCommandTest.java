@@ -47,13 +47,13 @@ public class FuckMessierCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsFuckMessier() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsFuckMessier");
-		assertTrue(fuckMessierCommand.isAccept(new String[] { "<@NHLBOT>", "fuckmessier" }));
+		assertTrue(fuckMessierCommand.isAccept(null, new String[] { "<@NHLBOT>", "fuckmessier" }));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotFuckMessier() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotFuckMessier");
-		assertFalse(fuckMessierCommand.isAccept(new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(fuckMessierCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
 	}
 
 	@Test
