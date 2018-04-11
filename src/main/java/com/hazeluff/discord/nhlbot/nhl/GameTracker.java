@@ -100,14 +100,19 @@ public class GameTracker extends Thread {
 
 				if (game.getStatus() == GameStatus.FINAL) {
 					if (lastFinal == null) {
+						LOGGER.info("Game finished. Continuing polling...");
 						lastFinal = ZonedDateTime.now();
 					}
 					timeAfterLast = DateUtils.diffMs(ZonedDateTime.now(), lastFinal);
+					LOGGER.debug("Time till thread finishes (ms): "
+							+ String.valueOf(POST_GAME_UPDATE_DURATION - timeAfterLast));
 				} else {
 					lastFinal = null;
+					LOGGER.info("Game not finished.");
 				}
 				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}
+			LOGGER.info("Game thread finished");
 		} else {
 			LOGGER.info("Game is already finished");
 		}
