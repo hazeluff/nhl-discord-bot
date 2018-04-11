@@ -24,7 +24,7 @@ public class StatsCommand extends Command {
 
 	@Override
 	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("about");
+		return arguments[1].equalsIgnoreCase("stats");
 	}
 
 	public String buildMessage() {

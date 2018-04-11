@@ -22,6 +22,7 @@ import com.hazeluff.discord.nhlbot.bot.command.GoalsCommand;
 import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
 import com.hazeluff.discord.nhlbot.bot.command.NextGameCommand;
 import com.hazeluff.discord.nhlbot.bot.command.ScoreCommand;
+import com.hazeluff.discord.nhlbot.bot.command.StatsCommand;
 import com.hazeluff.discord.nhlbot.bot.command.SubscribeCommand;
 import com.hazeluff.discord.nhlbot.bot.command.UnsubscribeCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
@@ -59,6 +60,7 @@ public class CommandListener {
 		commands.add(new NextGameCommand(nhlBot));
 		commands.add(new ScoreCommand(nhlBot));
 		commands.add(new GoalsCommand(nhlBot));
+		commands.add(new StatsCommand(nhlBot));
 
 		topics = new ArrayList<>();
 		topics.add(new FriendlyTopic(nhlBot));
