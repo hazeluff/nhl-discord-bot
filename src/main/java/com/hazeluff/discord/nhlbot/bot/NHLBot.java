@@ -47,6 +47,7 @@ public class NHLBot {
 		Thread.currentThread().setName("NHLBot");
 
 		NHLBot nhlBot = new NHLBot();
+		nhlBot.gameScheduler = gameScheduler;
 
 		// Init DiscordClient and DiscordManager
 		nhlBot.initDiscord(botToken);
