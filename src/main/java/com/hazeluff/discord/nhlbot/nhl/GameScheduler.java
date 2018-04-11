@@ -31,7 +31,7 @@ import com.hazeluff.discord.nhlbot.utils.Utils;
 /**
  * This class is used to start GameTrackers for games and to maintain the channels in discord for those games.
  */
-public class GameScheduler implements Runnable {
+public class GameScheduler extends Thread {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 

@@ -22,7 +22,7 @@ public class BotRunner {
 
 		if (Config.Debug.isLoadGames()) {
 			LOGGER.info("Loading the games...");
-			new Thread(gameScheduler).start();
+			gameScheduler.start();
 		}
 
 		NHLBot bot = new NHLBot(args[0], gameScheduler);
