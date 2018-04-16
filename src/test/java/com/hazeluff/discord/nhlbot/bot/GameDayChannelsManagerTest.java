@@ -174,55 +174,30 @@ public class GameDayChannelsManagerTest {
 	}
 
 	@Test
-	public void createChannelShouldReturnGameDayChannelIfItAlreadyExists() {
-		LOGGER.info("createChannelShouldReturnGameDayChannelIfItAlreadyExists");
-		IGuild guild = mock(IGuild.class);
-		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
-		Game game = mock(Game.class);
-		when(game.getGamePk()).thenReturn(Utils.getRandomInt());
-		GameDayChannel gameDayChannel = mock(GameDayChannel.class);
-		gameDayChannelsManager.putGameDayChannel(guild.getLongID(), game.getGamePk(), gameDayChannel);
-
-		GameDayChannel result = gameDayChannelsManager.createChannel(game, guild);
-
-		assertEquals(gameDayChannel, result);
-	}
-
-	@Test
 	@PrepareForTest(GameDayChannel.class)
-	public void createChannelShouldReturnNullIfGameTrackerDoesNotExist() {
-		LOGGER.info("createChannelShouldReturnNullIfGameTrackerDoesNotExist");
-		IGuild guild = mock(IGuild.class);
-		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
+	public void createChannelShouldFunctionCorrectly() {
+		LOGGER.info("createChannelShouldFunctionCorrectly");
 		Game game = mock(Game.class);
-		when(game.getGamePk()).thenReturn(Utils.getRandomInt());
-		GameDayChannel gameDayChannel = mock(GameDayChannel.class);
-		Team team = Utils.getRandom(Team.class);
-		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.get(mockNHLBot, game, guild, team)).thenReturn(gameDayChannel);
-
-		GameDayChannel result = gameDayChannelsManager.createChannel(game, guild);
-
-		assertNull(result);
-	}
-
-	@Test
-	@PrepareForTest(GameDayChannel.class)
-	public void createChannelShouldReturnGameDayChannelIfGameTrackerExists() {
-		LOGGER.info("createChannelShouldReturnGameDayChannelIfGameTrackerExists");
+		int gamePk = Utils.getRandomInt();
+		when(game.getGamePk()).thenReturn(gamePk);
 		IGuild guild = mock(IGuild.class);
-		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
-		Game game = mock(Game.class);
-		when(game.getGamePk()).thenReturn(Utils.getRandomInt());
-		GameDayChannel gameDayChannel = mock(GameDayChannel.class);
+		long guildId = Utils.getRandomLong();
+		when(guild.getLongID()).thenReturn(guildId);
 		Team team = Utils.getRandom(Team.class);
 		when(mockNHLBot.getPreferencesManager().getTeamByGuild(guild.getLongID())).thenReturn(team);
+		GameDayChannel gameDayChannel = mock(GameDayChannel.class);
 		mockStatic(GameDayChannel.class);
 		when(GameDayChannel.get(mockNHLBot, game, guild, team)).thenReturn(gameDayChannel);
+		
+		// GameDayChannel exists
+		doReturn(gameDayChannel).when(spyGameDayChannelsManager).getGameDayChannel(guildId, gamePk);
+		assertEquals(gameDayChannel, spyGameDayChannelsManager.createChannel(game, guild));
 
-		GameDayChannel result = gameDayChannelsManager.createChannel(game, guild);
-
-		assertEquals(gameDayChannel, result);
+		// GameDayChannel doesn't exist
+		doReturn(null).when(spyGameDayChannelsManager).getGameDayChannel(guildId, gamePk);
+		assertEquals(gameDayChannel, spyGameDayChannelsManager.createChannel(game, guild));
+		verifyStatic();
+		GameDayChannel.get(mockNHLBot, game, guild, team);
 	}
 
 	@Test
