@@ -3,6 +3,7 @@ package com.hazeluff.discord.nhlbot.nhl;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +41,8 @@ public class GameTracker extends Thread {
 
 	private final Game game;
 
-	private boolean started = false;
-	private boolean finished = false;
+	private AtomicBoolean started = new AtomicBoolean(false);
+	private AtomicBoolean finished = new AtomicBoolean(false);
 
 	GameTracker(Game game) {
 		this.game = game;
@@ -63,8 +64,9 @@ public class GameTracker extends Thread {
 
 	@Override
 	public void start() {
-		if (!started) {
-			started = true;
+		if (!started.get()) {
+			LOGGER.info("Started thread for [" + game + "]");
+			started.set(true);
 			superStart();
 		} else {
 			LOGGER.warn("Thread already started.");
@@ -78,7 +80,6 @@ public class GameTracker extends Thread {
 	@Override
 	public void run() {
 		setName(GameDayChannel.getChannelName(game));
-		LOGGER.info("Started thread for [" + game + "]");
 
 		if (game.getStatus() != GameStatus.FINAL) {
 			// Wait until close to start of game
@@ -118,7 +119,7 @@ public class GameTracker extends Thread {
 		}
 
 		gameTrackers.remove(game);
-		finished = true;
+		finished.set(true);
 	}
 
 	/**
@@ -173,7 +174,7 @@ public class GameTracker extends Thread {
 	 *         false, otherwise
 	 */
 	public boolean isFinished() {
-		return finished;
+		return finished.get();
 	}
 
 	/**

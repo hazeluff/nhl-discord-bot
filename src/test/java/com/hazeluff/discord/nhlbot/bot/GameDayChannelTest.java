@@ -1,9 +1,11 @@
 package com.hazeluff.discord.nhlbot.bot;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -19,6 +21,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Before;
@@ -36,6 +39,8 @@ import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameEvent;
 import com.hazeluff.discord.nhlbot.nhl.GamePeriod;
 import com.hazeluff.discord.nhlbot.nhl.GamePeriod.Type;
+import com.hazeluff.discord.nhlbot.nhl.GameStatus;
+import com.hazeluff.discord.nhlbot.nhl.GameTracker;
 import com.hazeluff.discord.nhlbot.nhl.Player;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
@@ -60,6 +65,8 @@ public class GameDayChannelTest {
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	NHLBot mockNHLBot;
 	@Mock
+	GameTracker mockGameTracker;
+	@Mock
 	Game mockGame;
 	@Mock
 	IGuild mockGuild;
@@ -69,6 +76,7 @@ public class GameDayChannelTest {
 	Team team = Utils.getRandom(Team.class);
 
 	GameDayChannel gameDayChannel;
+	GameDayChannel spyGameDayChannel;
 
 	@Before
 	public void before() {
@@ -81,7 +89,95 @@ public class GameDayChannelTest {
 		when(mockGame.getHomeScore()).thenReturn(HOME_SCORE);
 		when(mockGame.getDate()).thenReturn(DATE);
 
-		gameDayChannel = new GameDayChannel(mockNHLBot, mockGame, null, mockGuild, mockChannel, team);
+		gameDayChannel = new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, mockChannel,
+				team);
+		spyGameDayChannel = spy(gameDayChannel);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void runShouldInvokClasses() {
+		LOGGER.info("runShouldInvokClasses");
+
+		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED, GameStatus.STARTED, GameStatus.FINAL);
+		doNothing().when(spyGameDayChannel).sendReminders();
+		doReturn(false).when(spyGameDayChannel).waitForStart();
+		doNothing().when(spyGameDayChannel).sendStartOfGameMessage();
+		when(mockGameTracker.isFinished()).thenReturn(false, false, true);
+		doNothing().when(spyGameDayChannel).updateMessages(any());
+		doNothing().when(spyGameDayChannel).updateEvents(any());
+		List<GameEvent> events = Arrays.asList(mock(GameEvent.class));
+		List<GameEvent> newEvents = Arrays.asList(mock(GameEvent.class));
+		when(mockGame.getEvents()).thenReturn(events, newEvents);
+		doReturn(false).when(spyGameDayChannel).isRetryEventFetch(any());
+		doNothing().when(spyGameDayChannel).updateMessages(any());
+		doNothing().when(spyGameDayChannel).updateEvents(any());
+		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
+		doNothing().when(spyGameDayChannel).updatePinnedMessage();
+
+		spyGameDayChannel.run();
+
+		InOrder io = inOrder(spyGameDayChannel);
+		io.verify(spyGameDayChannel).sendReminders();
+		io.verify(spyGameDayChannel).waitForStart();
+		io.verify(spyGameDayChannel).sendStartOfGameMessage();
+		io.verify(spyGameDayChannel).updateMessages(events);
+		io.verify(spyGameDayChannel).updateEvents(events);
+		io.verify(spyGameDayChannel).updateMessages(newEvents);
+		io.verify(spyGameDayChannel).updateEvents(newEvents);
+		io.verify(spyGameDayChannel).updateEndOfGameMessage();
+		io.verify(spyGameDayChannel).updatePinnedMessage();
+	}
+
+	@Test
+	public void runShouldDoNothingIfGameIsFinished() {
+		LOGGER.info("runShouldDoNothingIfGameIsFinished");
+
+		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
+		doNothing().when(spyGameDayChannel).sendReminders();
+		doReturn(false).when(spyGameDayChannel).waitForStart();
+		doNothing().when(spyGameDayChannel).sendStartOfGameMessage();
+		when(mockGameTracker.isFinished()).thenReturn(false, true);
+		doNothing().when(spyGameDayChannel).updateMessages(any());
+		doNothing().when(spyGameDayChannel).updateEvents(any());
+		doReturn(false).when(spyGameDayChannel).isRetryEventFetch(any());
+		doNothing().when(spyGameDayChannel).updateMessages(any());
+		doNothing().when(spyGameDayChannel).updateEvents(any());
+		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
+		doNothing().when(spyGameDayChannel).updatePinnedMessage();
+
+		spyGameDayChannel.run();
+
+		verify(spyGameDayChannel, never()).sendReminders();
+		verify(spyGameDayChannel, never()).waitForStart();
+		verify(spyGameDayChannel, never()).sendStartOfGameMessage();
+		verify(spyGameDayChannel, never()).updateMessages(any());
+		verify(spyGameDayChannel, never()).updateEvents(any());
+		verify(spyGameDayChannel, never()).updateEndOfGameMessage();
+		verify(spyGameDayChannel, never()).isRetryEventFetch(any());
+	}
+
+	@Test
+	public void runShouldNotSendStartOfGameMessageIfGameIsStarted() {
+		LOGGER.info("runShouldNotSendStartOfGameMessageIfGameIsStarted");
+
+		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED, GameStatus.STARTED, GameStatus.FINAL);
+		doNothing().when(spyGameDayChannel).sendReminders();
+		doReturn(true).when(spyGameDayChannel).waitForStart();
+		doNothing().when(spyGameDayChannel).sendStartOfGameMessage();
+		when(mockGameTracker.isFinished()).thenReturn(true);
+		doNothing().when(spyGameDayChannel).updateMessages(any());
+		doNothing().when(spyGameDayChannel).updateEvents(any());
+		doReturn(true).when(spyGameDayChannel).isRetryEventFetch(any());
+		doNothing().when(spyGameDayChannel).updateMessages(any());
+		doNothing().when(spyGameDayChannel).updateEvents(any());
+		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
+		doNothing().when(spyGameDayChannel).updatePinnedMessage();
+
+		spyGameDayChannel.run();
+
+		InOrder io = inOrder(spyGameDayChannel);
+		io.verify(spyGameDayChannel, never()).sendStartOfGameMessage();
 	}
 
 	@Test
@@ -276,13 +372,12 @@ public class GameDayChannelTest {
 		GameEvent gameEvent = mock(GameEvent.class);
 		when(gameEvent.getId()).thenReturn(Utils.getRandomInt());
 		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
-		when(mockGame.getEvents()).thenReturn(Arrays.asList(gameEvent));
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
 		
-		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages(Arrays.asList(gameEvent));
 		
 		verify(gameDayChannel).sendEventMessage(gameEvent);
 		verify(gameDayChannel, never()).updateEventMessage(any());
@@ -297,13 +392,12 @@ public class GameDayChannelTest {
 		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
 		List<GameEvent> events = new ArrayList<>();
 		events.add(gameEvent);
-		when(mockGame.getEvents()).thenReturn(events);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
 
-		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages(events);
 
 		verify(gameDayChannel, never()).sendEventMessage(any());
 		verify(gameDayChannel, never()).updateEventMessage(any());
@@ -321,13 +415,12 @@ public class GameDayChannelTest {
 		when(gameEvent2.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
 		List<GameEvent> events = Arrays.asList(gameEvent, gameEvent2);
 		List<GameEvent> retrievedEvents = Arrays.asList(gameEvent2);
-		when(mockGame.getEvents()).thenReturn(retrievedEvents);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
 
-		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages(retrievedEvents);
 
 		verify(gameDayChannel, never()).sendEventMessage(any());
 		verify(gameDayChannel, never()).updateEventMessage(any());
@@ -342,18 +435,12 @@ public class GameDayChannelTest {
 		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
 		List<GameEvent> events = Arrays.asList(gameEvent);
 		List<GameEvent> retrievedEvents = new ArrayList<>();
-		when(mockGame.getEvents()).thenReturn(retrievedEvents);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
 
-		gameDayChannel.updateMessages();
-		gameDayChannel.updateMessages();
-		gameDayChannel.updateMessages();
-		gameDayChannel.updateMessages();
-		gameDayChannel.updateMessages();
-		gameDayChannel.updateMessages();
+		gameDayChannel.updateMessages(retrievedEvents);
 
 		verify(gameDayChannel, never()).sendEventMessage(any());
 		verify(gameDayChannel, never()).updateEventMessage(any());
@@ -404,6 +491,7 @@ public class GameDayChannelTest {
 	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
 	public void sendRemindersShouldSleepUntilNearStartOfGame() throws InterruptedException {
 		LOGGER.info("sendRemindersShouldSleepUntilNearStartOfGame");
+
 		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 		ZonedDateTime mockGameTime = ZonedDateTime.of(0, 1, 1, 0, 0, 1, 0, ZoneOffset.UTC);
 		mockStatic(DateUtils.class, ZonedDateTime.class, Utils.class);
@@ -416,5 +504,37 @@ public class GameDayChannelTest {
 		gameDayChannel.sendReminders();
 		verifyStatic(times(3));
 		Utils.sleep(GameDayChannel.IDLE_POLL_RATE_MS);
+	}
+
+	@Test
+	public void isRetryEventFetchShouldReturnBoolean() {
+		LOGGER.info("sendRemindersShouldSleepUntilNearStartOfGame");
+
+		List<GameEvent> emptyList = Collections.emptyList();
+		List<GameEvent> event1List= Arrays.asList(mock(GameEvent.class));
+		List<GameEvent> event2List = Arrays.asList(mock(GameEvent.class), mock(GameEvent.class));
+
+		// returns false when fetchedGameEvents is not empty
+		gameDayChannel = new GameDayChannel(null, null, null, null, null, null, null);
+		assertFalse(gameDayChannel.isRetryEventFetch(event1List));
+
+		// returns true if existing list is larger than 1
+		gameDayChannel = new GameDayChannel(null, null, null, event2List, null, null, null);
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+
+		// when list is 1, returns true until iterations reaches threshold
+		gameDayChannel = new GameDayChannel(null, null, null, event1List, null, null, null);
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertFalse(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
+		assertFalse(gameDayChannel.isRetryEventFetch(emptyList));
 	}
 }

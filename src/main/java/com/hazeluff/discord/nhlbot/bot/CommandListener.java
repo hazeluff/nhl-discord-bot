@@ -140,7 +140,7 @@ public class CommandListener {
 
 			Optional<Command> matchedCommand = commands
 					.stream()
-					.filter(command -> command.isAccept(null, arguments))
+					.filter(command -> command.isAccept(message, arguments))
 					.findFirst();
 			if (matchedCommand.isPresent()) {
 				matchedCommand.get().replyTo(message, arguments);

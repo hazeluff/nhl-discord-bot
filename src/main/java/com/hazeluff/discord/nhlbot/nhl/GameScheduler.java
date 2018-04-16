@@ -374,27 +374,6 @@ public class GameScheduler extends Thread {
 	}
 
 	/**
-	 * Creates a new GameTracker for the given game. If it already exists, then the existing one is returned.
-	 * 
-	 * @param game
-	 *            game to find NHLGameTracker for
-	 * @return NHLGameTracker for the game
-	 * 
-	 */
-	GameTracker createGameTracker(Game game) {
-		if (activeGameTrackers.containsKey(game)) {
-			// NHLGameTracker already exists
-			LOGGER.debug("NHLGameTracker exists: " + game);
-			return activeGameTrackers.get(game);
-		} else {
-			LOGGER.debug("NHLGameTracker does not exist; Creating it: " + game);
-			GameTracker gameTracker = GameTracker.get(game);
-			activeGameTrackers.put(game, gameTracker);
-			return gameTracker;
-		}
-	}
-
-	/**
 	 * Gets the existing GameTracker for the specified game, if it exists. If the
 	 * GameTracker does not exist, a new one is created.
 	 * 

@@ -187,7 +187,7 @@ public class DiscordManager {
 					if (!message.getContent().equals(newMessage)) {
 						return message.edit(newMessage);
 					} else {
-						LOGGER.warn("No change to the message [" + message.getContent() + "]");
+						LOGGER.debug("No change to the message [" + message.getContent() + "]");
 						return message;
 					}
 				}, 

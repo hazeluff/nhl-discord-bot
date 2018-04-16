@@ -21,6 +21,7 @@ import com.hazeluff.discord.nhlbot.nhl.GameEvent;
 import com.hazeluff.discord.nhlbot.nhl.GameEventStrength;
 import com.hazeluff.discord.nhlbot.nhl.GamePeriod;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
+import com.hazeluff.discord.nhlbot.nhl.GameTracker;
 import com.hazeluff.discord.nhlbot.nhl.Player;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.nhl.custommessages.CanucksCustomMessages;
@@ -60,6 +61,7 @@ public class GameDayChannel extends Thread {
 	static final String GAME_DAY_CHANNEL_CATEGORY_NAME = "Game Day Channels";
 
 	private final NHLBot nhlBot;
+	private final GameTracker gameTracker;
 	private final Game game;
 	private final IGuild guild;
 
@@ -76,8 +78,11 @@ public class GameDayChannel extends Thread {
 
 	private boolean started = false;
 
-	GameDayChannel(NHLBot nhlBot, Game game, List<GameEvent> events, IGuild guild, IChannel channel, Team team) {
+	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Game game, List<GameEvent> events, IGuild guild,
+			IChannel channel,
+			Team team) {
 		this.nhlBot = nhlBot;
+		this.gameTracker = gameTracker;
 		this.game = game;
 		this.events = events;
 		this.guild = guild;
@@ -86,15 +91,18 @@ public class GameDayChannel extends Thread {
 	}
 
 	GameDayChannel(NHLBot nhlBot, Game game, IGuild guild, Team team) {
-		this(nhlBot, game, game.getEvents(), guild, null, team);
+		this(nhlBot, null, game, game.getEvents(), guild, null, team);
 	}
 
 	public static GameDayChannel get(NHLBot nhlBot, Game game, IGuild guild, Team team) {
-		// Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getLongID());
 		GameDayChannel gameDayChannel = new GameDayChannel(nhlBot, game, guild, team);
 		gameDayChannel.createChannel();
 		gameDayChannel.start();
 		return gameDayChannel;
+	}
+
+	void updateEvents(List<GameEvent> events) {
+		this.events = events;
 	}
 
 	/**
@@ -129,42 +137,38 @@ public class GameDayChannel extends Thread {
 		setName(threadName);
 		LOGGER.info("Started thread for channel [{}] in guild [{}]", channelName, guild.getName());
 
-		try {
-			if (game.getStatus() != GameStatus.FINAL) {
-				// Wait until close to start of game
-				LOGGER.info("Idling until near game start.");
-				sendReminders();
+		if (game.getStatus() != GameStatus.FINAL) {
+			// Wait until close to start of game
+			LOGGER.info("Idling until near game start.");
+			sendReminders();
 
-				// Game is close to starting. Poll at higher rate than previously
-				LOGGER.info("Game is about to start. Polling more actively.");
-				boolean alreadyStarted = waitForStart();
+			// Game is close to starting. Poll at higher rate than previously
+			LOGGER.info("Game is about to start. Polling more actively.");
+			boolean alreadyStarted = waitForStart();
 
-				// Game has started
-				if (!alreadyStarted) {
-					LOGGER.info("Game is about to start!");
-					sendStartOfGameMessage();
-				} else {
-					LOGGER.info("Game has already started.");
-				}
-
-				// If the game is not final after the post game updates, then it will loop back
-				// and continue to track
-				// the
-				// game as if it hasn't ended yet.
-				while (game.getStatus() != GameStatus.FINAL && !isInterrupted()) {
-					updateChannel();
-					// Game is over
-					sendEndOfGameMessage();
-					updatePinnedMessage();
-
-					// Keep checking if game is over.
-					updateChannelPostGame();
-				}
+			// Game has started
+			if (!alreadyStarted) {
+				LOGGER.info("Game is about to start!");
+				sendStartOfGameMessage();
 			} else {
-				LOGGER.info("Game is already finished");
+				LOGGER.info("Game has already started.");
 			}
-		} catch (InterruptedException e) {
-			LOGGER.warn("Thread Terminated.");
+
+			while (!gameTracker.isFinished()) {
+				List<GameEvent> fetchedEvents = game.getEvents();
+				if (!isRetryEventFetch(fetchedEvents)) {
+					updateMessages(fetchedEvents);
+					updateEvents(fetchedEvents);
+
+					if (game.getStatus() == GameStatus.FINAL) {
+						updateEndOfGameMessage();
+					}
+				}
+			}
+
+			updatePinnedMessage();
+		} else {
+			LOGGER.info("Game is already finished");
 		}
 	}
 
@@ -223,7 +227,7 @@ public class GameDayChannel extends Thread {
 	 * 
 	 * @throws InterruptedException
 	 */
-	void sendReminders() throws InterruptedException {
+	void sendReminders() {
 		boolean firstPass = true;
 		boolean closeToStart;
 		long timeTillGameMs = Long.MAX_VALUE;
@@ -231,10 +235,6 @@ public class GameDayChannel extends Thread {
 			timeTillGameMs = DateUtils.diffMs(ZonedDateTime.now(), game.getDate());
 			closeToStart = timeTillGameMs < CLOSE_TO_START_THRESHOLD_MS;
 			if (!closeToStart) {
-				if (isInterrupted()) {
-					return;
-				}
-
 				// Check to see if message should be sent.
 				long lowestThreshold = Long.MAX_VALUE;
 				String message = null;
@@ -258,7 +258,7 @@ public class GameDayChannel extends Thread {
 				firstPass = false;
 				LOGGER.trace("Idling until near game start. Sleeping for [" + IDLE_POLL_RATE_MS + "]");
 
-				Utils.uncaughtSleep(IDLE_POLL_RATE_MS);
+				Utils.sleep(IDLE_POLL_RATE_MS);
 			}
 		} while (!closeToStart && !isInterrupted());
 	}
@@ -271,7 +271,7 @@ public class GameDayChannel extends Thread {
 	 *         false, otherwise
 	 * @throws InterruptedException
 	 */
-	boolean waitForStart() throws InterruptedException {
+	boolean waitForStart() {
 		boolean alreadyStarted = game.getStatus() != GameStatus.PREVIEW;
 		boolean started = false;
 		do {
@@ -279,51 +279,28 @@ public class GameDayChannel extends Thread {
 			started = game.getStatus() != GameStatus.PREVIEW;
 			if (!started && !isInterrupted()) {
 				LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
-				Utils.uncaughtSleep(ACTIVE_POLL_RATE_MS);
+				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}
 		} while (!started && !isInterrupted());
 		return alreadyStarted;
 	}
 
 	/**
-	 * Updates the Channel with Messages of events until the game is finished.
 	 * 
-	 * @throws InterruptedException
-	 */
-	void updateChannel() throws InterruptedException {
-		while (game.getStatus() != GameStatus.FINAL && !isInterrupted()) {
-			updateMessages();
-
-			if (game.getStatus() != GameStatus.FINAL && !isInterrupted()) {
-				LOGGER.trace("Game in Progress. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
-				Utils.uncaughtSleep(ACTIVE_POLL_RATE_MS);
-			}
-		}
-	}
-
-	/**
-	 * Updates/Posts/Removes Messages from the Channels based on the state of the
+	 * <p>
+	 * Posts/Updates/Removes Messages from the Channels based on the state of the
 	 * Game's GameEvents.
+	 * </p>
+	 * 
+	 * <p>
+	 * Updates the stored events.
+	 * </p>
+	 * 
+	 * @param fetchedEvents
+	 *            the new list of events to update to
 	 */
-	void updateMessages() {
-		List<GameEvent> retrievedEvents = game.getEvents();
-		if (retrievedEvents.isEmpty()) {
-			if (events.size() > 1) {
-				LOGGER.warn("NHL api returned no events, but we have stored more than one event.");
-				return;
-			} else if (events.size() == 1) {
-				LOGGER.warn("NHL api returned no events, but we have stored one event.");
-				if (eventsRetries++ < NHL_EVENTS_RETRIES) {
-					LOGGER.warn(String.format(
-							"Could be a rescinded goal or NHL api issue. " + "Retrying %s time(s) out of %s",
-							eventsRetries, NHL_EVENTS_RETRIES));
-					return;
-				}
-			}
-		}
-		eventsRetries = 0;
-
-		retrievedEvents.forEach(retrievedEvent -> {
+	void updateMessages(List<GameEvent> fetchedEvents) {
+		fetchedEvents.forEach(retrievedEvent -> {
 			if (retrievedEvent.getPlayers().isEmpty()) {
 				return;
 			}
@@ -343,13 +320,47 @@ public class GameDayChannel extends Thread {
 
 		// Deleted events
 		events.forEach(event -> {
-			if (retrievedEvents.stream().noneMatch(retrievedEvent -> event.getId() == retrievedEvent.getId())) {
+			if (fetchedEvents.stream().noneMatch(retrievedEvent -> event.getId() == retrievedEvent.getId())) {
 				LOGGER.debug("Removed event: [" + event + "]");
 				sendDeletedEventMessage(event);
 			}
 		});
+	}
 
-		events = retrievedEvents;
+	/**
+	 * <p>
+	 * Determines if game events should be fetched again before updating the
+	 * messages.
+	 * </p>
+	 * 
+	 * <p>
+	 * A retry should happen if the existing events is more than 1 and the api
+	 * returned 0 events. Otherwise, if there is 1 existing event and none is
+	 * fetched, retry {@link #NHL_EVENTS_RETRIES} times until accepting the changes.
+	 * </p>
+	 * 
+	 * @param fetchedGameEvents
+	 *            the fetched game events
+	 * @return true - if events should be fetched again<br>
+	 *         false - otherwise
+	 */
+	public boolean isRetryEventFetch(List<GameEvent> fetchedGameEvents) {
+		if (fetchedGameEvents.isEmpty()) {
+			if (events.size() > 1) {
+				LOGGER.warn("NHL api returned no events, but we have stored more than one event.");
+				return true;
+			} else if (events.size() == 1) {
+				LOGGER.warn("NHL api returned no events, but we have stored one event.");
+				if (eventsRetries++ < NHL_EVENTS_RETRIES) {
+					LOGGER.warn(String.format(
+							"Could be a rescinded goal or NHL api issue. " + "Retrying %s time(s) out of %s",
+							eventsRetries, NHL_EVENTS_RETRIES));
+					return true;
+				}
+			}
+		}
+		eventsRetries = 0;
+		return false;
 	}
 
 	/**
@@ -440,25 +451,6 @@ public class GameDayChannel extends Thread {
 	}
 
 	/**
-	 * Update the Channel/Messages for a duration after the end of the game.
-	 * 
-	 * @throws InterruptedException
-	 */
-	void updateChannelPostGame() throws InterruptedException {
-		int iterations = 0;
-		while (iterations * IDLE_POLL_RATE_MS < POST_GAME_UPDATE_DURATION && game.getStatus() == GameStatus.FINAL
-				&& !isInterrupted()) {
-			iterations++;
-			updateMessages();
-			updateEndOfGameMessage();
-			updatePinnedMessage();
-			if (game.getStatus() == GameStatus.FINAL && !isInterrupted()) {
-				Utils.uncaughtSleep(IDLE_POLL_RATE_MS);
-			}
-		}
-	}
-
-	/**
 	 * Sends the 'Start of game' message to the game channels of the specified game.
 	 * 
 	 * @param game
@@ -470,23 +462,16 @@ public class GameDayChannel extends Thread {
 	}
 
 	/**
-	 * Send a message to the channel, at the end of a game to summarize the game.
-	 */
-	void sendEndOfGameMessage() {
-		LOGGER.info("Sending end of game message for game.");
-		endOfGameMessage = nhlBot.getDiscordManager().sendMessage(channel, buildEndOfGameMessage());
-	}
-
-	/**
-	 * Updates the end of game messages that are already sent.
+	 * Updates/Sends the end of game message.
 	 */
 	void updateEndOfGameMessage() {
-		LOGGER.info("Updating end of game message for game.");
-		if (endOfGameMessage != null) {
+		if (endOfGameMessage == null) {
+			LOGGER.info("Sending end of game message for game.");
+			endOfGameMessage = nhlBot.getDiscordManager().sendMessage(channel, buildEndOfGameMessage());
+		} else {
+			LOGGER.trace("End of game message already sent.");
 			String newEndOfGameMessage = buildEndOfGameMessage();
 			endOfGameMessage = nhlBot.getDiscordManager().updateMessage(endOfGameMessage, newEndOfGameMessage);
-		} else {
-			LOGGER.warn("End of game message do not exist for the game.");
 		}
 	}
 

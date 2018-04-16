@@ -103,6 +103,9 @@ public class GameSchedulerTest {
 		when(GameDayChannel.getChannelName(mockGame3)).thenReturn(GAME_CHANNEL_NAME3);
 		when(GameDayChannel.getChannelName(mockGame4)).thenReturn(GAME_CHANNEL_NAME4);
 		
+		when(mockGame1.getGamePk()).thenReturn(Utils.getRandomInt());
+		when(mockGame2.getGamePk()).thenReturn(Utils.getRandomInt());
+
 		when(mockGame1.getDate()).thenReturn(gameDate1);
 		when(mockGame2.getDate()).thenReturn(gameDate2);
 		when(mockGame3.getDate()).thenReturn(gameDate3);
@@ -484,28 +487,6 @@ public class GameSchedulerTest {
 		assertEquals(mockGameTracker3, gameScheduler.getGameTracker(mockGame3));
 		verifyStatic(never());
 		GameTracker.get(any(Game.class));
-	}
-
-	@Test
-	@PrepareForTest({ GameTracker.class, GameDayChannel.class })
-	public void createGameTrackerShouldReturnNewGameTrackerAndAddToGameTrackersListWhenGameDoesNotExistAndIsNotEnded()
-			throws Exception {
-		LOGGER.info(
-				"createGameTrackerShouldReturnNewGameTrackerAndAddToGameTrackersListWhenGameDoesNotExist");
-		Game newGame = mock(Game.class);
-		GameTracker newGameTracker = mock(GameTracker.class);
-		mockStatic(GameTracker.class);
-		when(GameTracker.get(newGame)).thenReturn(newGameTracker);
-		when(newGame.isEnded()).thenReturn(false);
-
-		GameScheduler gameScheduler = new GameScheduler(null, new HashMap<>());
-
-		GameTracker result = gameScheduler.createGameTracker(newGame);
-
-		assertEquals(newGameTracker, result);
-		Map<Game, GameTracker> expected = new HashMap<>();
-		expected.put(newGame, newGameTracker);
-		assertEquals(expected, gameScheduler.getActiveGameTrackers());
 	}
 
 	@Test
