@@ -383,7 +383,7 @@ public class GameScheduler extends Thread {
 	 *         null, if it does not exists
 	 * 
 	 */
-	GameTracker getGameTracker(Game game) {
+	public GameTracker getGameTracker(Game game) {
 		if (activeGameTrackers.containsKey(game)) {
 			// NHLGameTracker already exists
 			LOGGER.debug("NHLGameTracker exists: " + game);

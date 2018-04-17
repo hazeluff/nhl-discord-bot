@@ -79,8 +79,7 @@ public class GameDayChannel extends Thread {
 	private boolean started = false;
 
 	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Game game, List<GameEvent> events, IGuild guild,
-			IChannel channel,
-			Team team) {
+			IChannel channel, Team team) {
 		this.nhlBot = nhlBot;
 		this.gameTracker = gameTracker;
 		this.game = game;
@@ -94,8 +93,12 @@ public class GameDayChannel extends Thread {
 		this(nhlBot, null, game, game.getEvents(), guild, null, team);
 	}
 
-	public static GameDayChannel get(NHLBot nhlBot, Game game, IGuild guild, Team team) {
-		GameDayChannel gameDayChannel = new GameDayChannel(nhlBot, game, guild, team);
+	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, IGuild guild, Team team) {
+		this(nhlBot, gameTracker, gameTracker.getGame(), gameTracker.getGame().getEvents(), guild, null, team);
+	}
+
+	public static GameDayChannel get(NHLBot nhlBot, GameTracker gameTracker, IGuild guild, Team team) {
+		GameDayChannel gameDayChannel = new GameDayChannel(nhlBot, gameTracker, guild, team);
 		gameDayChannel.createChannel();
 		gameDayChannel.start();
 		return gameDayChannel;
@@ -217,7 +220,7 @@ public class GameDayChannel extends Thread {
 	/**
 	 * Stops the thread and deletes the channel from the Discord Guild.
 	 */
-	void remove() {
+	void stopAndRemove() {
 		interrupt();
 		nhlBot.getDiscordManager().deleteChannel(channel);
 	}
