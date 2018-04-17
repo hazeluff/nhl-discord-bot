@@ -187,7 +187,7 @@ public class GameDayChannel extends Thread {
 				nhlBot.getDiscordManager().pinMessage(channel, message);
 			}
 		} else {
-			LOGGER.warn("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
+			LOGGER.debug("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
 			channel = guild.getChannels().stream().filter(channelMatcher).findAny().get();
 		}
 
