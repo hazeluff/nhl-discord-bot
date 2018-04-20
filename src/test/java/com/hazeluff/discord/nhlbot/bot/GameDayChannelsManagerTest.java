@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -284,7 +285,53 @@ public class GameDayChannelsManagerTest {
 
 	@Test
 	public void initChannelsShouldInvokeMethods() {
-		LOGGER.info("initChannelsShouldInvokeGameChannelsManager");
+		List<Game> activeGames1 = Arrays.asList(mock(Game.class));
+		when(activeGames1.get(0).getGamePk()).thenReturn(100);
+		List<Game> activeGames2 = Arrays.asList(mock(Game.class), mock(Game.class));
+		when(activeGames2.get(0).getGamePk()).thenReturn(101);
+		when(activeGames2.get(1).getGamePk()).thenReturn(102);
+		Team team1 = Team.ANAHEIM_DUCKS;
+		Team team2 = Team.BOSTON_BRUINS;
+		when(mockNHLBot.getGameScheduler().getActiveGames(team1)).thenReturn(activeGames1);
+		when(mockNHLBot.getGameScheduler().getActiveGames(team2)).thenReturn(activeGames2);
+		Function<Long, IGuild> mockGuild = id -> {
+			IGuild guild = mock(IGuild.class);
+			when(guild.getLongID()).thenReturn(id);
+			return guild;
+		};
+		IGuild guild1 = mockGuild.apply(1l);
+		IGuild guild2 = mockGuild.apply(2l);
+		IGuild guild3 = mockGuild.apply(3l);
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(any(Team.class)))
+				.thenReturn(Collections.emptyList());
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team1)).thenReturn(Arrays.asList(guild1, guild2));
+		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team2)).thenReturn(Arrays.asList(guild3));
+		GameDayChannel gameDayChannelG1G1 = mock(GameDayChannel.class);
+		GameDayChannel gameDayChannelG1G2 = mock(GameDayChannel.class);
+		GameDayChannel gameDayChannelG2G3 = mock(GameDayChannel.class);
+		GameDayChannel gameDayChannelG3G3 = mock(GameDayChannel.class);
+		doReturn(null).when(spyGameDayChannelsManager).createChannel(any(Game.class), any(IGuild.class));
+		doReturn(gameDayChannelG1G1).when(spyGameDayChannelsManager).createChannel(activeGames1.get(0), guild1);
+		doReturn(gameDayChannelG1G2).when(spyGameDayChannelsManager).createChannel(activeGames1.get(0), guild2);
+		doReturn(gameDayChannelG2G3).when(spyGameDayChannelsManager).createChannel(activeGames2.get(0), guild3);
+		doReturn(gameDayChannelG3G3).when(spyGameDayChannelsManager).createChannel(activeGames2.get(1), guild3);
+		doNothing().when(spyGameDayChannelsManager).addGameDayChannel(anyLong(), anyInt(), any(GameDayChannel.class));
+
+		spyGameDayChannelsManager.initChannels();
+
+		verify(spyGameDayChannelsManager).addGameDayChannel(guild1.getLongID(), activeGames1.get(0).getGamePk(),
+				gameDayChannelG1G1);
+		verify(spyGameDayChannelsManager).addGameDayChannel(guild2.getLongID(), activeGames1.get(0).getGamePk(),
+				gameDayChannelG1G2);
+		verify(spyGameDayChannelsManager).addGameDayChannel(guild3.getLongID(), activeGames2.get(0).getGamePk(),
+				gameDayChannelG2G3);
+		verify(spyGameDayChannelsManager).addGameDayChannel(guild3.getLongID(), activeGames2.get(1).getGamePk(),
+				gameDayChannelG3G3);
+	}
+
+	@Test
+	public void initChannelsByGuildShouldInvokeMethods() {
+		LOGGER.info("initChannelsByGuildShouldInvokeMethods");
 		IGuild guild = mock(IGuild.class);
 		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
 		Team team = Utils.getRandom(Team.class);

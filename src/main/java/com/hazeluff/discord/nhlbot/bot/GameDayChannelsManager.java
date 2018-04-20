@@ -189,7 +189,6 @@ public class GameDayChannelsManager extends Thread {
 	 * @param guild
 	 *            guild to initialize channels for
 	 */
-	// TODO Write test
 	public void initChannels() {
 		LOGGER.info("Initializing channels.");
 		for (Team team : Team.values()) {
