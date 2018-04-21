@@ -114,7 +114,7 @@ public class GameScheduler extends Thread {
 			ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
 			games.addAll(getGames(team, startDate, endDate));
 		}
-		LOGGER.info("Retrieved all games: [" + games.size() + "]");		
+		LOGGER.info("Retrieved all games: [" + games.size() + "]");
 
 		LOGGER.info("Finished Initialization.");
 	}

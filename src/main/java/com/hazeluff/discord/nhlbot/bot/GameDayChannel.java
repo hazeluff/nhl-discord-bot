@@ -379,7 +379,9 @@ public class GameDayChannel extends Thread {
 		LOGGER.info("Sending message for event [" + event + "].");
 		String strMessage = buildEventMessage(event);
 		IMessage message = nhlBot.getDiscordManager().sendMessage(channel, strMessage);
-		eventMessages.put(event.getId(), message);
+		if (message != null) {
+			eventMessages.put(event.getId(), message);
+		}
 	}
 
 	/**
