@@ -41,6 +41,10 @@ public class ResourceLoader {
 	}
 
 	public Resource getHazeluffAvatar() {
-		return getResource("/hazeluff.png");
+		return getResource("/hazeluff.jpg");
+	}
+
+	public Resource getNHLBotAvatar() {
+		return getResource("/nhlbot.png");
 	}
 }

@@ -34,7 +34,7 @@ public class AboutCommand extends Command {
 		DiscordManager discordManager = nhlBot.getDiscordManager();
 		EmbedObject embed = new EmbedBuilder()
 				.withColor(0xba9ddf)
-				.withThumbnail("attachment://hazeluff.png")
+				.withThumbnail("attachment://hazeluff.jpg")
 				.withAuthorName("Hazeluff")
 				.withAuthorUrl(Config.HAZELUFF_SITE)
 				.withTitle("NHLBot")
