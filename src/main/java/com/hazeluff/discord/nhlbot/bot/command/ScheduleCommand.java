@@ -42,7 +42,7 @@ public class ScheduleCommand extends Command {
 			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
 		} else {
 			EmbedObject embed = getEmbed(preferredTeam);
-			nhlBot.getDiscordManager().sendFile(channel, ResourceLoader.get().getNHLBotAvatar(), embed);
+			nhlBot.getDiscordManager().sendFile(channel, ResourceLoader.get().getPixel(), embed);
 		}
 	}
 
@@ -51,7 +51,7 @@ public class ScheduleCommand extends Command {
 
 		EmbedBuilder embedBuilder = new EmbedBuilder()
 				.withColor(0xffffff)
-				.withThumbnail("attachment://nhlbot.png");
+				.withThumbnail("attachment://pixel.png");
 		for (int i = 1; i >= 0; i--) {
 			Game game = gameScheduler.getPastGame(team, i);
 			if (game != null) {
