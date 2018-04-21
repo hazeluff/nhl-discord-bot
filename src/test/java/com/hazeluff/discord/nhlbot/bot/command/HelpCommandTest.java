@@ -48,13 +48,13 @@ public class HelpCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsHelp() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsHelp");
-		assertTrue(helpCommand.isAccept(new String[] { "<@NHLBOT>", "help" }));
+		assertTrue(helpCommand.isAccept(null, new String[] { "<@NHLBOT>", "help" }));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotHelp() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotHelp");
-		assertFalse(helpCommand.isAccept(new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(helpCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
 	}
 
 	@Test

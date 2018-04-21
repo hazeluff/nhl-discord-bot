@@ -27,7 +27,7 @@ public class UnsubscribeCommand extends Command {
 		} else if (hasAdminPermission(message)) {
 			// Subscribe guild
 			nhlBot.getPreferencesManager().unsubscribeGuild(message.getGuild().getLongID());
-			nhlBot.getGameScheduler().removeAllChannels(message.getGuild());
+			nhlBot.getGameDayChannelsManager().removeAllChannels(message.getGuild());
 			nhlBot.getDiscordManager().sendMessage(channel, "This server is now unsubscribed from all teams.");
 		} else {
 			nhlBot.getDiscordManager().sendMessage(channel, MUST_BE_ADMIN_TO_UNSUBSCRIBE_MESSAGE);
@@ -35,7 +35,7 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(String[] arguments) {
+	public boolean isAccept(IMessage message, String[] arguments) {
 		return arguments[1].equalsIgnoreCase("unsubscribe");
 	}
 }

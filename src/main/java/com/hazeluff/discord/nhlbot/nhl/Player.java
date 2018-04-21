@@ -41,23 +41,17 @@ public class Player {
 		}
 	}
 
-	public Player(JSONObject jsonPlayer) {
-		this.id = jsonPlayer.getJSONObject("player").getInt("id");
-		this.fullName = jsonPlayer.getJSONObject("player").getString("fullName");
-		this.role = EventRole.parse(jsonPlayer.getString("playerType"));
-	}
-
-	/**
-	 * For testing only.
-	 * 
-	 * @param id
-	 * @param fullName
-	 * @param role
-	 */
-	public Player(int id, String fullName, EventRole role) {
+	Player(int id, String fullName, EventRole role) {
 		this.id = id;
 		this.fullName = fullName;
 		this.role = role;
+	}
+
+	public static Player parse(JSONObject jsonPlayer) {
+		return new Player(
+				jsonPlayer.getJSONObject("player").getInt("id"), 
+				jsonPlayer.getJSONObject("player").getString("fullName"), 
+				EventRole.parse(jsonPlayer.getString("playerType")));
 	}
 
 	public int getId() {

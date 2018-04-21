@@ -39,7 +39,7 @@ public class HelpCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(String[] arguments) {
+	public boolean isAccept(IMessage message, String[] arguments) {
 		return arguments[1].equalsIgnoreCase("help");
 	}
 

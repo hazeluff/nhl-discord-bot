@@ -3,6 +3,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.List;
 
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
@@ -40,14 +41,17 @@ public abstract class Command {
 	public abstract void replyTo(IMessage message, String[] arguments);
 
 	/**
-	 * Determines if the command arguments are accepted by this command. i.e the argument has the value for command.
+	 * Determines if the command arguments are accepted by this command. i.e the
+	 * argument has the value for command.
 	 * 
+	 * @param message
+	 *            message received
 	 * @param arguments
 	 *            command arguments
 	 * @return true, if accepted<br>
 	 *         false, otherwise
 	 */
-	public abstract boolean isAccept(String[] arguments);
+	public abstract boolean isAccept(IMessage message, String[] arguments);
 
 	/**
 	 * Gets the channel (mention) in the specified guild that represents the latest game of the team that guild is
@@ -64,7 +68,7 @@ public abstract class Command {
 		if (game == null) {
 			game = nhlBot.getGameScheduler().getLastGame(team);
 		}
-		String channelName = game.getChannelName().toLowerCase();
+		String channelName = GameDayChannel.getChannelName(game).toLowerCase();
 		List<IChannel> channels = guild.getChannelsByName(channelName);
 		if (!channels.isEmpty()) {
 			channelName = "<#" + channels.get(0).getStringID() + ">";

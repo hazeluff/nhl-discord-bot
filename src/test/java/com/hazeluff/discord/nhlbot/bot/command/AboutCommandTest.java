@@ -69,13 +69,13 @@ public class AboutCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsAbout() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsAbout");
-		assertTrue(aboutCommand.isAccept(new String[] { "<@NHLBOT>", "about" }));
+		assertTrue(aboutCommand.isAccept(null, new String[] { "<@NHLBOT>", "about" }));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotAbout() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotAbout");
-		assertFalse(aboutCommand.isAccept(new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(aboutCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
 	}
 
 	@Test

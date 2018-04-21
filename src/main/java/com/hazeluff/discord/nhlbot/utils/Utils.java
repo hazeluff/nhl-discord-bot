@@ -29,9 +29,10 @@ public class Utils {
 			LOGGER.error("Could not sleep for [" + duration + "]", e);
 		}
 	}
-	
+
 	/**
 	 * Gets a random int value.
+	 * 
 	 * @return random value
 	 */
 	public static int getRandomInt() {
@@ -55,6 +56,18 @@ public class Utils {
 	 */
 	public static <T> T getRandom(List<T> list) {
 		return list.get(random.nextInt(list.size()));
+	}
+
+	/**
+	 * Gets a random enum value from an enum class.
+	 * 
+	 * @param enumClass
+	 *            class to get random enum from
+	 * @return random enum
+	 */
+	public static <T extends Enum<?>> T getRandom(Class<T> enumClass) {
+		int x = random.nextInt(enumClass.getEnumConstants().length);
+		return enumClass.getEnumConstants()[x];
 	}
 
 	/**

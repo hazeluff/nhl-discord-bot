@@ -1,5 +1,6 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
@@ -34,13 +35,13 @@ public class ScoreCommand extends Command {
 			} else if (game.getStatus() == GameStatus.PREVIEW) {
 				nhlBot.getDiscordManager().sendMessage(channel, GAME_NOT_STARTED_MESSAGE);
 			} else {
-				nhlBot.getDiscordManager().sendMessage(channel, game.getScoreMessage());
+				nhlBot.getDiscordManager().sendMessage(channel, GameDayChannel.getScoreMessage(game));
 			}
 		}
 	}
 
 	@Override
-	public boolean isAccept(String[] arguments) {
+	public boolean isAccept(IMessage message, String[] arguments) {
 		return arguments[1].equalsIgnoreCase("score");
 	}
 

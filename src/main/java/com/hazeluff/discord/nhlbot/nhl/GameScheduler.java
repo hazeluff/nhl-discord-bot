@@ -7,11 +7,14 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -21,16 +24,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
-import com.hazeluff.discord.nhlbot.bot.NHLBot;
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
-
-import sx.blah.discord.handle.obj.IGuild;
 
 /**
  * This class is used to start GameTrackers for games and to maintain the channels in discord for those games.
  */
-public class GameScheduler implements Runnable {
+public class GameScheduler extends Thread {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 
@@ -39,13 +40,13 @@ public class GameScheduler implements Runnable {
 	// Poll for if the day has rolled over every 30 minutes
 	static final long UPDATE_RATE = 1800000L;
 
-	// I want to use TreeSet, but it removes a lot of elements for some reason...
 	private Set<Game> games = new TreeSet<>(GAME_COMPARATOR);
 	/**
 	 * To be applied to the overall games list, so that it removes duplicates and sorts all games in order. Duplicates
 	 * are determined by the gamePk being identicle. Games are sorted by game date.
 	 */
 	static final Comparator<Game> GAME_COMPARATOR = new Comparator<Game>() {
+		@Override
 		public int compare(Game g1, Game g2) {
 			if (g1.getGamePk() == g2.getGamePk()) {
 				return 0;
@@ -55,54 +56,47 @@ public class GameScheduler implements Runnable {
 		}
 	};
 
-	private List<GameTracker> gameTrackers = new ArrayList<>(); // TODO Change to HashMap<Integer(GamePk), GameTracker>
+	private final Map<Game, GameTracker> activeGameTrackers;
 
-	private final NHLBot nhlBot;
+	LocalDate lastUpdate;
 
 	/**
 	 * Constructor for injecting private members (Use only for testing).
 	 * 
 	 * @param discordmanager
 	 * @param games
-	 * @param gameTrackers
+	 * @param activeGameTrackers
 	 * @param teamSubscriptions
 	 * @param teamLatestGames
 	 */
-	GameScheduler(NHLBot nhlBot, Set<Game> games, List<GameTracker> gameTrackers) {
-		this.nhlBot = nhlBot;
+	GameScheduler(Set<Game> games, Map<Game, GameTracker> activeGameTrackers) {
 		this.games = games;
-		this.gameTrackers = gameTrackers;
+		this.activeGameTrackers = activeGameTrackers;
 	}
 
-	public GameScheduler(NHLBot nhlBot) {
-		this.nhlBot = nhlBot;
+	public GameScheduler() {
+		activeGameTrackers = new ConcurrentHashMap<>();
 	}
 
 
 	/**
 	 * Starts the thread that sets up channels and polls for updates to NHLGameTrackers.
 	 */
+	@Override
 	public void run() {
 		/*
 		 * Initialize games, trackers, guild channels.
 		 */
 		initGames();
 		initTrackers();
-		createChannels();
-		deleteInactiveChannels();
 
-		/*
-		 * Start threads to maintain the games, trackers, guild channels
-		 */
 
-		LocalDate lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
-
+		lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
 		while (!isStop()) {
 			LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
 			if (today.compareTo(lastUpdate) > 0) {
 				updateGameSchedule();
 				updateTrackers();
-				deleteInactiveChannels();
 				lastUpdate = today;
 			}
 			Utils.sleep(UPDATE_RATE);
@@ -126,18 +120,6 @@ public class GameScheduler implements Runnable {
 	}
 
 	/**
-	 * Creates channels for all active games.
-	 */
-	void createChannels() {
-		LOGGER.info("Creating channels for latest games.");
-		for (Team team : Team.values()) {
-			for(Game game : getActiveGames(team)) {
-				nhlBot.getGameChannelsManager().createChannels(game, team);
-			}
-		}
-	}
-
-	/**
 	 * Create GameTrackers for each game in the list if they are not ended.
 	 * 
 	 * @param list
@@ -149,35 +131,7 @@ public class GameScheduler implements Runnable {
 		for (Team team : Team.values()) {
 			activeGames.addAll(getActiveGames(team));
 		}
-		activeGames.forEach(game -> createGameTracker(game));
-	}
-
-	/**
-	 * Remove all inactive channels for all guilds subscribed. Channels are inactive if they are not in the list of
-	 * latest games for the team subscribed to. Only channels written in the format that represents a game channel will
-	 * be removed.
-	 */
-	public void deleteInactiveChannels() {
-		LOGGER.info("Cleaning up old channels.");
-		for (Team team : Team.values()) {
-			List<Game> activeGames = getActiveGames(team);
-			nhlBot.getPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
-				guild.getChannels().forEach(channel -> {
-					String channelName = channel.getName();
-					if (Game.isFormatted(channelName)) {
-						Game activeGame = activeGames.stream()
-								.filter(game -> channelName.equalsIgnoreCase(game.getChannelName()))
-								.findAny()
-								.orElse(null);
-						if (activeGame == null) {
-							nhlBot.getGameChannelsManager().removeChannel(null, channel);
-						} else {
-
-						}
-					}
-				});
-			});
-		}
+		activeGames.forEach(game -> getGameTracker(game));
 	}
 
 
@@ -190,7 +144,17 @@ public class GameScheduler implements Runnable {
 		for (Team team : Team.values()) {
 			ZonedDateTime startDate = ZonedDateTime.now();
 			ZonedDateTime endDate = startDate.plusDays(7);
-			games.addAll(getGames(team, startDate, endDate));
+			List<Game> updatedGames = getGames(team, startDate, endDate);
+			updatedGames.forEach(updatedGame -> {
+				Game existingGame = games.stream()
+						.filter(game -> game.getGamePk() == updatedGame.getGamePk()).findAny()
+						.orElse(null);
+				if (existingGame == null) {
+					games.add(updatedGame);
+				} else {
+					existingGame.updateTo(updatedGame);
+				}
+			});
 		}
 	}
 
@@ -199,7 +163,8 @@ public class GameScheduler implements Runnable {
 	 */
 	void updateTrackers() {
 		LOGGER.info("Removing finished trackers.");
-		gameTrackers.removeIf(gameTracker -> {
+		activeGameTrackers.entrySet().removeIf(map -> {
+			GameTracker gameTracker = map.getValue();
 			if (gameTracker.isFinished()) {
 				LOGGER.info("Game is finished: " + gameTracker.getGame());
 				return true;
@@ -211,42 +176,9 @@ public class GameScheduler implements Runnable {
 		LOGGER.info("Starting new trackers and creating channels.");
 		for (Team team : Team.values()) {
 			getActiveGames(team).forEach(activeGame -> {
-				createGameTracker(activeGame);
-				nhlBot.getGameChannelsManager().createChannels(activeGame, team);
+				getGameTracker(activeGame);
 			});
 		}
-	}
-
-	/**
-	 * Initializes the channels of guild in Discord. Creates channels for the latest games of the current team the guild
-	 * is subscribed to.
-	 * 
-	 * @param guild
-	 *            guild to initialize channels for
-	 */
-	public void initChannels(IGuild guild) {
-		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
-		Team team = nhlBot.getPreferencesManager().getTeamByGuild(guild.getLongID());
-
-		// Create game channels of latest game for current subscribed team
-		for (Game game : getActiveGames(team)) {
-			nhlBot.getGameChannelsManager().createChannel(game, guild);
-		}
-	}
-
-	/**
-	 * Removes all channels that have names in the format of a game channel.
-	 * 
-	 * @param guild
-	 */
-	public void removeAllChannels(IGuild guild) {
-		games.forEach(game -> {
-			guild.getChannels().forEach(channel -> {
-				if (game.getChannelName().equalsIgnoreCase(channel.getName())) {
-					nhlBot.getGameChannelsManager().removeChannel(game, channel);
-				}
-			});
-		});
 	}
 
 	/**
@@ -288,7 +220,7 @@ public class GameScheduler implements Runnable {
 		List<Game> games = new ArrayList<>();
 		for (int i = 0; i < jsonDates.length(); i++) {
 			JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
-			Game game = new Game(jsonGame);
+			Game game = Game.parse(jsonGame);
 			if (game.getStatus() != GameStatus.SCHEDULED) {
 				LOGGER.debug("Adding additional game [" + game + "]");
 				games.add(game);
@@ -310,7 +242,7 @@ public class GameScheduler implements Runnable {
 	 *            team to get games of
 	 * @return list of active/active games
 	 */
-	List<Game> getActiveGames(Team team) {
+	public List<Game> getActiveGames(Team team) {
 		List<Game> list = new ArrayList<>();
 		Game lastGame = getLastGame(team);
 		if (lastGame != null) {
@@ -432,7 +364,7 @@ public class GameScheduler implements Runnable {
 	public Game getGameByChannelName(String channelName) {
 		try {
 			return games.stream()
-					.filter(game -> game.getChannelName().equalsIgnoreCase(channelName))
+					.filter(game -> GameDayChannel.getChannelName(game).equalsIgnoreCase(channelName))
 					.findAny()
 					.get();
 		} catch (NoSuchElementException e) {
@@ -442,30 +374,24 @@ public class GameScheduler implements Runnable {
 	}
 
 	/**
-	 * Gets the existing GameTracker for the specified game, if it exists. If the GameTracker does not exist, a new one
-	 * will be instantiated and added to the tracker list.
+	 * Gets the existing GameTracker for the specified game, if it exists. If the
+	 * GameTracker does not exist, a new one is created.
 	 * 
 	 * @param game
 	 *            game to find NHLGameTracker for
-	 * @return NHLGameTracker for game if already exists <br>
-	 *         null, if none already exists
+	 * @return NHLGameTracker for the game, if it exists <br>
+	 *         null, if it does not exists
 	 * 
 	 */
-	GameTracker createGameTracker(Game game) {
-		for (GameTracker gameTracker : gameTrackers) {
-			if (gameTracker != null && gameTracker.getGame().getGamePk() == game.getGamePk()) {
-				// NHLGameTracker already exists
-				LOGGER.debug("NHLGameTracker exists: " + game);
-				return gameTracker;
-			}
+	public GameTracker getGameTracker(Game game) {
+		if (activeGameTrackers.containsKey(game)) {
+			// NHLGameTracker already exists
+			LOGGER.debug("NHLGameTracker exists: " + game);
+			return activeGameTrackers.get(game);
+		} else {
+			LOGGER.debug("NHLGameTracker does not exist: " + game);
+			return GameTracker.get(game);
 		}
-		LOGGER.debug("NHLGameTracker does not exist: " + game);
-		GameTracker newGameTracker = new GameTracker(nhlBot.getGameChannelsManager(), game);
-		if (!game.isEnded()) {
-			newGameTracker.start();
-			gameTrackers.add(newGameTracker);
-		}
-		return newGameTracker;
 	}
 	
 	/**
@@ -482,6 +408,10 @@ public class GameScheduler implements Runnable {
 				.collect(Collectors.toList());
 	}
 
+	Map<Game, GameTracker> getActiveGameTrackers() {
+		return new HashMap<>(activeGameTrackers);
+	}
+
 	/**
 	 * Used for stubbing the loop of {@link #run()} for tests.
 	 * 
@@ -491,11 +421,11 @@ public class GameScheduler implements Runnable {
 		return false;
 	}
 
-	public Set<Game> getGames() {
-		return new HashSet<>(games);
+	public LocalDate getLastUpdate() {
+		return lastUpdate;
 	}
 
-	List<GameTracker> getGameTrackers() {
-		return new ArrayList<>(gameTrackers);
+	public Set<Game> getGames() {
+		return new HashSet<>(games);
 	}
 }

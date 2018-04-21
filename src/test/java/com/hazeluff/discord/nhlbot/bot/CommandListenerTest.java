@@ -56,7 +56,6 @@ public class CommandListenerTest {
 	private static final long AUTHOR_USER_ID = Utils.getRandomLong();
 	private static final long OWNER_USER_ID = Utils.getRandomLong();
 	private static final String MESSAGE_CONTENT = "Message Content";
-	private static final String CHANNEL_NAME = "ChannelName";
 	private static final long CHANNEL_ID = Utils.getRandomLong();
 	private static final long GUILD_ID = Utils.getRandomLong();
 
@@ -105,7 +104,6 @@ public class CommandListenerTest {
 		when(mockNHLBot.getId()).thenReturn(BOT_ID);
 		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
 		when(mockNHLBot.getNicknameMentionId()).thenReturn(BOT_NICKNAME_MENTION_ID);
-		when(mockGame.getChannelName()).thenReturn(CHANNEL_NAME);
 		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
 		when(mockAuthorUser.getLongID()).thenReturn(AUTHOR_USER_ID);
@@ -195,9 +193,9 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		verify(commands.get(0), never()).isAccept(any());
-		verify(commands.get(1), never()).isAccept(any());
-		verify(commands.get(2), never()).isAccept(any());
+		verify(commands.get(0), never()).isAccept(any(), any());
+		verify(commands.get(1), never()).isAccept(any(), any());
+		verify(commands.get(2), never()).isAccept(any(), any());
 		verify(commands.get(0), never()).replyTo(any(), any());
 		verify(commands.get(1), never()).replyTo(any(), any());
 		verify(commands.get(2), never()).replyTo(any(), any());
@@ -215,9 +213,9 @@ public class CommandListenerTest {
 		boolean result = spyCommandListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		verify(commands.get(0), never()).isAccept(any());
-		verify(commands.get(1), never()).isAccept(any());
-		verify(commands.get(2), never()).isAccept(any());
+		verify(commands.get(0), never()).isAccept(any(), any());
+		verify(commands.get(1), never()).isAccept(any(), any());
+		verify(commands.get(2), never()).isAccept(any(), any());
 		verify(commands.get(0), never()).replyTo(any(), any());
 		verify(commands.get(1), never()).replyTo(any(), any());
 		verify(commands.get(2), never()).replyTo(any(), any());
@@ -229,9 +227,9 @@ public class CommandListenerTest {
 
 		String[] arguments = new String[2];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		when(commands.get(0).isAccept(arguments)).thenReturn(false);
-		when(commands.get(1).isAccept(arguments)).thenReturn(true);
-		when(commands.get(2).isAccept(arguments)).thenReturn(false);
+		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
+		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(true);
+		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
 		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);
@@ -250,9 +248,9 @@ public class CommandListenerTest {
 
 		String[] arguments = new String[2];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		when(commands.get(0).isAccept(arguments)).thenReturn(false);
-		when(commands.get(1).isAccept(arguments)).thenReturn(false);
-		when(commands.get(2).isAccept(arguments)).thenReturn(false);
+		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
+		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(false);
+		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
 		commandListener = new CommandListener(mockNHLBot, commands, null);
 		spyCommandListener = spy(commandListener);
 		doReturn(arguments).when(spyCommandListener).getBotCommand(mockMessage);

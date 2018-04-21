@@ -9,13 +9,12 @@ import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IGuild;
 
 /**
@@ -26,39 +25,36 @@ public class PreferencesManager {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManager.class);
 
-	private final IDiscordClient discordClient;
-	private final MongoDatabase mongoDB;
+	private final NHLBot nhlBot;
 
 	// GuildID -> GuildPreferences
 	private Map<Long, GuildPreferences> guildPreferences = new HashMap<>();
 	// UserID -> UserPreferences
 	private Map<Long, UserPreferences> userPreferences = new HashMap<>();
 
-	PreferencesManager(IDiscordClient discordClient, MongoDatabase mongoDB) {
-		this.discordClient = discordClient;
-		this.mongoDB = mongoDB;
+	PreferencesManager(NHLBot nhlBot) {
+		this.nhlBot = nhlBot;
 	}
 
-	PreferencesManager(IDiscordClient discordClient, MongoDatabase mongoDB,
-			Map<Long, GuildPreferences> guildPreferences, Map<Long, UserPreferences> userPreferences) {
-		this.discordClient = discordClient;
-		this.mongoDB = mongoDB;
+	PreferencesManager(NHLBot nhlBot, Map<Long, GuildPreferences> guildPreferences,
+			Map<Long, UserPreferences> userPreferences) {
+		this.nhlBot = nhlBot;
 		this.guildPreferences = guildPreferences;
 		this.userPreferences = userPreferences;
 	}
 
-	public static PreferencesManager getInstance(IDiscordClient discordClient, MongoDatabase mongoDB) {
-		PreferencesManager preferencesManager = new PreferencesManager(discordClient, mongoDB);
+	public static PreferencesManager getInstance(NHLBot nhlBot) {
+		PreferencesManager preferencesManager = new PreferencesManager(nhlBot);
 		preferencesManager.loadPreferences();
 		return preferencesManager;
 	}
 
 	MongoCollection<Document> getGuildCollection() {
-		return mongoDB.getCollection("guilds");
+		return nhlBot.getMongoDatabase().getCollection("guilds");
 	}
 
 	MongoCollection<Document> getUserCollection() {
-		return mongoDB.getCollection("users");
+		return nhlBot.getMongoDatabase().getCollection("users");
 	}
 
 	void loadPreferences() {
@@ -187,7 +183,7 @@ public class PreferencesManager {
 	 * @return list of IGuilds
 	 */
 	public List<IGuild> getSubscribedGuilds(Team team) {
-		return discordClient.getGuilds().stream()
+		return nhlBot.getDiscordClient().getGuilds().stream()
 				.filter(guild -> {
 					if (!guildPreferences.containsKey(guild.getLongID())) {
 						return false;

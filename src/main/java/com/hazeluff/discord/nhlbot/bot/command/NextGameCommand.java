@@ -1,5 +1,6 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
@@ -31,12 +32,12 @@ public class NextGameCommand extends Command {
 		} else {
 			Game nextGame = nhlBot.getGameScheduler().getNextGame(preferredTeam);
 			nhlBot.getDiscordManager().sendMessage(channel,
-					"The next game is:\n" + nextGame.getDetailsMessage(preferredTeam.getTimeZone()));
+					"The next game is:\n" + GameDayChannel.getDetailsMessage(nextGame, preferredTeam.getTimeZone()));
 		}
 	}
 
 	@Override
-	public boolean isAccept(String[] arguments) {
+	public boolean isAccept(IMessage message, String[] arguments) {
 		return arguments[1].equalsIgnoreCase("nextgame");
 	}
 

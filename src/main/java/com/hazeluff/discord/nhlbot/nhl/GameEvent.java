@@ -2,9 +2,10 @@ package com.hazeluff.discord.nhlbot.nhl;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hazeluff.discord.nhlbot.nhl.Player.EventRole;
@@ -21,30 +22,6 @@ public class GameEvent {
 	private final List<Player> players = new ArrayList<>();
 	private final GameEventStrength strength;
 
-	public GameEvent(JSONObject jsonScoringPlay) {
-		JSONObject jsonAbout = jsonScoringPlay.getJSONObject("about");
-		id = jsonAbout.getInt("eventId");
-		idx = jsonAbout.getInt("eventIdx");
-		date = DateUtils.parseNHLDate(jsonAbout.getString("dateTime"));
-		period = new GamePeriod(
-				jsonAbout.getInt("period"), 
-				GamePeriod.Type.parse(jsonAbout.getString("periodType")),
-				jsonAbout.getString("ordinalNum"));
-		periodTime = jsonAbout.getString("periodTime");
-		team = Team.parse(jsonScoringPlay.getJSONObject("team").getInt("id"));
-
-		JSONObject jsonResult = jsonScoringPlay.getJSONObject("result");
-		strength = GameEventStrength.parse(jsonResult.getJSONObject("strength").getString("code"));
-		type = GameEventType.parse(jsonResult.getString("eventTypeId"));
-
-		JSONArray jsonPlayers = jsonScoringPlay.getJSONArray("players");
-		for (int i = 0; i < jsonPlayers.length(); i++) {
-			players.add(new Player(jsonPlayers.getJSONObject(i)));
-		}
-		
-		players.removeIf(player -> player.getRole() == EventRole.GOALIE);
-	}
-
 	GameEvent(int id, int idx, ZonedDateTime date, GameEventType type, Team team, String periodTime, GamePeriod period,
 			List<Player> players, GameEventStrength strength) {
 		this.id = id;
@@ -56,6 +33,33 @@ public class GameEvent {
 		this.period = period;
 		this.players.addAll(players);
 		this.strength = strength;
+	}
+
+	public static GameEvent parse(JSONObject jsonScoringPlay) {
+		JSONObject jsonAbout = jsonScoringPlay.getJSONObject("about");
+		int id = jsonAbout.getInt("eventId");
+		int idx = jsonAbout.getInt("eventIdx");
+		ZonedDateTime date = DateUtils.parseNHLDate(jsonAbout.getString("dateTime"));
+		GamePeriod period = new GamePeriod(
+				jsonAbout.getInt("period"), 
+				GamePeriod.Type.parse(jsonAbout.getString("periodType")),
+				jsonAbout.getString("ordinalNum"));
+		String periodTime = jsonAbout.getString("periodTime");
+		Team team = Team.parse(jsonScoringPlay.getJSONObject("team").getInt("id"));
+
+		JSONObject jsonResult = jsonScoringPlay.getJSONObject("result");
+		GameEventStrength strength = GameEventStrength.parse(jsonResult.getJSONObject("strength").getString("code"));
+		GameEventType type = GameEventType.parse(jsonResult.getString("eventTypeId"));
+
+		List<Player> players = jsonScoringPlay.getJSONArray("players").toList().stream()
+				.map(HashMap.class::cast)
+				.map(JSONObject::new)
+				.map(Player::parse)
+				.collect(Collectors.toList());
+		
+		players.removeIf(player -> player.getRole() == EventRole.GOALIE);
+
+		return new GameEvent(id, idx, date, type, team, periodTime, period, players, strength);
 	}
 
 	public int getId() {

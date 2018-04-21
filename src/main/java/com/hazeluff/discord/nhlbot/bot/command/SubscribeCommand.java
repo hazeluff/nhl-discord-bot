@@ -46,9 +46,9 @@ public class SubscribeCommand extends Command {
 							"You are now subscribed to games of the **" + team.getFullName() + "**!");
 				} else {
 					// Subscribe guild
-					nhlBot.getGameScheduler().removeAllChannels(message.getGuild());
+					nhlBot.getGameDayChannelsManager().removeAllChannels(message.getGuild());
 					nhlBot.getPreferencesManager().subscribeGuild(message.getGuild().getLongID(), team);
-					nhlBot.getGameScheduler().initChannels(message.getGuild());
+					nhlBot.getGameDayChannelsManager().initChannels(message.getGuild());
 					nhlBot.getDiscordManager().sendMessage(channel,
 							"This server is now subscribed to games of the **" + team.getFullName() + "**!");
 				}
@@ -62,7 +62,7 @@ public class SubscribeCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(String[] arguments) {
+	public boolean isAccept(IMessage message, String[] arguments) {
 		return arguments[1].equalsIgnoreCase("subscribe");
 	}
 
