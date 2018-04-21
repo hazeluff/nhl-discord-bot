@@ -27,7 +27,6 @@
 - [x] Display messages for when goals are scored.
 - [x] Display summaries of games.
 - [x] Special messages for when canucks score.
-- [ ] Bot messages during gameplay to cheer on team.
 
 ## Commands
 `@NHLBot [command]`
