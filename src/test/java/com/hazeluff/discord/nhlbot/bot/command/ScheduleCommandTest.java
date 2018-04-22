@@ -213,13 +213,13 @@ public class ScheduleCommandTest {
 		verify(embedBuilder).appendField(date, scoreMessage, false);
 
 		scheduleCommand.appendGame(embedBuilder, game, homeTeam, GameState.CURRENT);
-		verify(embedBuilder).appendField(date, "**" + scoreMessage + "**", false);
+		verify(embedBuilder).appendField(date + " (current game)", scoreMessage, false);
 
 		scheduleCommand.appendGame(embedBuilder, game, homeTeam, GameState.NEXT);
-		verify(embedBuilder).appendField(date, "**vs " + awayTeam.getFullName() + "**", false);
+		verify(embedBuilder).appendField(date + " (next game)", "vs " + awayTeam.getFullName(), false);
 
 		scheduleCommand.appendGame(embedBuilder, game, awayTeam, GameState.NEXT);
-		verify(embedBuilder).appendField(date, "**@ " + homeTeam.getFullName() + "**", false);
+		verify(embedBuilder).appendField(date + " (next game)", "@ " + homeTeam.getFullName(), false);
 
 		scheduleCommand.appendGame(embedBuilder, game, homeTeam, GameState.FUTURE);
 		verify(embedBuilder).appendField(date, "vs " + awayTeam.getFullName(), false);

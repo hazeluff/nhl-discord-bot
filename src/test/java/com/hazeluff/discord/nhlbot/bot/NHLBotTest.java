@@ -52,7 +52,7 @@ public class NHLBotTest {
 	@Mock
 	EventDispatcher mockEventDispatcher;
 	@Mock
-	CommandListener mockCommandListener;
+	MessageListener mockCommandListener;
 
 	private static final String TOKEN = RandomStringUtils.randomAlphanumeric(20);
 

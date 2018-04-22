@@ -100,11 +100,13 @@ public class ScheduleCommand extends Command {
 			message = GameDayChannel.getScoreMessage(game);
 			break;
 		case CURRENT:
-			message = String.format("**%s**", GameDayChannel.getScoreMessage(game));
+			date += " (current game)";
+			message = GameDayChannel.getScoreMessage(game);
 			break;
 		case NEXT:
-			message = String.format("**%s**", getAgainstTeamMessage.apply(game));
-				break;
+			date += " (next game)";
+			message = getAgainstTeamMessage.apply(game);
+			break;
 		case FUTURE:
 			message = getAgainstTeamMessage.apply(game);
 			break;

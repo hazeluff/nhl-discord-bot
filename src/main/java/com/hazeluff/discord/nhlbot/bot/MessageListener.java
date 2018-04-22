@@ -38,8 +38,8 @@ import sx.blah.discord.handle.obj.IMessage;
  * 
  * Commands need to be in format '@NHLBot command'.
  */
-public class CommandListener {
-	private static final Logger LOGGER = LoggerFactory.getLogger(CommandListener.class);
+public class MessageListener {
+	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
 
 	static final String DIRECT_MESSAGE_COMMAND_INSERT = "DirectMessage";
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
@@ -50,7 +50,7 @@ public class CommandListener {
 
 	private final NHLBot nhlBot;
 
-	public CommandListener(NHLBot nhlBot) {
+	public MessageListener(NHLBot nhlBot) {
 		this.nhlBot = nhlBot;
 		commands = new ArrayList<>();
 		commands.add(new FuckMessierCommand(nhlBot));
@@ -71,7 +71,7 @@ public class CommandListener {
 		topics.add(new WhatsUpTopic(nhlBot));
 	}
 
-	CommandListener(NHLBot nhlBot, List<Command> commands, List<Topic> topics) {
+	MessageListener(NHLBot nhlBot, List<Command> commands, List<Topic> topics) {
 		this.nhlBot = nhlBot;
 		this.commands = commands;
 		this.topics = topics;

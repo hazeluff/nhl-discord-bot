@@ -96,7 +96,7 @@ public class NHLBot {
 
 	void registerListeners() {
 		EventDispatcher dispatcher = discordClient.getDispatcher();
-		dispatcher.registerListener(new CommandListener(this));
+		dispatcher.registerListener(new MessageListener(this));
 	}
 
 	static IDiscordClient getClient(String token) {
