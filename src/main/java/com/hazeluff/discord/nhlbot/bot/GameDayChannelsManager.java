@@ -69,12 +69,14 @@ public class GameDayChannelsManager extends Thread {
 	}
 
 	void removeGameDayChannels(IChannel channel) {
-		gameDayChannels.entrySet().removeIf(guildEntry -> 
+		gameDayChannels.entrySet().removeIf(guildEntry -> {
 			guildEntry.getValue().entrySet().removeIf(gameEntry -> {
 				boolean equalNames = gameEntry.getValue().getChannelName().equals(channel.getName());
 				if(equalNames) gameEntry.getValue().stopAndRemove();
 				return equalNames;
-		}) && guildEntry.getValue().isEmpty());
+			});
+			return guildEntry.getValue().isEmpty();
+		});
 	}
 
 	public GameDayChannelsManager(NHLBot nhlBot) {
