@@ -33,13 +33,9 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.chat.Topic;
 import com.hazeluff.discord.nhlbot.bot.command.Command;
-import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
-import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -61,15 +57,9 @@ public class MessageListenerTest {
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
-	@Mock
-	private IDiscordClient mockDiscordClient;
-	@Mock
-	private DiscordManager mockDiscordManager;
-	@Mock
-	private GameScheduler mockGameScheduler;
-	@Mock
-	private PreferencesManager mockPreferencesManager;
 
+	@Mock
+	private UserThrottler mockUserThrottler;
 	@Mock
 	private MessageReceivedEvent mockEvent;
 	@Mock
@@ -91,10 +81,6 @@ public class MessageListenerTest {
 
 	@Before
 	public void setup() {
-		when(mockNHLBot.getDiscordClient()).thenReturn(mockDiscordClient);
-		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
-		when(mockNHLBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
 		when(mockEvent.getMessage()).thenReturn(mockMessage);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockChannel.getLongID()).thenReturn(CHANNEL_ID);
@@ -116,15 +102,36 @@ public class MessageListenerTest {
 	// onReceivedMessageEvent
 	@Test
 	@PrepareForTest({ Utils.class, MessageListener.class })
+	public void onReceivedMessageShouldNotReplyToUserWhenThrottled() {
+		LOGGER.info("onReceivedMessageShouldDoNothingWhenThrottled");
+		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
+		doReturn(false).when(spyMessageListener).replyToCommand(any(IMessage.class));
+		doReturn(false).when(spyMessageListener).replyToMention(any(IMessage.class));
+		doReturn(false).when(spyMessageListener).isBotCommand(any(IMessage.class));
+		doReturn(false).when(spyMessageListener).shouldFuckMessier(any(IMessage.class));
+		when(mockUserThrottler.isThrottle(any(IUser.class))).thenReturn(true);
+
+		spyMessageListener.onReceivedMessageEvent(mockEvent);
+
+		verify(spyMessageListener, never()).replyToCommand(mockMessage);
+		verify(spyMessageListener, never()).replyToMention(any(IMessage.class));
+		verify(spyMessageListener, never()).isBotCommand(any(IMessage.class));
+		verify(spyMessageListener, never()).shouldFuckMessier(any(IMessage.class));
+		verify(mockNHLBot.getDiscordManager(), never()).sendMessage(any(IChannel.class), anyString());
+	}
+
+	@Test
+	@PrepareForTest({ Utils.class, MessageListener.class })
 	public void onReceivedMessageEventShouldReturnWhenReplyToCommandReturnsTrue() {
 		LOGGER.info("onReceivedMessageEventShouldReturnWhenReplyToCommandReturnsTrue");
+		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
 		doReturn(true).when(spyMessageListener).replyToCommand(any(IMessage.class));
 
 		spyMessageListener.onReceivedMessageEvent(mockEvent);
 
 		verify(spyMessageListener).replyToCommand(mockMessage);
 		verify(spyMessageListener, never()).replyToMention(any(IMessage.class));
-		verify(spyMessageListener, never()).getBotCommand(any(IMessage.class));
+		verify(spyMessageListener, never()).isBotCommand(any(IMessage.class));
 		verify(spyMessageListener, never()).shouldFuckMessier(any(IMessage.class));
 	}
 
@@ -132,6 +139,7 @@ public class MessageListenerTest {
 	@PrepareForTest({ Utils.class, MessageListener.class })
 	public void onReceivedMessageEventShouldReturnWhenReplyToMentionReturnsTrue() {
 		LOGGER.info("onReceivedMessageEventShouldReturnWhenReplyToMentionReturnsTrue");
+		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
 		doReturn(false).when(spyMessageListener).replyToCommand(any(IMessage.class));
 		doReturn(true).when(spyMessageListener).replyToMention(any(IMessage.class));
 
@@ -139,7 +147,7 @@ public class MessageListenerTest {
 
 		verify(spyMessageListener).replyToCommand(mockMessage);
 		verify(spyMessageListener).replyToMention(mockMessage);
-		verify(spyMessageListener, never()).getBotCommand(any(IMessage.class));
+		verify(spyMessageListener, never()).isBotCommand(any(IMessage.class));
 		verify(spyMessageListener, never()).shouldFuckMessier(any(IMessage.class));
 	}
 
@@ -147,28 +155,31 @@ public class MessageListenerTest {
 	@PrepareForTest({ Utils.class, MessageListener.class })
 	public void onReceivedMessageEventShouldReturnWhenReplyingToUnknownCommand() {
 		LOGGER.info("onReceivedMessageEventShouldReturnWhenReplyingToUnknownCommand");
+		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
 		doReturn(false).when(spyMessageListener).replyToCommand(any(IMessage.class));
 		doReturn(false).when(spyMessageListener).replyToMention(any(IMessage.class));
 		doReturn(true).when(spyMessageListener).isBotCommand(any(IMessage.class));
-
+		
 		spyMessageListener.onReceivedMessageEvent(mockEvent);
 
 		verify(spyMessageListener).replyToCommand(mockMessage);
 		verify(spyMessageListener).replyToMention(mockMessage);
 		verify(spyMessageListener).isBotCommand(mockMessage);
-		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorResponse.capture());
+		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorResponse.capture());
 		assertTrue(captorResponse.getValue().contains("`@NHLBot help`"));
-		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(mockNHLBot.getDiscordManager(), times(1)).sendMessage(any(IChannel.class), anyString());
 	}
 
 	@Test
 	@PrepareForTest({ Utils.class, MessageListener.class })
 	public void onReceivedMessageEventShouldInvokeFuckMessierWhenNotACommandOrMentioned() {
 		LOGGER.info("onReceivedMessageEventShouldInvokeFuckMessierWhenNotACommandOrMentioned");
+		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
 		doReturn(false).when(spyMessageListener).replyToCommand(any(IMessage.class));
 		doReturn(false).when(spyMessageListener).replyToMention(any(IMessage.class));
 		doReturn(false).when(spyMessageListener).isBotCommand(any(IMessage.class));
 		doReturn(true).when(spyMessageListener).shouldFuckMessier(any(IMessage.class));
+		when(mockUserThrottler.isThrottle(any(IUser.class))).thenReturn(false);
 
 		spyMessageListener.onReceivedMessageEvent(mockEvent);
 
@@ -176,8 +187,8 @@ public class MessageListenerTest {
 		verify(spyMessageListener).replyToMention(mockMessage);
 		verify(spyMessageListener).isBotCommand(mockMessage);
 		verify(spyMessageListener).shouldFuckMessier(mockMessage);
-		verify(mockDiscordManager).sendMessage(mockChannel, "FUCK MESSIER");
-		verify(mockDiscordManager, times(1)).sendMessage(any(IChannel.class), anyString());
+		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "FUCK MESSIER");
+		verify(mockNHLBot.getDiscordManager(), times(1)).sendMessage(any(IChannel.class), anyString());
 	}
 
 	// replyToCommand
@@ -186,7 +197,7 @@ public class MessageListenerTest {
 		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsOne");
 		String[] arguments = new String[1];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		messageListener = new MessageListener(mockNHLBot, commands, null);
+		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
 		spyMessageListener = spy(messageListener);
 		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
 
@@ -206,7 +217,7 @@ public class MessageListenerTest {
 		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsZero");
 		String[] arguments = new String[0];
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		messageListener = new MessageListener(mockNHLBot, commands, null);
+		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
 		spyMessageListener = spy(messageListener);
 		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
 
@@ -230,7 +241,7 @@ public class MessageListenerTest {
 		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
 		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(true);
 		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
-		messageListener = new MessageListener(mockNHLBot, commands, null);
+		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
 		spyMessageListener = spy(messageListener);
 		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
 
@@ -251,7 +262,7 @@ public class MessageListenerTest {
 		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
 		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(false);
 		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
-		messageListener = new MessageListener(mockNHLBot, commands, null);
+		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
 		spyMessageListener = spy(messageListener);
 		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
 		
@@ -282,7 +293,7 @@ public class MessageListenerTest {
 		when(topics.get(0).isReplyTo(mockMessage)).thenReturn(false);
 		when(topics.get(1).isReplyTo(mockMessage)).thenReturn(true);
 		when(topics.get(2).isReplyTo(mockMessage)).thenReturn(false);
-		spyMessageListener = spy(new MessageListener(mockNHLBot, null, topics));
+		spyMessageListener = spy(new MessageListener(mockNHLBot, null, topics, mockUserThrottler));
 		doReturn(true).when(spyMessageListener).isBotMentioned(mockMessage);
 
 		boolean result = spyMessageListener.replyToMention(mockMessage);
@@ -301,7 +312,7 @@ public class MessageListenerTest {
 		when(topics.get(0).isReplyTo(mockMessage)).thenReturn(false);
 		when(topics.get(1).isReplyTo(mockMessage)).thenReturn(false);
 		when(topics.get(2).isReplyTo(mockMessage)).thenReturn(false);
-		spyMessageListener = spy(new MessageListener(mockNHLBot, null, topics));
+		spyMessageListener = spy(new MessageListener(mockNHLBot, null, topics, mockUserThrottler));
 		doReturn(true).when(spyMessageListener).isBotMentioned(mockMessage);
 
 		boolean result = spyMessageListener.replyToMention(mockMessage);

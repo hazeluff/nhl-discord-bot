@@ -32,6 +32,7 @@ import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IUser;
 
 /**
  * Listens for MessageReceivedEvents and will process the messages for commands.
@@ -49,6 +50,7 @@ public class MessageListener {
 	private final List<Topic> topics;
 
 	private final NHLBot nhlBot;
+	private final UserThrottler userThrottler;
 
 	public MessageListener(NHLBot nhlBot) {
 		this.nhlBot = nhlBot;
@@ -69,42 +71,52 @@ public class MessageListener {
 		topics.add(new LovelyTopic(nhlBot));
 		topics.add(new RudeTopic(nhlBot));
 		topics.add(new WhatsUpTopic(nhlBot));
+		
+		userThrottler = new UserThrottler();
 	}
 
-	MessageListener(NHLBot nhlBot, List<Command> commands, List<Topic> topics) {
+	MessageListener(NHLBot nhlBot, List<Command> commands, List<Topic> topics, UserThrottler userThrottler) {
 		this.nhlBot = nhlBot;
 		this.commands = commands;
 		this.topics = topics;
+		this.userThrottler = userThrottler;
 	}
 
 	@EventSubscriber
 	public void onReceivedMessageEvent(MessageReceivedEvent event) {
+		IUser user = event.getAuthor();
 		IMessage message = event.getMessage();
-		if(message.getChannel().isPrivate()) {
-			LOGGER.trace(String.format("[Direct Message][%s][%s][%s]",
-					message.getChannel().getName(),
-					message.getAuthor().getName(),
-					message.getContent()));			
+		if (!userThrottler.isThrottle(user)) {
+			if(message.getChannel().isPrivate()) {
+				LOGGER.trace(String.format("[Direct Message][%s][%s][%s]",
+						message.getChannel().getName(),
+						message.getAuthor().getName(),
+						message.getContent()));			
+			} else {
+				LOGGER.trace(String.format("[%s][%s][%s][%s]",
+						message.getGuild().getName(),
+						message.getChannel().getName(),
+						message.getAuthor().getName(),
+						message.getContent()));			
+			}
+			
+
+			if (replyToCommand(message)) {
+				userThrottler.add(user);
+				return;
+			}
+
+			if (replyToMention(message)) {
+				userThrottler.add(user);
+				return;
+			}
+
+			if (isBotCommand(message)) {
+				nhlBot.getDiscordManager().sendMessage(message.getChannel(),
+						"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
+				return;
+			}
 		} else {
-			LOGGER.trace(String.format("[%s][%s][%s][%s]",
-					message.getGuild().getName(),
-					message.getChannel().getName(),
-					message.getAuthor().getName(),
-					message.getContent()));			
-		}
-		
-
-		if (replyToCommand(message)) {
-			return;
-		}
-
-		if (replyToMention(message)) {
-			return;
-		}
-
-		if (isBotCommand(message)) {
-			nhlBot.getDiscordManager().sendMessage(message.getChannel(),
-					"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
 			return;
 		}
 

@@ -40,15 +40,24 @@ public class UserThrottler extends Thread {
 		return throttler;
 	}
 
+
 	/**
 	 * Invoke this when a message is received by the user.
 	 * 
 	 * @param user
 	 *            user who sent the message
-	 * @param time
-	 *            time the message was sent
 	 */
-	public void put(IUser user, ZonedDateTime time) {
+	public void add(IUser user) {
+		put(user, DateUtils.now());
+	}
+
+	/**
+	 * Visible for Test.
+	 * 
+	 * @param user
+	 * @param time
+	 */
+	void put(IUser user, ZonedDateTime time) {
 		if (!userTimeStamps.containsKey(user.getLongID())) {
 			userTimeStamps.put(user.getLongID(), new CopyOnWriteArrayList<>());
 		}
@@ -56,7 +65,7 @@ public class UserThrottler extends Thread {
 		userTimeStamps.get(user.getLongID()).add(time);
 	}
 
-	public void cleanUp() {
+	void cleanUp() {
 		ZonedDateTime now = DateUtils.now();
 		userTimeStamps.entrySet().removeIf(entry -> {
 			entry.getValue().removeIf(timeStamp -> DateUtils.diffMs(timeStamp, now) > THRESHOLD_MS);
