@@ -31,8 +31,12 @@ public class NextGameCommand extends Command {
 			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
 		} else {
 			Game nextGame = nhlBot.getGameScheduler().getNextGame(preferredTeam);
-			nhlBot.getDiscordManager().sendMessage(channel,
-					"The next game is:\n" + GameDayChannel.getDetailsMessage(nextGame, preferredTeam.getTimeZone()));
+			if (nextGame != null) {
+				nhlBot.getDiscordManager().sendMessage(channel, "The next game is:\n"
+						+ GameDayChannel.getDetailsMessage(nextGame, preferredTeam.getTimeZone()));
+			} else {
+				nhlBot.getDiscordManager().sendMessage(channel, NO_NEXT_GAME_MESSAGE);
+			}
 		}
 	}
 

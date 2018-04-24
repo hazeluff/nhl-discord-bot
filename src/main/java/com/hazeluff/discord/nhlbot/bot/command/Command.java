@@ -23,6 +23,7 @@ public abstract class Command {
 			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
 	static final String GAME_NOT_STARTED_MESSAGE = "The game hasn't started yet.";
 	static final String RUN_IN_SERVER_CHANNEL_MESSAGE = "This can only be run on a server's 'Game Day Channel'.";
+	static final String NO_NEXT_GAME_MESSAGE = "There may not be a next game.";
 	
 	final NHLBot nhlBot;
 
