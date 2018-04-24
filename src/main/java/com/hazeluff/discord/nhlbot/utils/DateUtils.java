@@ -31,4 +31,13 @@ public class DateUtils {
 	public static long diffMs(ZonedDateTime date1, ZonedDateTime date2) {
 		return Duration.between(date1, date2).getSeconds() * 1000;
 	}
+
+	/**
+	 * Gets {@link ZonedDateTime#now()}. Used for stubbing in tests.
+	 * 
+	 * @return
+	 */
+	public static ZonedDateTime now() {
+		return ZonedDateTime.now();
+	}
 }

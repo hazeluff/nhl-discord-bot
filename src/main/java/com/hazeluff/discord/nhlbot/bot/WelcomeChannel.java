@@ -54,7 +54,7 @@ public class WelcomeChannel extends Thread {
 			String strStatsMessage = statsCommand.buildMessage();
 			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
 			
-			while (!isInterrupted()) {
+			while (isStop() && !isInterrupted()) {
 				Utils.sleep(UPDATE_RATE);
 				
 				if (!strStatsMessage.equals(statsCommand.buildMessage())) {
@@ -65,5 +65,14 @@ public class WelcomeChannel extends Thread {
 		} else {
 			LOGGER.warn("Channel could not found in Discord.");
 		}
+	}
+
+	/**
+	 * For Stubbing in Tests.
+	 * 
+	 * @return
+	 */
+	private boolean isStop() {
+		return false;
 	}
 }

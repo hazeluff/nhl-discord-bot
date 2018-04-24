@@ -26,7 +26,7 @@ public class Utils {
 		try {
 			Thread.sleep(duration);
 		} catch (InterruptedException e) {
-			LOGGER.error("Could not sleep for [" + duration + "]", e);
+			LOGGER.error("Sleep interupted");
 		}
 	}
 

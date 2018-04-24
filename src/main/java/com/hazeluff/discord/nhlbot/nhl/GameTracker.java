@@ -120,6 +120,7 @@ public class GameTracker extends Thread {
 
 		gameTrackers.remove(game);
 		finished.set(true);
+		LOGGER.info("Thread Completed");
 	}
 
 	/**

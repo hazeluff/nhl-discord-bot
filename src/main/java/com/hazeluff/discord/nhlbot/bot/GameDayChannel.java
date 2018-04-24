@@ -173,6 +173,7 @@ public class GameDayChannel extends Thread {
 		} else {
 			LOGGER.info("Game is already finished");
 		}
+		LOGGER.info("Thread Completed");
 	}
 
 	void createChannel() {
