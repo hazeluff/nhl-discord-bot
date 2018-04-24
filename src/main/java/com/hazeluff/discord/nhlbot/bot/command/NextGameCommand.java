@@ -1,5 +1,8 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
@@ -12,6 +15,7 @@ import sx.blah.discord.handle.obj.IMessage;
  * Displays information about the next game.
  */
 public class NextGameCommand extends Command {
+	private static final Logger LOGGER = LoggerFactory.getLogger(NextGameCommand.class);
 
 	public NextGameCommand(NHLBot nhlBot) {
 		super(nhlBot);
@@ -35,6 +39,7 @@ public class NextGameCommand extends Command {
 				nhlBot.getDiscordManager().sendMessage(channel, "The next game is:\n"
 						+ GameDayChannel.getDetailsMessage(nextGame, preferredTeam.getTimeZone()));
 			} else {
+				LOGGER.warn("Did not find next game for: " + preferredTeam);
 				nhlBot.getDiscordManager().sendMessage(channel, NO_NEXT_GAME_MESSAGE);
 			}
 		}
