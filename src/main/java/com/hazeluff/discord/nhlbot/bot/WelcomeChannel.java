@@ -50,7 +50,7 @@ public class WelcomeChannel extends Thread {
 					.filter(message -> nhlBot.getDiscordManager().isAuthorOfMessage(message))
 					.forEach(message -> nhlBot.getDiscordManager().deleteMessage(message));
 			nhlBot.getDiscordManager().sendMessage(channel, UPDATED_MESSAGE);
-			aboutCommand.sendFile(channel);
+			aboutCommand.sendEmbed(channel);
 			String strStatsMessage = statsCommand.buildMessage();
 			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
 			

@@ -3,12 +3,10 @@ package com.hazeluff.discord.nhlbot.bot.command;
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
-import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
+import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
 
-import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.util.EmbedBuilder;
 
 /**
  * Displays information about NHLBot and the author
@@ -22,7 +20,7 @@ public class AboutCommand extends Command {
 	@Override
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
-		sendFile(channel);
+		sendEmbed(channel);
 	}
 
 	@Override
@@ -30,11 +28,9 @@ public class AboutCommand extends Command {
 		return arguments[1].equalsIgnoreCase("about");
 	}
 
-	public void sendFile(IChannel channel) {
-		DiscordManager discordManager = nhlBot.getDiscordManager();
-		EmbedObject embed = new EmbedBuilder()
-				.withColor(0xba9ddf)
-				.withThumbnail("attachment://hazeluff.jpg")
+	public void sendEmbed(IChannel channel) {
+		EmbedResource embedResource = EmbedResource.get(ResourceLoader.get().getHazeluffAvatar(), 0xba9ddf);
+		embedResource.getEmbedBuilder()
 				.withAuthorName("Hazeluff")
 				.withAuthorUrl(Config.HAZELUFF_SITE)
 				.withTitle("NHLBot")
@@ -45,9 +41,8 @@ public class AboutCommand extends Command {
 				.appendField("Contact", Config.HAZELUFF_MENTION, true)
 				.appendField("Email", Config.HAZELUFF_EMAIL, true)
 				.appendField("Version", Config.VERSION, true)
-				.appendField("GitHub", Config.GIT_URL, true)
-				.build();
-		discordManager.sendFile(channel, ResourceLoader.get().getHazeluffAvatar(), embed);
+				.appendField("GitHub", Config.GIT_URL, true);
+		nhlBot.getDiscordManager().sendEmbed(channel, embedResource);
 	}
 
 }

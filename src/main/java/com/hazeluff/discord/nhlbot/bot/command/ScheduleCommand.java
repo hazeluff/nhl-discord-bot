@@ -5,12 +5,11 @@ import java.util.function.Function;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
+import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
-import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.EmbedBuilder;
@@ -41,17 +40,15 @@ public class ScheduleCommand extends Command {
 		if (preferredTeam == null) {
 			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
 		} else {
-			EmbedObject embed = getEmbed(preferredTeam);
-			nhlBot.getDiscordManager().sendFile(channel, ResourceLoader.get().getPixel(), embed);
+			EmbedResource embedResource = EmbedResource.get(preferredTeam.getColor());
+			appendToEmbed(embedResource.getEmbedBuilder(), preferredTeam);
+			nhlBot.getDiscordManager().sendEmbed(channel, embedResource);
 		}
 	}
 
-	EmbedObject getEmbed(Team team) {
+	void appendToEmbed(EmbedBuilder embedBuilder, Team team) {
 		GameScheduler gameScheduler = nhlBot.getGameScheduler();
 
-		EmbedBuilder embedBuilder = new EmbedBuilder()
-				.withColor(0xffffff)
-				.withThumbnail("attachment://pixel.png");
 		for (int i = 1; i >= 0; i--) {
 			Game game = gameScheduler.getPastGame(team, i);
 			if (game != null) {
@@ -78,8 +75,6 @@ public class ScheduleCommand extends Command {
 
 			}
 		}
-
-		return embedBuilder.build();
 	}
 
 	enum GameState {

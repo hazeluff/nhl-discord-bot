@@ -1,6 +1,5 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -8,7 +7,6 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -33,13 +31,14 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
 import com.hazeluff.discord.nhlbot.bot.command.ScheduleCommand.GameState;
+import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.EmbedBuilder;
 
@@ -60,8 +59,10 @@ public class ScheduleCommandTest {
 	}
 
 	@Test
+	@PrepareForTest(EmbedResource.class)
 	public void replyToShouldInvokeClasses() {
 		IMessage message = mock(IMessage.class, Answers.RETURNS_DEEP_STUBS.get());
+		when(message.getChannel()).thenReturn(mock(IChannel.class));
 		Team userTeam = Team.VANCOUVER_CANUCKS;
 		Team guildTeam = Team.FLORIDA_PANTHERS;
 		long userId = Utils.getRandomInt();
@@ -70,25 +71,29 @@ public class ScheduleCommandTest {
 		long guildId = Utils.getRandomInt();
 		when(message.getGuild().getLongID()).thenReturn(guildId);
 		when(nhlBot.getPreferencesManager().getTeamByGuild(guildId)).thenReturn(guildTeam);
-		EmbedObject userEmbed = mock(EmbedObject.class);
-		EmbedObject guildEmbed = mock(EmbedObject.class);
 
 		Supplier<ScheduleCommand> getScheduleCommandSpy = () -> {
 			ScheduleCommand spyScheduleCommand = spy(new ScheduleCommand(nhlBot));
-			doReturn(userEmbed).when(spyScheduleCommand).getEmbed(userTeam);
-			doReturn(guildEmbed).when(spyScheduleCommand).getEmbed(guildTeam);
+			doNothing().when(spyScheduleCommand).appendToEmbed(any(EmbedBuilder.class), any(Team.class));
 			return spyScheduleCommand;
 		};
 
+		EmbedResource embedResource = mock(EmbedResource.class);
+		mockStatic(EmbedResource.class);
+		when(EmbedResource.get(anyInt())).thenReturn(embedResource);
+		
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		when(message.getChannel().isPrivate()).thenReturn(true);
 		spyScheduleCommand.replyTo(message, null);
-		verify(nhlBot.getDiscordManager()).sendFile(eq(message.getChannel()), any(Resource.class), eq(userEmbed));
+		verify(spyScheduleCommand).appendToEmbed(embedResource.getEmbedBuilder(), userTeam);
+		verify(nhlBot.getDiscordManager()).sendEmbed(message.getChannel(), embedResource);
 
 		spyScheduleCommand = getScheduleCommandSpy.get();
+		reset(nhlBot.getDiscordManager());
 		when(message.getChannel().isPrivate()).thenReturn(false);
 		spyScheduleCommand.replyTo(message, null);
-		verify(nhlBot.getDiscordManager()).sendFile(eq(message.getChannel()), any(Resource.class), eq(guildEmbed));
+		verify(spyScheduleCommand).appendToEmbed(embedResource.getEmbedBuilder(), guildTeam);
+		verify(nhlBot.getDiscordManager()).sendEmbed(message.getChannel(), embedResource);
 
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		when(nhlBot.getPreferencesManager().getTeamByUser(userId)).thenReturn(null);
@@ -108,8 +113,8 @@ public class ScheduleCommandTest {
 
 	@Test
 	@PrepareForTest(ScheduleCommand.class)
-	public void getEmbedReturnsEmbedObject() throws Exception {
-		LOGGER.info("getEmbedReturnsEmbedObject");
+	public void appendToEmbedShouldInvokeClasses() throws Exception {
+		LOGGER.info("appendToEmbedShouldInvokeClasses");
 		Team team = Team.VANCOUVER_CANUCKS;
 		Game[] games = new Game[] {
 				mock(Game.class), mock(Game.class), mock(Game.class), mock(Game.class),
@@ -137,9 +142,8 @@ public class ScheduleCommandTest {
 		when(nhlBot.getGameScheduler().getFutureGame(team, 2)).thenReturn(games[5]);
 		when(nhlBot.getGameScheduler().getFutureGame(team, 3)).thenReturn(games[6]);
 		ScheduleCommand spyScheduleCommand = getScheduleCommandSpy.get();
-		EmbedObject result = spyScheduleCommand.getEmbed(team);
+		spyScheduleCommand.appendToEmbed(embedBuilder, team);
 		
-		assertEquals(embedBuilder.build(), result);
 		verify(spyScheduleCommand).appendGame(embedBuilder, games[0], team, GameState.PAST);
 		verify(spyScheduleCommand).appendGame(embedBuilder, games[1], team, GameState.PAST);
 		verify(spyScheduleCommand).appendGame(embedBuilder, games[2], team, GameState.CURRENT);
@@ -158,9 +162,8 @@ public class ScheduleCommandTest {
 		when(nhlBot.getGameScheduler().getFutureGame(team, 3)).thenReturn(games[6]);
 
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		result = spyScheduleCommand.getEmbed(team);
+		spyScheduleCommand.appendToEmbed(embedBuilder, team);
 		
-		assertEquals(embedBuilder.build(), result);
 		verify(spyScheduleCommand, never()).appendGame(eq(embedBuilder), eq(games[0]), eq(team), any(GameState.class));
 		verify(spyScheduleCommand).appendGame(embedBuilder, games[1], team, GameState.PAST);
 		verify(spyScheduleCommand, never()).appendGame(eq(embedBuilder), eq(games[2]), eq(team), any(GameState.class));
@@ -179,9 +182,8 @@ public class ScheduleCommandTest {
 		when(nhlBot.getGameScheduler().getFutureGame(team, 3)).thenReturn(games[6]);
 
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		result = spyScheduleCommand.getEmbed(team);
+		spyScheduleCommand.appendToEmbed(embedBuilder, team);
 
-		assertEquals(embedBuilder.build(), result);
 		verify(spyScheduleCommand).appendGame(embedBuilder, games[0], team, GameState.PAST);
 		verify(spyScheduleCommand).appendGame(embedBuilder, games[1], team, GameState.PAST);
 		verify(spyScheduleCommand).appendGame(embedBuilder, games[2], team, GameState.CURRENT);

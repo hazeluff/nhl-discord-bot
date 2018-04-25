@@ -3,6 +3,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -24,6 +26,7 @@ import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
+import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
 
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
@@ -79,16 +82,21 @@ public class AboutCommandTest {
 	}
 
 	@Test
-	@PrepareForTest({ AboutCommand.class, ResourceLoader.class })
+	@PrepareForTest({ ResourceLoader.class, EmbedResource.class })
 	public void replyToShouldSendMessage() throws Exception {
 		LOGGER.info("replyToShouldSendMessage(");
 		whenNew(EmbedBuilder.class).withNoArguments().thenReturn(spyEmbedBuilder);
 		doReturn(mockEmbedObject).when(spyEmbedBuilder).build();
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		when(mockResourceLoader.getHazeluffAvatar()).thenReturn(mockResource);
+		EmbedResource mockEmbedResource = mock(EmbedResource.class);
+		when(mockEmbedResource.getEmbedBuilder())
+				.thenReturn(mock(EmbedBuilder.class, Answers.RETURNS_DEEP_STUBS.get()));
+		mockStatic(EmbedResource.class);
+		when(EmbedResource.get(mockResource, 0xba9ddf)).thenReturn(mockEmbedResource);
 
 		aboutCommand.replyTo(mockMessage, null);
 
-		verify(mockDiscordManager).sendFile(mockChannel, mockResource, mockEmbedObject);
+		verify(mockDiscordManager).sendEmbed(mockChannel, mockEmbedResource);
 	}
 }

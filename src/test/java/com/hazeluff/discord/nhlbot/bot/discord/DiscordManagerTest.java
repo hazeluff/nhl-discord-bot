@@ -216,15 +216,18 @@ public class DiscordManagerTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	@PrepareForTest(DiscordManager.class)
-	public void sendFileShouldInvokePerformRequest() throws Exception {
-		LOGGER.info("sendFileShouldInvokePerformRequest");
+	public void sendEmbedShouldInvokePerformRequest() throws Exception {
+		LOGGER.info("sendEmbedShouldInvokePerformRequest");
 		doReturn(mockMessage).when(spyDiscordManager).performRequest(any(DiscordRequest.class), anyString(),
 				any(IMessage.class));
 		Resource mockResource = mock(Resource.class);
 		when(mockResource.getStream()).thenReturn(mock(InputStream.class));
 		when(mockResource.getFileName()).thenReturn("FileName");
+		EmbedResource mockEmbedResource = mock(EmbedResource.class);
+		when(mockEmbedResource.getResource()).thenReturn(mockResource);
+		when(mockEmbedResource.getEmbed()).thenReturn(mockEmbedObject);
 
-		IMessage result = spyDiscordManager.sendFile(mockChannel, mockResource, mockEmbedObject);
+		IMessage result = spyDiscordManager.sendEmbed(mockChannel, mockEmbedResource);
 
 		assertSame(mockMessage, result);
 		verify(spyDiscordManager).performRequest(captorDiscordRequest.capture(), anyString(), isNull(IMessage.class));

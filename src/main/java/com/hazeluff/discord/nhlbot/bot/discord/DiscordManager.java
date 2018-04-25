@@ -7,8 +7,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.ICategory;
@@ -85,9 +83,10 @@ public class DiscordManager {
 	 *            when null, image is displayed by itself
 	 * @return
 	 */
-	public IMessage sendFile(IChannel channel, Resource resource, EmbedObject embed) {
-		InputStream inputStream = resource.getStream();
-		String fileName = resource.getFileName();
+	public IMessage sendEmbed(IChannel channel, EmbedResource embedResource) {
+		InputStream inputStream = embedResource.getResource().getStream();
+		String fileName = embedResource.getResource().getFileName();
+		EmbedObject embed = embedResource.getEmbed();
 		return performRequest(
 				() -> channel.sendFile(null, false, inputStream, fileName, embed),
 				String.format("Could not send file [%s] to [%s]", fileName, channel),
