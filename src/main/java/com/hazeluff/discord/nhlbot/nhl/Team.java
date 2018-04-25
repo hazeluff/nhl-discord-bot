@@ -263,7 +263,7 @@ public enum Team {
 			"WPG", 
 			Division.CENTRAL, 
 			"Go Jets Go!", 
-			0x041E42,
+			0x000000,
 			ZoneId.of("America/Winnipeg")),
 	ARIZONA_COYOTES(
 			53, 
