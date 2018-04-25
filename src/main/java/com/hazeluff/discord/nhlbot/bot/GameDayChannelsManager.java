@@ -230,9 +230,15 @@ public class GameDayChannelsManager extends Thread {
 	// TODO Write test
 	public void removeAllChannels(IGuild guild) {
 		guild.getChannels().forEach(channel -> {
-			if (GameDayChannel.isChannelNameFormat(channel.getName())) {
-				removeGameDayChannels(channel);
-				nhlBot.getDiscordManager().deleteChannel(channel);
+			String channelName = channel.getName();
+			if (GameDayChannel.isChannelNameFormat(channelName)) {
+				Game game = nhlBot.getGameScheduler().getGameByChannelName(channelName);
+				if(game != null) {
+					removeGameDayChannel(guild.getLongID(), game.getGamePk());
+					nhlBot.getDiscordManager().deleteChannel(channel);					
+				} else {
+					LOGGER.warn("Could not find game for channel [{}]", channelName);
+				}
 			}
 		});
 		gameDayChannels.remove(guild.getLongID());

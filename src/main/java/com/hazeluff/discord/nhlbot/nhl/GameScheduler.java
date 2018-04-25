@@ -368,7 +368,7 @@ public class GameScheduler extends Thread {
 					.findAny()
 					.get();
 		} catch (NoSuchElementException e) {
-			LOGGER.warn("No channel by name [" + channelName + "]");
+			LOGGER.warn("No channel by name [{}]", channelName);
 			return null;
 		}
 	}
