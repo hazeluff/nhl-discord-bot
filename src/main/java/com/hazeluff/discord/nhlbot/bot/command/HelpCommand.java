@@ -24,6 +24,8 @@ public class HelpCommand extends Command {
 
 						+ "`unsubscribe` - Unsubscribes you from a team.\n"
 
+						+ "`schedule` - Displays information about the most recent and coming up games.\n"
+
 						+ "`nextgame` - Displays information of the next game.\n"
 
 						+ "`score` - Displays the score of the game. "

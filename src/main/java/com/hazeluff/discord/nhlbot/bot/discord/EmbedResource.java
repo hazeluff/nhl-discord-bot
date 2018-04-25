@@ -15,7 +15,7 @@ public class EmbedResource {
 		this.resource = resource;
 		this.embedBuilder = new EmbedBuilder()
 				.withColor(color)
-				.withThumbnail("attachment:/" + resource.getFileName());
+				.withThumbnail("attachment://" + resource.getFileName());
 	}
 	
 	/**
