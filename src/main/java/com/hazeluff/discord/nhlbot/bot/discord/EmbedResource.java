@@ -1,6 +1,5 @@
 package com.hazeluff.discord.nhlbot.bot.discord;
 
-import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
 
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
@@ -13,19 +12,8 @@ public class EmbedResource {
 
 	private EmbedResource(Resource resource, int color) {
 		this.resource = resource;
-		this.embedBuilder = new EmbedBuilder()
-				.withColor(color)
+		this.embedBuilder = getEmbedBuilder(color)
 				.withThumbnail("attachment://" + resource.getFileName());
-	}
-	
-	/**
-	 * Gets a embed resource for a embed with "no" image. Uses a 1 transparent pixel
-	 * image.
-	 * 
-	 * @param team
-	 */
-	public static EmbedResource get(int color) {
-		return new EmbedResource(ResourceLoader.get().getPixel(), color);
 	}
 
 	/**
@@ -52,6 +40,15 @@ public class EmbedResource {
 	 */
 	public EmbedBuilder getEmbedBuilder() {
 		return embedBuilder;
+	}
+
+	/**
+	 * Gets an EmbedBuilder with a standardized format for NHLBot.
+	 * 
+	 * @return
+	 */
+	public static EmbedBuilder getEmbedBuilder(int color) {
+		return new EmbedBuilder().withColor(color);
 	}
 
 	public EmbedObject getEmbed() {

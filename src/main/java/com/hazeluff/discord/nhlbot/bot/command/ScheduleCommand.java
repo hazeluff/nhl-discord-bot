@@ -40,9 +40,9 @@ public class ScheduleCommand extends Command {
 		if (preferredTeam == null) {
 			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
 		} else {
-			EmbedResource embedResource = EmbedResource.get(preferredTeam.getColor());
-			appendToEmbed(embedResource.getEmbedBuilder(), preferredTeam);
-			nhlBot.getDiscordManager().sendEmbed(channel, embedResource);
+			EmbedBuilder embedBuilder = EmbedResource.getEmbedBuilder(preferredTeam.getColor());
+			appendToEmbed(embedBuilder, preferredTeam);
+			nhlBot.getDiscordManager().sendMessage(channel, "", embedBuilder.build());
 		}
 	}
 

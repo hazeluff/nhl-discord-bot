@@ -77,23 +77,23 @@ public class ScheduleCommandTest {
 			doNothing().when(spyScheduleCommand).appendToEmbed(any(EmbedBuilder.class), any(Team.class));
 			return spyScheduleCommand;
 		};
-
-		EmbedResource embedResource = mock(EmbedResource.class);
+		EmbedBuilder embedBuilder = mock(EmbedBuilder.class);
+		when(embedBuilder.build()).thenReturn(mock(EmbedObject.class));
 		mockStatic(EmbedResource.class);
-		when(EmbedResource.get(anyInt())).thenReturn(embedResource);
+		when(EmbedResource.getEmbedBuilder(anyInt())).thenReturn(embedBuilder);
 		
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		when(message.getChannel().isPrivate()).thenReturn(true);
 		spyScheduleCommand.replyTo(message, null);
-		verify(spyScheduleCommand).appendToEmbed(embedResource.getEmbedBuilder(), userTeam);
-		verify(nhlBot.getDiscordManager()).sendEmbed(message.getChannel(), embedResource);
+		verify(spyScheduleCommand).appendToEmbed(embedBuilder, userTeam);
+		verify(nhlBot.getDiscordManager()).sendMessage(message.getChannel(), "", embedBuilder.build());
 
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		reset(nhlBot.getDiscordManager());
 		when(message.getChannel().isPrivate()).thenReturn(false);
 		spyScheduleCommand.replyTo(message, null);
-		verify(spyScheduleCommand).appendToEmbed(embedResource.getEmbedBuilder(), guildTeam);
-		verify(nhlBot.getDiscordManager()).sendEmbed(message.getChannel(), embedResource);
+		verify(spyScheduleCommand).appendToEmbed(embedBuilder, guildTeam);
+		verify(nhlBot.getDiscordManager()).sendMessage(message.getChannel(), "", embedBuilder.build());
 
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		when(nhlBot.getPreferencesManager().getTeamByUser(userId)).thenReturn(null);
