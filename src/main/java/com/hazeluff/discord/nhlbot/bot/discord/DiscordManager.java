@@ -255,10 +255,12 @@ public class DiscordManager {
 	 *            channel to delete
 	 */
 	public void deleteChannel(IChannel channel) {
-		LOGGER.debug("Deleting channel [" + channel.getName() + "]");
-		performRequest(
-				() -> channel.delete(),
-				"Could not delete channel [" + channel + "]");
+		if (channel != null) {
+			LOGGER.debug("Deleting channel [" + channel.getName() + "]");
+			performRequest(() -> channel.delete(), "Could not delete channel [" + channel + "]");
+		} else {
+			LOGGER.warn("Channel was null.");
+		}
 	}
 
 	/**
