@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -76,7 +77,8 @@ public class GameDayChannel extends Thread {
 
 	private IMessage endOfGameMessage;
 
-	private boolean started = false;
+	private AtomicBoolean started = new AtomicBoolean(false);
+	private AtomicBoolean finished = new AtomicBoolean(false);
 
 	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Game game, List<GameEvent> events, IGuild guild,
 			IChannel channel, Team team) {
@@ -121,8 +123,8 @@ public class GameDayChannel extends Thread {
 
 	@Override
 	public void start() {
-		if (!started) {
-			started = true;
+		if (!started.get()) {
+			started.set(true);
 			superStart();
 		} else {
 			LOGGER.warn("Thread already started.");
@@ -174,6 +176,11 @@ public class GameDayChannel extends Thread {
 			LOGGER.info("Game is already finished");
 		}
 		LOGGER.info("Thread Completed");
+		finished.set(true);
+	}
+
+	public boolean isFinished() {
+		return finished.get();
 	}
 
 	void createChannel() {
@@ -221,7 +228,7 @@ public class GameDayChannel extends Thread {
 	/**
 	 * Stops the thread and deletes the channel from the Discord Guild.
 	 */
-	void stopAndRemove() {
+	void stopAndRemoveGuildChannel() {
 		interrupt();
 		nhlBot.getDiscordManager().deleteChannel(channel);
 	}

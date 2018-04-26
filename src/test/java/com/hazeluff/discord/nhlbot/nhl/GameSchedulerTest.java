@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -501,5 +502,24 @@ public class GameSchedulerTest {
 		List<Game> result = spyGameScheduler.getInactiveGames(TEAM);
 
 		assertEquals(Arrays.asList(mockGame1), result);
+	}
+
+	@Test
+	@PrepareForTest(GameDayChannel.class)
+	public void isGameActiveShouldFunctionCorrectly() {
+		LOGGER.info("isGameActiveShouldFunctionCorrectly");
+		Game game1 = mock(Game.class);
+		String channelName1 = "Channel1";
+		Game game2 = mock(Game.class);
+		String channelName2 = "Channel2";
+		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.getChannelName(game1)).thenReturn(channelName1);
+		when(GameDayChannel.getChannelName(game2)).thenReturn(channelName2);
+		Team team = Team.VANCOUVER_CANUCKS;
+		doReturn(Arrays.asList(game1, game2)).when(spyGameScheduler).getActiveGames(team);
+
+		assertTrue(spyGameScheduler.isGameActive(team, channelName1));
+		assertTrue(spyGameScheduler.isGameActive(team, channelName2));
+		assertFalse(spyGameScheduler.isGameActive(team, "Some other channel's name"));
 	}
 }

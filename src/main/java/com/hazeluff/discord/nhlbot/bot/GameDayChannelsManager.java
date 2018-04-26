@@ -47,6 +47,10 @@ public class GameDayChannelsManager extends Thread {
 		return gameDayChannels.get(guildId).get(gamePk);
 	}
 
+	boolean isGameDayChannelExist(long guildId, int gamePk) {
+		return getGameDayChannel(guildId, gamePk) != null;
+	}
+
 	void addGameDayChannel(long guildId, int gamePk, GameDayChannel gameDayChannel) {
 		if (!gameDayChannels.containsKey(guildId)) {
 			gameDayChannels.put(guildId, new ConcurrentHashMap<>());
@@ -59,7 +63,7 @@ public class GameDayChannelsManager extends Thread {
 			Map<Integer, GameDayChannel> guildChannels = gameDayChannels.get(guildId);
 			GameDayChannel gameDayChannel = guildChannels.remove(gamePk);
 			if (gameDayChannel != null) {
-				gameDayChannel.stopAndRemove();
+				gameDayChannel.stopAndRemoveGuildChannel();
 			}
 			
 			if (guildChannels.isEmpty()) {
@@ -68,12 +72,17 @@ public class GameDayChannelsManager extends Thread {
 		}
 	}
 
-	void removeGameDayChannels(IChannel channel) {
+	/**
+	 * Remove GameDayChannels that are finished from the Map, and from its guild.
+	 */
+	void removeFinishedGameDayChannels() {
 		gameDayChannels.entrySet().removeIf(guildEntry -> {
 			guildEntry.getValue().entrySet().removeIf(gameEntry -> {
-				boolean equalNames = gameEntry.getValue().getChannelName().equals(channel.getName());
-				if(equalNames) gameEntry.getValue().stopAndRemove();
-				return equalNames;
+				boolean isFinished = gameEntry.getValue().isFinished();
+				if(isFinished) {
+					gameEntry.getValue().stopAndRemoveGuildChannel();
+				}
+				return isFinished;
 			});
 			return guildEntry.getValue().isEmpty();
 		});
@@ -94,8 +103,9 @@ public class GameDayChannelsManager extends Thread {
 				Utils.sleep(INIT_UPDATE_RATE);
 			} else if (lastUpdate == null || schedulerUpdate.compareTo(lastUpdate) > 0) {
 				LOGGER.info("Updating Channels...");
+				removeFinishedGameDayChannels();
+				deleteInactiveGuildChannels();
 				initChannels();
-				deleteInactiveChannels();
 				lastUpdate = schedulerUpdate;
 			} else {
 				LOGGER.trace("Waiting for GameScheduler to update...");
@@ -150,6 +160,7 @@ public class GameDayChannelsManager extends Thread {
 			GameTracker gameTracker = nhlBot.getGameScheduler().getGameTracker(game);
 			if (gameTracker != null) {
 				gameDayChannel = GameDayChannel.get(nhlBot, gameTracker, guild, team);
+				addGameDayChannel(guild.getLongID(), game.getGamePk(), gameDayChannel);
 			} else {
 				LOGGER.error("Could not find GameTracker for game [{}]", game);
 				gameDayChannel = null;
@@ -160,24 +171,19 @@ public class GameDayChannelsManager extends Thread {
 	}
 
 	/**
-	 * Remove all inactive channels for all guilds subscribed. Channels are inactive
+	 * <p>Remove all inactive channels for all guilds subscribed. Channels are inactive
 	 * if they are not in the list of latest games for the team subscribed to. Only
 	 * channels written in the format that represents a game channel will be
-	 * removed.
+	 * removed.</p>
 	 */
-	public void deleteInactiveChannels() {
-		LOGGER.info("Cleaning up old channels.");
+	void deleteInactiveGuildChannels() {
+		LOGGER.info("Cleaning up old channels in guilds.");
 		for (Team team : Team.values()) {
-			List<Game> activeGames = nhlBot.getGameScheduler().getActiveGames(team);
 			nhlBot.getPreferencesManager().getSubscribedGuilds(team).forEach(guild -> {
 				guild.getChannels().forEach(channel -> {
 					String channelName = channel.getName();
-					if (GameDayChannel.isInCategory(channel) && GameDayChannel.isChannelNameFormat(channelName)) {
-						if (activeGames.stream()
-								.noneMatch(game -> channelName.equalsIgnoreCase(GameDayChannel.getChannelName(game)))) {
-							removeGameDayChannels(channel);
-							nhlBot.getDiscordManager().deleteChannel(channel);
-						}
+					if (!nhlBot.getGameScheduler().isGameActive(team, channelName)) {
+						deleteGuildChannel(channel);
 					}
 				});
 			});
@@ -191,14 +197,13 @@ public class GameDayChannelsManager extends Thread {
 	 * @param guild
 	 *            guild to initialize channels for
 	 */
-	public void initChannels() {
+	void initChannels() {
 		LOGGER.info("Initializing channels.");
 		for (Team team : Team.values()) {
 			List<Game> activeGames = nhlBot.getGameScheduler().getActiveGames(team);
 			for (IGuild guild : nhlBot.getPreferencesManager().getSubscribedGuilds(team)) {
 				for (Game game : activeGames) {
-					GameDayChannel gameDayChannel = createChannel(game, guild);
-					addGameDayChannel(guild.getLongID(), game.getGamePk(), gameDayChannel);
+					createChannel(game, guild);
 				}
 			}
 		}
@@ -217,31 +222,35 @@ public class GameDayChannelsManager extends Thread {
 
 		// Create game channels of latest game for current subscribed team
 		for (Game game : nhlBot.getGameScheduler().getActiveGames(team)) {
-			GameDayChannel gameDayChannel = createChannel(game, guild);
-			addGameDayChannel(guild.getLongID(), game.getGamePk(), gameDayChannel);
+			createChannel(game, guild);
 		}
 	}
 
 	/**
+	 * <p>
 	 * Removes all channels that have names in the format of a game channel.
+	 * </p>
+	 * 
+	 * <p>
+	 * Removes the GameDayChannels from the stored Map
+	 * </p>
 	 * 
 	 * @param guild
 	 */
-	// TODO Write test
 	public void removeAllChannels(IGuild guild) {
-		guild.getChannels().forEach(channel -> {
-			String channelName = channel.getName();
-			if (GameDayChannel.isChannelNameFormat(channelName)) {
-				Game game = nhlBot.getGameScheduler().getGameByChannelName(channelName);
-				if(game != null) {
-					removeGameDayChannel(guild.getLongID(), game.getGamePk());
-					nhlBot.getDiscordManager().deleteChannel(channel);					
-				} else {
-					LOGGER.warn("Could not find game for channel [{}]", channelName);
-				}
-			}
-		});
+		guild.getChannels().forEach(this::deleteGuildChannel);
 		gameDayChannels.remove(guild.getLongID());
+	}
+
+	/**
+	 * Deletes a given channel from its guild. Does not remove it if it does not match the GameDayChannels format or is 
+	 * not in the GameDayChannel Category.
+	 * @param channel
+	 */
+	void deleteGuildChannel(IChannel channel) {
+		if (GameDayChannel.isChannelNameFormat(channel.getName()) && GameDayChannel.isInCategory(channel)) {
+			nhlBot.getDiscordManager().deleteChannel(channel);
+		}
 	}
 
 	/**

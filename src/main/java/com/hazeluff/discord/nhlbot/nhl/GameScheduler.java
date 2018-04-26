@@ -408,6 +408,11 @@ public class GameScheduler extends Thread {
 				.collect(Collectors.toList());
 	}
 
+	public boolean isGameActive(Team team, String channelName) {
+		return getActiveGames(team).stream()
+				.anyMatch(game -> channelName.equalsIgnoreCase(GameDayChannel.getChannelName(game)));
+	}
+
 	Map<Game, GameTracker> getActiveGameTrackers() {
 		return new HashMap<>(activeGameTrackers);
 	}
