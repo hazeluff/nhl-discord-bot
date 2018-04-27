@@ -78,11 +78,13 @@ public class GameDayChannelsManager extends Thread {
 	void removeFinishedGameDayChannels() {
 		gameDayChannels.entrySet().removeIf(guildEntry -> {
 			guildEntry.getValue().entrySet().removeIf(gameEntry -> {
-				boolean isFinished = gameEntry.getValue().isFinished();
-				if(isFinished) {
-					gameEntry.getValue().stopAndRemoveGuildChannel();
+				GameDayChannel gameDayChannel = gameEntry.getValue();
+				boolean isInactive = !nhlBot.getGameScheduler().isGameActive(gameDayChannel.getTeam(),
+						gameDayChannel.getChannelName());
+				if (isInactive) {
+					gameDayChannel.stopAndRemoveGuildChannel();
 				}
-				return isFinished;
+				return isInactive;
 			});
 			return guildEntry.getValue().isEmpty();
 		});

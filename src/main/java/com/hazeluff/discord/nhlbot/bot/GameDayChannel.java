@@ -78,7 +78,6 @@ public class GameDayChannel extends Thread {
 	private IMessage endOfGameMessage;
 
 	private AtomicBoolean started = new AtomicBoolean(false);
-	private AtomicBoolean finished = new AtomicBoolean(false);
 
 	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Game game, List<GameEvent> events, IGuild guild,
 			IChannel channel, Team team) {
@@ -176,11 +175,10 @@ public class GameDayChannel extends Thread {
 			LOGGER.info("Game is already finished");
 		}
 		LOGGER.info("Thread Completed");
-		finished.set(true);
 	}
 
-	public boolean isFinished() {
-		return finished.get();
+	public Team getTeam() {
+		return team;
 	}
 
 	void createChannel() {

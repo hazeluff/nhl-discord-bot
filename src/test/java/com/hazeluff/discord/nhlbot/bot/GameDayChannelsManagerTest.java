@@ -105,20 +105,27 @@ public class GameDayChannelsManagerTest {
 	@Test
 	public void removeFinishedGameDayChannelsShouldRemoveFinishedOnes() {
 		LOGGER.info("removeFinishedGameDayChannelsShouldRemoveFinishedOnes");
-		Function<Boolean, GameDayChannel> gdcMockBuilder = finished -> {
-			GameDayChannel gameDayChannel = mock(GameDayChannel.class);
-			when(gameDayChannel.isFinished()).thenReturn(finished);
-			return gameDayChannel;
-		};
-		GameDayChannel gameDayChannel = gdcMockBuilder.apply(true);
-		GameDayChannel gameDayChannel2 = gdcMockBuilder.apply(false);
-		GameDayChannel gameDayChannel3 = gdcMockBuilder.apply(true);
+
+		GameDayChannel gameDayChannel = mock(GameDayChannel.class); // t
+		when(gameDayChannel.getChannelName()).thenReturn("channel1");
+		when(gameDayChannel.getTeam()).thenReturn(Team.ANAHEIM_DUCKS);
+		when(mockNHLBot.getGameScheduler().isGameActive(gameDayChannel.getTeam(), gameDayChannel.getChannelName()))
+				.thenReturn(false);
+		GameDayChannel gameDayChannel2 = mock(GameDayChannel.class); // f
+		when(gameDayChannel2.getChannelName()).thenReturn("channel2");
+		when(gameDayChannel2.getTeam()).thenReturn(Team.ARIZONA_COYOTES);
+		when(mockNHLBot.getGameScheduler().isGameActive(gameDayChannel2.getTeam(), gameDayChannel2.getChannelName()))
+				.thenReturn(true);
+		GameDayChannel gameDayChannel3 = mock(GameDayChannel.class); // t
+		when(gameDayChannel3.getChannelName()).thenReturn("channel3");
+		when(gameDayChannel3.getTeam()).thenReturn(Team.BOSTON_BRUINS);
+		when(mockNHLBot.getGameScheduler().isGameActive(gameDayChannel3.getTeam(), gameDayChannel3.getChannelName()))
+				.thenReturn(false);
 		gameDayChannelsManager.addGameDayChannel(1, 101, gameDayChannel);
 		gameDayChannelsManager.addGameDayChannel(1, 102, gameDayChannel2);
 		gameDayChannelsManager.addGameDayChannel(2, 101, gameDayChannel3);
 
 		gameDayChannelsManager.removeFinishedGameDayChannels();
-
 		assertNull(gameDayChannelsManager.getGameDayChannel(1, 101));
 		verify(gameDayChannel).stopAndRemoveGuildChannel();
 		assertEquals(gameDayChannel2, gameDayChannelsManager.getGameDayChannel(1, 102));
