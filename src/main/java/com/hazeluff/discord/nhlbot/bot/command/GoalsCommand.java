@@ -27,7 +27,7 @@ public class GoalsCommand extends Command {
 		if (channel.isPrivate()) {
 			nhlBot.getDiscordManager().sendMessage(channel, RUN_IN_SERVER_CHANNEL_MESSAGE);
 		} else if ((preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(guild.getLongID())) == null) {
-			nhlBot.getDiscordManager().sendMessage(channel, GUILD_SUBSCRIBE_FIRST_MESSAGE);
+			sendSubscribeFirstMessage(channel);
 		} else {
 			Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
 			if (game == null) {

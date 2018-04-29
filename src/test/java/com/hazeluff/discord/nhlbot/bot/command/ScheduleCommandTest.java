@@ -75,7 +75,7 @@ public class ScheduleCommandTest {
 			ScheduleCommand spyScheduleCommand = spy(new ScheduleCommand(nhlBot));
 			doReturn(teamListBlock).when(spyScheduleCommand).getTeamsListBlock();
 			doNothing().when(spyScheduleCommand).appendToEmbed(any(EmbedBuilder.class), any(Team.class));
-			doReturn(null).when(spyScheduleCommand).sendSubscribeMessage(any(IChannel.class));
+			doReturn(null).when(spyScheduleCommand).sendSubscribeFirstMessage(any(IChannel.class));
 			doReturn(null).when(spyScheduleCommand).sendSchedule(any(IChannel.class), any(Team.class));
 			doReturn(null).when(spyScheduleCommand).sendInvalidCodeMessage(any(IChannel.class), anyString(),
 					anyString());
@@ -91,7 +91,7 @@ public class ScheduleCommandTest {
 		when(spyScheduleCommand.getTeam(message)).thenReturn(team);
 		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule" });
 		verify(spyScheduleCommand).sendSchedule(message.getChannel(), team);
-		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
 		verifyNoMoreInteractions(nhlBot.getDiscordManager());
 
@@ -99,7 +99,7 @@ public class ScheduleCommandTest {
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		when(spyScheduleCommand.getTeam(message)).thenReturn(null);
 		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule" });
-		verify(spyScheduleCommand).sendSubscribeMessage(message.getChannel());
+		verify(spyScheduleCommand).sendSubscribeFirstMessage(message.getChannel());
 		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));
 		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
 		verifyNoMoreInteractions(nhlBot.getDiscordManager());
@@ -111,7 +111,7 @@ public class ScheduleCommandTest {
 		String sentMessage = strCaptor.getValue();
 		assertTrue(sentMessage.contains(teamListBlock));
 		assertTrue(sentMessage.contains("`@NHLBot schedule [team]`"));
-		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));
 		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
 
@@ -121,7 +121,7 @@ public class ScheduleCommandTest {
 		assertNotEquals("Both teams need to be different.", team, differentTeam);
 		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule", "col" });
 		verify(spyScheduleCommand).sendSchedule(message.getChannel(), differentTeam);
-		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
 		verifyNoMoreInteractions(nhlBot.getDiscordManager());
 
@@ -130,7 +130,7 @@ public class ScheduleCommandTest {
 		String[] args = new String[] { "nhlbot", "schedule", "asdf" };
 		spyScheduleCommand.replyTo(message, args);
 		verify(spyScheduleCommand).sendInvalidCodeMessage(message.getChannel(), args[2], "schedule");
-		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));
 		verifyNoMoreInteractions(nhlBot.getDiscordManager());
 	}

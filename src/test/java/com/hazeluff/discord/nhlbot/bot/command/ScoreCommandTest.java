@@ -2,9 +2,11 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
@@ -109,10 +111,12 @@ public class ScoreCommandTest {
 		LOGGER.info("replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed");
 		when(mockChannel.isPrivate()).thenReturn(false);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
+		doReturn(null).when(spyScoreCommand).sendSubscribeFirstMessage(any(IChannel.class));
 
-		scoreCommand.replyTo(mockMessage, null);
+		spyScoreCommand.replyTo(mockMessage, null);
 
-		verify(mockDiscordManager).sendMessage(mockChannel, Command.GUILD_SUBSCRIBE_FIRST_MESSAGE);
+		verifyNoMoreInteractions(mockDiscordManager);
+		verify(spyScoreCommand).sendSubscribeFirstMessage(mockChannel);
 	}
 
 	@Test

@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -107,14 +108,15 @@ public class GoalsCommandTest {
 	}
 
 	@Test
-	public void replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed() {
-		LOGGER.info("replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed");
+	public void replyToShouldsendSubscribeFirstMessageWhenGuildIsNotSubscribed() {
+		LOGGER.info("replyToShouldsendSubscribeFirstMessageWhenGuildIsNotSubscribed");
 		when(mockChannel.isPrivate()).thenReturn(false);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
+		doReturn(null).when(spyGoalsCommand).sendSubscribeFirstMessage(any(IChannel.class));
 
-		goalsCommand.replyTo(mockMessage, null);
+		spyGoalsCommand.replyTo(mockMessage, null);
 
-		verify(mockDiscordManager).sendMessage(mockChannel, Command.GUILD_SUBSCRIBE_FIRST_MESSAGE);
+		verify(spyGoalsCommand).sendSubscribeFirstMessage(mockChannel);
 	}
 
 	@Test

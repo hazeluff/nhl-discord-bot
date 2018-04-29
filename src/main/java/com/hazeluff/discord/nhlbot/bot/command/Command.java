@@ -17,11 +17,11 @@ import sx.blah.discord.handle.obj.Permissions;
  * Interface for commands that the NHLBot can accept and the replies to those commands.
  */
 public abstract class Command {
-	static final String USER_SUBSCRIBE_FIRST_MESSAGE = "Please subscribe "
+	private static final String USER_SUBSCRIBE_FIRST_MESSAGE = "Please subscribe "
 			+ "to a team by using the command `@NHLBot subscribe [team]`, "
 			+ "where [team] is the 3 letter code for your team.\n"
 			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
-	static final String GUILD_SUBSCRIBE_FIRST_MESSAGE = "Please have your admin first subscribe your guild "
+	private static final String GUILD_SUBSCRIBE_FIRST_MESSAGE = "Please have your admin first subscribe your guild "
 			+ "to a team by using the command `@NHLBot subscribe [team]`, "
 			+ "where [team] is the 3 letter code for your team.\n"
 			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
@@ -167,7 +167,7 @@ public abstract class Command {
 	 * @param channel
 	 * @return
 	 */
-	IMessage sendSubscribeMessage(IChannel channel) {
+	IMessage sendSubscribeFirstMessage(IChannel channel) {
 		String message = channel.isPrivate() ? USER_SUBSCRIBE_FIRST_MESSAGE : GUILD_SUBSCRIBE_FIRST_MESSAGE;
 		return nhlBot.getDiscordManager().sendMessage(channel, message);
 	}

@@ -2,11 +2,18 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
+
+import java.time.ZoneId;
+import java.util.function.Supplier;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -82,80 +89,46 @@ public class NextGameCommandTest {
 	}
 
 	@Test
-	public void replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribedAndChannelIsPrivate() {
-		LOGGER.info("replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed");
-		when(mockChannel.isPrivate()).thenReturn(true);
-		when(mockMessage.getChannel()).thenReturn(mockChannel);
-
-		nextGameCommand.replyTo(mockMessage, null);
-
-		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.GUILD_SUBSCRIBE_FIRST_MESSAGE);
-	}
-
-	@Test
-	public void replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribedAndChannelIsNotPrivate() {
-		LOGGER.info("replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed");
-		when(mockChannel.isPrivate()).thenReturn(false);
-		when(mockMessage.getChannel()).thenReturn(mockChannel);
-
-		nextGameCommand.replyTo(mockMessage, null);
-
-		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.GUILD_SUBSCRIBE_FIRST_MESSAGE);
-	}
-
-	@Test
 	@PrepareForTest(GameDayChannel.class)
-	public void replyToShouldSendMessageIfChannelIsPrivate() {
-		LOGGER.info("replyToShouldSendMessageIfChannelIsPrivate");
-		when(mockChannel.isPrivate()).thenReturn(true);
-		when(mockNHLBot.getPreferencesManager().getTeamByUser(USER_ID)).thenReturn(USER_TEAM);
-		when(mockNHLBot.getGameScheduler().getNextGame(USER_TEAM)).thenReturn(mockGame);
+	public void replyToShouldInvokeMethods() {
+		LOGGER.info("replyToShouldInvokeMethods");
+		Supplier<NextGameCommand> getSpyNextGameCommand = () -> {
+			NextGameCommand spyNextGameCommand = spy(new NextGameCommand(mockNHLBot));
+			doReturn(null).when(spyNextGameCommand).sendSubscribeFirstMessage(mockChannel);
+			return spyNextGameCommand;
+		};
 		String detailsMessage = "DetailsMessage";
 		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.getDetailsMessage(mockGame, USER_TEAM.getTimeZone())).thenReturn(detailsMessage);
+		when(GameDayChannel.getDetailsMessage(any(Game.class), any(ZoneId.class))).thenReturn(detailsMessage);
+		
+		Team team = Utils.getRandom(Team.class);
+		NextGameCommand spyNextGameCommand;
 
-		nextGameCommand.replyTo(mockMessage, null);
-
+		// Subscribed; Has next game
+		spyNextGameCommand = getSpyNextGameCommand.get();
+		doReturn(team).when(spyNextGameCommand).getTeam(mockMessage);
+		when(mockNHLBot.getGameScheduler().getNextGame(team)).thenReturn(mockGame);
+		spyNextGameCommand.replyTo(mockMessage, null);
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
 		assertTrue(captorString.getValue().contains(detailsMessage));
-	}
+		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
+		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
 
-	@Test
-	@PrepareForTest(GameDayChannel.class)
-	public void replyToShouldSendMessageIfChannelIsNotPrivate() {
-		LOGGER.info("replyToShouldSendMessageIfChannelIsNotPrivate");
-		when(mockChannel.isPrivate()).thenReturn(false);
-		when(mockNHLBot.getPreferencesManager().getTeamByGuild(GUILD_ID)).thenReturn(GUILD_TEAM);
-		when(mockNHLBot.getGameScheduler().getNextGame(GUILD_TEAM)).thenReturn(mockGame);
-		String detailsMessage = "DetailsMessage";
-		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.getDetailsMessage(mockGame, GUILD_TEAM.getTimeZone())).thenReturn(detailsMessage);
-
-		nextGameCommand.replyTo(mockMessage, null);
-
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
-		assertTrue(captorString.getValue().contains(detailsMessage));
-	}
-
-	@Test
-	@PrepareForTest(GameDayChannel.class)
-	public void replyToShouldSendNoNextGameMessageWhenNextGameIsNull() {
-		LOGGER.info("replyToShouldSendNoNextGameMessageWhenNextGameIsNull");
-		when(mockNHLBot.getPreferencesManager().getTeamByGuild(GUILD_ID)).thenReturn(GUILD_TEAM);
-		when(mockNHLBot.getGameScheduler().getNextGame(GUILD_TEAM)).thenReturn(null); // null game
-		String detailsMessage = "DetailsMessage";
-		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.getDetailsMessage(mockGame, GUILD_TEAM.getTimeZone())).thenReturn(detailsMessage);
-
-		when(mockChannel.isPrivate()).thenReturn(false);
-		nextGameCommand.replyTo(mockMessage, null);
-
+		// Subscribed; No next game
+		spyNextGameCommand = getSpyNextGameCommand.get();
+		doReturn(team).when(spyNextGameCommand).getTeam(mockMessage);
+		when(mockNHLBot.getGameScheduler().getNextGame(team)).thenReturn(null);
+		spyNextGameCommand.replyTo(mockMessage, null);
 		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.NO_NEXT_GAME_MESSAGE);
+		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
+		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
 
-		reset(mockNHLBot.getDiscordManager());
-		when(mockChannel.isPrivate()).thenReturn(false);
-		nextGameCommand.replyTo(mockMessage, null);
-
-		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.NO_NEXT_GAME_MESSAGE);
+		// Not subscribed
+		spyNextGameCommand = getSpyNextGameCommand.get();
+		doReturn(null).when(spyNextGameCommand).getTeam(mockMessage);
+		when(mockNHLBot.getGameScheduler().getNextGame(team)).thenReturn(null);
+		spyNextGameCommand.replyTo(mockMessage, null);
+		verify(spyNextGameCommand).sendSubscribeFirstMessage(any(IChannel.class));
+		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
 	}
 }

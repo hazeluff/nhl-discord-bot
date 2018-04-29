@@ -122,6 +122,7 @@ public class DiscordManager {
 			return null;
 		}
 
+
 		LOGGER.debug("Sending message [" + channel.getName() + "][" + message + "]");
 		return performRequest(() -> getMessageBuilder(channel, message, null).send(),
 				String.format("Could not send message [%s] to [%s]", message, channel), null);

@@ -47,7 +47,7 @@ public class ScheduleCommand extends Command {
 		} else {
 			Team preferredTeam = getTeam(message);
 			if (preferredTeam == null) {
-				sendSubscribeMessage(channel);
+				sendSubscribeFirstMessage(channel);
 			} else {
 				sendSchedule(channel, preferredTeam);
 			}
