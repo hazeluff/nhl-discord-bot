@@ -17,7 +17,11 @@ import sx.blah.discord.handle.obj.Permissions;
  * Interface for commands that the NHLBot can accept and the replies to those commands.
  */
 public abstract class Command {
-	static final String SUBSCRIBE_FIRST_MESSAGE = "Please have your admin first subscribe your guild "
+	static final String USER_SUBSCRIBE_FIRST_MESSAGE = "Please subscribe "
+			+ "to a team by using the command `@NHLBot subscribe [team]`, "
+			+ "where [team] is the 3 letter code for your team.\n"
+			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
+	static final String GUILD_SUBSCRIBE_FIRST_MESSAGE = "Please have your admin first subscribe your guild "
 			+ "to a team by using the command `@NHLBot subscribe [team]`, "
 			+ "where [team] is the 3 letter code for your team.\n"
 			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
@@ -104,5 +108,67 @@ public abstract class Command {
 		return message.getAuthor().getRolesForGuild(message.getGuild()).stream().anyMatch(
 				role -> role.getPermissions().stream().anyMatch(permission -> permission == Permissions.ADMINISTRATOR))
 				|| message.getGuild().getOwner().getLongID() == message.getAuthor().getLongID();
+	}
+
+	/**
+	 * Sends a message to the channel that the inputted Team code was incorrect.
+	 * Note: the Command sending this should have a help command that lists the
+	 * teams.
+	 * 
+	 * @param channel
+	 *            channel to send the message to
+	 * @param incorrectCode
+	 *            the incorrect code the user inputed
+	 * @param command
+	 *            command to tell user to invoke help of
+	 * @return
+	 */
+	IMessage sendInvalidCodeMessage(IChannel channel, String incorrectCode, String command) {
+		return nhlBot.getDiscordManager().sendMessage(channel,
+				String.format("`%s` is not a valid team code.\n"
+						+ "Use `@NHLBot %s help` to get a full list of team",
+						incorrectCode, command));
+	}
+
+	/**
+	 * Gets the subscribed Team of the User/Guild in the message.
+	 * 
+	 * @param message
+	 *            the source message
+	 * @return the subscribed team for the User/Guild
+	 */
+	Team getTeam(IMessage message) {
+		if (message.getChannel().isPrivate()) {
+			return nhlBot.getPreferencesManager().getTeamByUser(message.getAuthor().getLongID());
+		} else {
+			return nhlBot.getPreferencesManager().getTeamByGuild(message.getGuild().getLongID());
+		}
+	}
+
+	/**
+	 * Gets a string that creates a quote/code block in Discord listing all the NHL
+	 * teams and their codes.
+	 * 
+	 * @return
+	 */
+	String getTeamsListBlock() {
+		StringBuilder strBuilder = new StringBuilder("```");
+		for (Team team : Team.values()) {
+			strBuilder.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
+		}
+		strBuilder.append("```\n");
+		return strBuilder.toString();
+	}
+
+	/**
+	 * Sends a message to the channel, that the user or guild must subscribe first.
+	 * Message varies depending on whether its an user or a guild.
+	 * 
+	 * @param channel
+	 * @return
+	 */
+	IMessage sendSubscribeMessage(IChannel channel) {
+		String message = channel.isPrivate() ? USER_SUBSCRIBE_FIRST_MESSAGE : GUILD_SUBSCRIBE_FIRST_MESSAGE;
+		return nhlBot.getDiscordManager().sendMessage(channel, message);
 	}
 }

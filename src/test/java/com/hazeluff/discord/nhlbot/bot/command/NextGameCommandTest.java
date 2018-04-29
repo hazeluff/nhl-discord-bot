@@ -89,7 +89,7 @@ public class NextGameCommandTest {
 
 		nextGameCommand.replyTo(mockMessage, null);
 
-		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.SUBSCRIBE_FIRST_MESSAGE);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.GUILD_SUBSCRIBE_FIRST_MESSAGE);
 	}
 
 	@Test
@@ -100,7 +100,7 @@ public class NextGameCommandTest {
 
 		nextGameCommand.replyTo(mockMessage, null);
 
-		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.SUBSCRIBE_FIRST_MESSAGE);
+		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, Command.GUILD_SUBSCRIBE_FIRST_MESSAGE);
 	}
 
 	@Test

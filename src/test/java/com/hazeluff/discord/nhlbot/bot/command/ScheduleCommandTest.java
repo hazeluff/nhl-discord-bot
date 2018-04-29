@@ -1,17 +1,19 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
@@ -22,6 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -35,7 +39,6 @@ import com.hazeluff.discord.nhlbot.bot.command.ScheduleCommand.GameState;
 import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
-import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
@@ -48,6 +51,9 @@ public class ScheduleCommandTest {
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot nhlBot;
+
+	@Captor
+	ArgumentCaptor<String> strCaptor;
 
 	private ScheduleCommand scheduleCommand;
 	private ScheduleCommand spyScheduleCommand;
@@ -63,18 +69,16 @@ public class ScheduleCommandTest {
 	public void replyToShouldInvokeClasses() {
 		IMessage message = mock(IMessage.class, Answers.RETURNS_DEEP_STUBS.get());
 		when(message.getChannel()).thenReturn(mock(IChannel.class));
-		Team userTeam = Team.VANCOUVER_CANUCKS;
-		Team guildTeam = Team.FLORIDA_PANTHERS;
-		long userId = Utils.getRandomInt();
-		when(message.getAuthor().getLongID()).thenReturn(userId);
-		when(nhlBot.getPreferencesManager().getTeamByUser(userId)).thenReturn(userTeam);
-		long guildId = Utils.getRandomInt();
-		when(message.getGuild().getLongID()).thenReturn(guildId);
-		when(nhlBot.getPreferencesManager().getTeamByGuild(guildId)).thenReturn(guildTeam);
-
+		Team team = Team.VANCOUVER_CANUCKS;
+		String teamListBlock = "TeamList ```team1, team2```";
 		Supplier<ScheduleCommand> getScheduleCommandSpy = () -> {
 			ScheduleCommand spyScheduleCommand = spy(new ScheduleCommand(nhlBot));
+			doReturn(teamListBlock).when(spyScheduleCommand).getTeamsListBlock();
 			doNothing().when(spyScheduleCommand).appendToEmbed(any(EmbedBuilder.class), any(Team.class));
+			doReturn(null).when(spyScheduleCommand).sendSubscribeMessage(any(IChannel.class));
+			doReturn(null).when(spyScheduleCommand).sendSchedule(any(IChannel.class), any(Team.class));
+			doReturn(null).when(spyScheduleCommand).sendInvalidCodeMessage(any(IChannel.class), anyString(),
+					anyString());
 			return spyScheduleCommand;
 		};
 		EmbedBuilder embedBuilder = mock(EmbedBuilder.class);
@@ -82,33 +86,53 @@ public class ScheduleCommandTest {
 		mockStatic(EmbedResource.class);
 		when(EmbedResource.getEmbedBuilder(anyInt())).thenReturn(embedBuilder);
 		
+		// No team argument; Is subscribed
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		when(message.getChannel().isPrivate()).thenReturn(true);
-		spyScheduleCommand.replyTo(message, null);
-		verify(spyScheduleCommand).appendToEmbed(embedBuilder, userTeam);
-		verify(nhlBot.getDiscordManager()).sendMessage(message.getChannel(), "", embedBuilder.build());
+		when(spyScheduleCommand.getTeam(message)).thenReturn(team);
+		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule" });
+		verify(spyScheduleCommand).sendSchedule(message.getChannel(), team);
+		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
+		verifyNoMoreInteractions(nhlBot.getDiscordManager());
 
+		// No team argument; Not subscribed
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		reset(nhlBot.getDiscordManager());
-		when(message.getChannel().isPrivate()).thenReturn(false);
-		spyScheduleCommand.replyTo(message, null);
-		verify(spyScheduleCommand).appendToEmbed(embedBuilder, guildTeam);
-		verify(nhlBot.getDiscordManager()).sendMessage(message.getChannel(), "", embedBuilder.build());
+		when(spyScheduleCommand.getTeam(message)).thenReturn(null);
+		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule" });
+		verify(spyScheduleCommand).sendSubscribeMessage(message.getChannel());
+		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));
+		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
+		verifyNoMoreInteractions(nhlBot.getDiscordManager());
 
+		// Help
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		when(nhlBot.getPreferencesManager().getTeamByUser(userId)).thenReturn(null);
-		when(nhlBot.getPreferencesManager().getTeamByGuild(guildId)).thenReturn(guildTeam);
-		when(message.getChannel().isPrivate()).thenReturn(true);
-		spyScheduleCommand.replyTo(message, null);
-		verify(nhlBot.getDiscordManager()).sendMessage(message.getChannel(), Command.SUBSCRIBE_FIRST_MESSAGE);
+		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule", "help" });
+		verify(nhlBot.getDiscordManager()).sendMessage(eq(message.getChannel()), strCaptor.capture());
+		String sentMessage = strCaptor.getValue();
+		assertTrue(sentMessage.contains(teamListBlock));
+		assertTrue(sentMessage.contains("`@NHLBot schedule [team]`"));
+		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));
+		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
 
-		reset(nhlBot.getDiscordManager());
+		// Valid Team
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		when(nhlBot.getPreferencesManager().getTeamByUser(userId)).thenReturn(userTeam);
-		when(nhlBot.getPreferencesManager().getTeamByGuild(guildId)).thenReturn(null);
-		when(message.getChannel().isPrivate()).thenReturn(false);
-		spyScheduleCommand.replyTo(message, null);
-		verify(nhlBot.getDiscordManager()).sendMessage(message.getChannel(), Command.SUBSCRIBE_FIRST_MESSAGE);
+		Team differentTeam = Team.COLORADO_AVALANCH;
+		assertNotEquals("Both teams need to be different.", team, differentTeam);
+		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule", "col" });
+		verify(spyScheduleCommand).sendSchedule(message.getChannel(), differentTeam);
+		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
+		verifyNoMoreInteractions(nhlBot.getDiscordManager());
+
+		// Invalid Team
+		spyScheduleCommand = getScheduleCommandSpy.get();
+		String[] args = new String[] { "nhlbot", "schedule", "asdf" };
+		spyScheduleCommand.replyTo(message, args);
+		verify(spyScheduleCommand).sendInvalidCodeMessage(message.getChannel(), args[2], "schedule");
+		verify(spyScheduleCommand, never()).sendSubscribeMessage(any(IChannel.class));
+		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));
+		verifyNoMoreInteractions(nhlBot.getDiscordManager());
 	}
 
 	@Test

@@ -112,7 +112,7 @@ public class ScoreCommandTest {
 
 		scoreCommand.replyTo(mockMessage, null);
 
-		verify(mockDiscordManager).sendMessage(mockChannel, Command.SUBSCRIBE_FIRST_MESSAGE);
+		verify(mockDiscordManager).sendMessage(mockChannel, Command.GUILD_SUBSCRIBE_FIRST_MESSAGE);
 	}
 
 	@Test

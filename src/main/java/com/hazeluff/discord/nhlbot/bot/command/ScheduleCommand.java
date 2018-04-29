@@ -30,20 +30,35 @@ public class ScheduleCommand extends Command {
 	@Override
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
-		Team preferredTeam;
-		if (channel.isPrivate()) {
-			preferredTeam = nhlBot.getPreferencesManager().getTeamByUser(message.getAuthor().getLongID());
+		if (arguments.length > 2) {
+			if (arguments[2].equalsIgnoreCase("help")) {
+				// Send Help Message
+				StringBuilder response = new StringBuilder(
+						"Get the game schedule any of the following teams by typing `@NHLBot schedule [team]`, "
+								+ "where [team] is the one of the three letter codes for your team below: ");
+				response.append(getTeamsListBlock());
+				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
+			} else if (Team.isValid(arguments[2])) {
+				// Send schedule for a specific team
+				sendSchedule(channel, Team.parse(arguments[2]));
+			} else {
+				sendInvalidCodeMessage(channel, arguments[2], "schedule");
+			}
 		} else {
-			preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(message.getGuild().getLongID());			
+			Team preferredTeam = getTeam(message);
+			if (preferredTeam == null) {
+				sendSubscribeMessage(channel);
+			} else {
+				sendSchedule(channel, preferredTeam);
+			}
 		}
-		
-		if (preferredTeam == null) {
-			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
-		} else {
-			EmbedBuilder embedBuilder = EmbedResource.getEmbedBuilder(preferredTeam.getColor());
-			appendToEmbed(embedBuilder, preferredTeam);
-			nhlBot.getDiscordManager().sendMessage(channel, "", embedBuilder.build());
-		}
+	}
+
+	IMessage sendSchedule(IChannel channel, Team team) {
+		String message = "Here is the schedule for the " + team.getFullName();
+		EmbedBuilder embedBuilder = EmbedResource.getEmbedBuilder(team.getColor());
+		appendToEmbed(embedBuilder, team);
+		return nhlBot.getDiscordManager().sendMessage(channel, message, embedBuilder.build());
 	}
 
 	void appendToEmbed(EmbedBuilder embedBuilder, Team team) {
