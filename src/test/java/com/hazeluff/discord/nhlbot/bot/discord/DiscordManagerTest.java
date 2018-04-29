@@ -119,7 +119,7 @@ public class DiscordManagerTest {
 		when(RequestBuffer.request(any(IRequest.class))).thenReturn(mockRequestFuture);
 		when(mockRequestFuture.get()).thenReturn(expected);
 
-		Object result = discordManager.performRequest(mockDiscordRequest, null, null);
+		Object result = discordManager.performRequest(mockDiscordRequest, "", null);
 
 		assertSame(expected, result);
 		ArgumentCaptor<IRequest> requestCaptor = ArgumentCaptor.forClass(IRequest.class);
