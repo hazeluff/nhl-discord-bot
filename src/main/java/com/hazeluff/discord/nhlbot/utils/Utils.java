@@ -31,6 +31,19 @@ public class Utils {
 	}
 
 	/**
+	 * If the string is longer than the given length, it is shortened and has "..."
+	 * appended.
+	 * 
+	 * @return
+	 */
+	public static String shorten(String s, int length) {
+		if(s.length() > length) {
+			s = s.substring(0, length) + "...";
+		}
+		return s;
+	}
+
+	/**
 	 * Gets a random int value.
 	 * 
 	 * @return random value

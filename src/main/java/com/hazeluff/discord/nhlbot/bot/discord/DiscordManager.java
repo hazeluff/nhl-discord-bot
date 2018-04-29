@@ -7,6 +7,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.utils.Utils;
+
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.ICategory;
@@ -47,7 +49,8 @@ public class DiscordManager {
 			try {
 				return request.perform();
 			} catch (MissingPermissionsException | DiscordException | NullPointerException e) {
-				LOGGER.warn(exceptionLoggerMessage, e);
+				String shortExceptionLoggerMessage = Utils.shorten(exceptionLoggerMessage, 30);
+				LOGGER.warn(shortExceptionLoggerMessage, e);
 				return defaultReturn;
 			}
 		}).get();
@@ -121,7 +124,6 @@ public class DiscordManager {
 			logNullArgumentsStackTrace("`message` was null.");
 			return null;
 		}
-
 
 		LOGGER.debug("Sending message [" + channel.getName() + "][" + message + "]");
 		return performRequest(() -> getMessageBuilder(channel, message, null).send(),
