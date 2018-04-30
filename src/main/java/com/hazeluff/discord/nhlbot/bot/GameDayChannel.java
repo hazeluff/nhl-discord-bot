@@ -189,7 +189,7 @@ public class GameDayChannel extends Thread {
 			if (channel != null) {
 				nhlBot.getDiscordManager().changeTopic(channel, team.getCheer());
 				ZoneId timeZone = team.getTimeZone();
-				IMessage message = nhlBot.getDiscordManager().sendMessage(channel, getDetailsMessage(timeZone));
+				IMessage message = sendMessage(getDetailsMessage(timeZone));
 				nhlBot.getDiscordManager().pinMessage(channel, message);
 			}
 		} else {
@@ -260,7 +260,7 @@ public class GameDayChannel extends Thread {
 					}
 				}
 				if (message != null && !firstPass) {
-					nhlBot.getDiscordManager().sendMessage(channel, message);
+					sendMessage(message);
 				}
 				lowestThreshold = Long.MAX_VALUE;
 				message = null;
@@ -384,7 +384,7 @@ public class GameDayChannel extends Thread {
 	void sendEventMessage(GameEvent event) {
 		LOGGER.info("Sending message for event [" + event + "].");
 		String strMessage = buildEventMessage(event);
-		IMessage message = nhlBot.getDiscordManager().sendMessage(channel, strMessage);
+		IMessage message = sendMessage(strMessage);
 		if (message != null) {
 			eventMessages.put(event.getId(), message);
 		}
@@ -422,8 +422,7 @@ public class GameDayChannel extends Thread {
 	 */
 	void sendDeletedEventMessage(GameEvent event) {
 		LOGGER.info("Sending 'deleted event' message for event [" + event + "].");
-		nhlBot.getDiscordManager().sendMessage(channel,
-				String.format("Goal by %s has been rescinded.", event.getPlayers().get(0).getFullName()));
+		sendMessage(String.format("Goal by %s has been rescinded.", event.getPlayers().get(0).getFullName()));
 	}
 
 	/**
@@ -469,7 +468,7 @@ public class GameDayChannel extends Thread {
 	 */
 	void sendStartOfGameMessage() {
 		LOGGER.info("Sending start message.");
-		nhlBot.getDiscordManager().sendMessage(channel, "Game is about to start! " + team.getCheer());
+		sendMessage("Game is about to start! " + team.getCheer());
 	}
 
 	/**
@@ -478,7 +477,9 @@ public class GameDayChannel extends Thread {
 	void updateEndOfGameMessage() {
 		if (endOfGameMessage == null) {
 			LOGGER.info("Sending end of game message for game.");
-			endOfGameMessage = nhlBot.getDiscordManager().sendMessage(channel, buildEndOfGameMessage());
+			if (channel != null) {
+				endOfGameMessage = sendMessage(buildEndOfGameMessage());
+			}
 		} else {
 			LOGGER.trace("End of game message already sent.");
 			String newEndOfGameMessage = buildEndOfGameMessage();
@@ -742,5 +743,9 @@ public class GameDayChannel extends Thread {
 		teamRegex = String.format("(%s)", teamRegex);
 		String regex = String.format("%1$s-vs-%1$s-[0-9]{2}-[0-9]{2}-[0-9]{2}", teamRegex);
 		return channelName.matches(regex);
+	}
+
+	private IMessage sendMessage(String message) {
+		return channel == null ? null : nhlBot.getDiscordManager().sendMessage(channel, message);
 	}
 }
