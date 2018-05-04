@@ -54,7 +54,7 @@ public class WelcomeChannel extends Thread {
 			String strStatsMessage = statsCommand.buildMessage();
 			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
 			
-			while (isStop() && !isInterrupted()) {
+			while (!isStop() && !isInterrupted()) {
 				Utils.sleep(UPDATE_RATE);
 				
 				if (!strStatsMessage.equals(statsCommand.buildMessage())) {
