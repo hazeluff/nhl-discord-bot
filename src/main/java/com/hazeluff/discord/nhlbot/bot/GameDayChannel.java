@@ -476,9 +476,11 @@ public class GameDayChannel extends Thread {
 	 */
 	void updateEndOfGameMessage() {
 		if (endOfGameMessage == null) {
-			LOGGER.info("Sending end of game message for game.");
 			if (channel != null) {
 				endOfGameMessage = sendMessage(buildEndOfGameMessage());
+			}
+			if (endOfGameMessage != null) {
+				LOGGER.info("Sent end of game message for game.");
 			}
 		} else {
 			LOGGER.trace("End of game message already sent.");
