@@ -12,8 +12,8 @@
       <file>logs/nhlbot.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
       <fileNamePattern>logs/nhlbot-%d{yy-MM-dd}.%i.log</fileNamePattern>
-        <maxFileSize>200MB</maxFileSize>    
-        <maxHistory>30</maxHistory>
+        <maxFileSize>50MB</maxFileSize>    
+        <maxHistory>7</maxHistory>
       </rollingPolicy>
       <encoder>
         <pattern>${pattern}</pattern>
