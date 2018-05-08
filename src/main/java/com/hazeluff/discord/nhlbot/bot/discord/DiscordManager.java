@@ -50,7 +50,7 @@ public class DiscordManager {
 				return request.perform();
 			} catch (MissingPermissionsException | DiscordException | NullPointerException e) {
 				String shortExceptionLoggerMessage = Utils.shorten(exceptionLoggerMessage, 30);
-				LOGGER.warn(shortExceptionLoggerMessage, e);
+				LOGGER.trace(shortExceptionLoggerMessage, e);
 				return defaultReturn;
 			}
 		}).get();
@@ -69,7 +69,7 @@ public class DiscordManager {
 			try {
 				request.perform();
 			} catch (MissingPermissionsException | DiscordException | NullPointerException e) {
-				LOGGER.warn(exceptionLoggerMessage, e);
+				LOGGER.trace(exceptionLoggerMessage, e);
 			}
 		});
 	}

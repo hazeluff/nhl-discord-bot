@@ -10,11 +10,14 @@
     
     <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
       <file>logs/nhlbot.log</file>
-      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-      <fileNamePattern>logs/nhlbot-%d{yy-MM-dd}.%i.log</fileNamePattern>
-        <maxFileSize>50MB</maxFileSize>    
-        <maxHistory>7</maxHistory>
+      <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+        <fileNamePattern>logs/nhlbot.%i.log</fileNamePattern>
+        <minIndex>1</minIndex>
+        <maxIndex>5</maxIndex>
       </rollingPolicy>
+      <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+        <maxFileSize>25MB</maxFileSize>
+      </triggeringPolicy>
       <encoder>
         <pattern>${pattern}</pattern>
       </encoder>
