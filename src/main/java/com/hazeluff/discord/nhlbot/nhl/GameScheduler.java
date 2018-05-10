@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
+import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -155,6 +156,11 @@ public class GameScheduler extends Thread {
 					existingGame.updateTo(updatedGame);
 				}
 			});
+			if (!updatedGames.isEmpty()) {
+				Game lastGame = updatedGames.stream().sorted(GAME_COMPARATOR).collect(Collectors.toList())
+						.get(updatedGames.size() - 1);
+				games.removeIf(game -> DateUtils.diffMs(lastGame.getDate(), game.getDate()) > 0);
+			}
 		}
 	}
 
@@ -432,5 +438,9 @@ public class GameScheduler extends Thread {
 
 	public Set<Game> getGames() {
 		return new HashSet<>(games);
+	}
+
+	public boolean isGameExist(Game game) {
+		return games.contains(game);
 	}
 }

@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
@@ -38,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.internal.util.collections.Sets;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -271,24 +273,42 @@ public class GameSchedulerTest {
 	@SuppressWarnings("serial")
 	@Test
 	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToSet() {		
-		LOGGER.info("updateGameScheduleShouldGetGamesFromAllTeamsAndAddToSet");
+	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet() {
+		LOGGER.info("updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet");
+		BiFunction<Integer, ZonedDateTime, Game> mockGame = (gamePk, date) -> {
+			Game mGame = mock(Game.class);
+			when(mGame.getGamePk()).thenReturn(gamePk);
+			when(mGame.getDate()).thenReturn(date);
+			return mGame;
+		};
+		ZonedDateTime g1Time = ZonedDateTime.now();
+		ZonedDateTime g2Time = g1Time.plusSeconds(1l);
+		ZonedDateTime g3Time = g2Time.plusSeconds(1l); // time of game that is past the last fetched game
+		
+		Game newMockGame1 = mockGame.apply(1, g1Time);
+		Game mockGame2 = mockGame.apply(2, g2Time);
+		Game newMockGame2 = mockGame.apply(2, g2Time);
+		Game mockGame3 = mockGame.apply(3, g3Time);
+		
 		mockStatic(Utils.class);
 		when(Utils.getCurrentTime()).thenReturn(0L, GameScheduler.GAME_SCHEDULE_UPDATE_RATE + 1);
-		gameScheduler = new GameScheduler(new LinkedHashSet<>(), null);
+		
+		
+		gameScheduler = new GameScheduler(Sets.newSet(mockGame2, mockGame3), null);
 		spyGameScheduler = spy(gameScheduler);
 
 		doReturn(Collections.emptyList()).when(spyGameScheduler).getGames(any(Team.class), any(), any());
-		doReturn(Arrays.asList(mockGame1, mockGame2)).when(spyGameScheduler).getGames(eq(TEAM), any(), any());
+		doReturn(Arrays.asList(newMockGame1, newMockGame2)).when(spyGameScheduler).getGames(eq(TEAM), any(), any());
 
 		spyGameScheduler.updateGameSchedule();
-
 		assertEquals(
 				new LinkedHashSet<Game>() {{
-					add(mockGame1);
+					add(newMockGame1);
 					add(mockGame2);
 				}}, 
 				spyGameScheduler.getGames());
+		verify(mockGame1, never()).updateTo(any(Game.class));
+		verify(mockGame2).updateTo(newMockGame2);
 	}
 
 	@Test
