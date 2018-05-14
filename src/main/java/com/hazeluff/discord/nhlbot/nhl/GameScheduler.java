@@ -143,7 +143,7 @@ public class GameScheduler extends Thread {
 		LOGGER.info("Updating game schedule.");
 		// Update schedule
 		for (Team team : Team.values()) {
-			ZonedDateTime startDate = ZonedDateTime.now();
+			ZonedDateTime startDate = DateUtils.now();
 			ZonedDateTime endDate = startDate.plusDays(7);
 			List<Game> updatedGames = getGames(team, startDate, endDate);
 			updatedGames.forEach(updatedGame -> {
@@ -157,9 +157,13 @@ public class GameScheduler extends Thread {
 				}
 			});
 			if (!updatedGames.isEmpty()) {
-				Game lastGame = updatedGames.stream().sorted(GAME_COMPARATOR).collect(Collectors.toList())
-						.get(updatedGames.size() - 1);
-				games.removeIf(game -> DateUtils.diffMs(lastGame.getDate(), game.getDate()) > 0);
+				List<Game> gamesToRemove = games.stream()
+						.filter(game -> DateUtils.isBetweenRange(game.getDate(), startDate, endDate))
+						.filter(game -> updatedGames.stream()
+								.noneMatch(updatedGame -> updatedGame.getGamePk() == game.getGamePk()))
+						.collect(Collectors.toList());
+				LOGGER.info("Removing games: " + gamesToRemove);
+				games.removeAll(gamesToRemove);
 			}
 		}
 	}

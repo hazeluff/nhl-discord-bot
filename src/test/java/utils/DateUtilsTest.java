@@ -1,7 +1,9 @@
 package utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.time.ZonedDateTime;
 
@@ -36,6 +38,19 @@ public class DateUtilsTest {
 		ZonedDateTime result = DateUtils.parseNHLDate("asdf");
 
 		assertNull(result);
+	}
+
+	@Test
+	public void isBetweenRangeShouldReturnCorrectAnswer() {
+		ZonedDateTime startDate = ZonedDateTime.now();
+		ZonedDateTime endDate = startDate.plusDays(5);
+
+		assertFalse(DateUtils.isBetweenRange(startDate.minusDays(1), startDate, endDate));
+		assertTrue(DateUtils.isBetweenRange(startDate.plusDays(1), startDate, endDate));
+		assertTrue(DateUtils.isBetweenRange(startDate.plusDays(2), startDate, endDate));
+		assertTrue(DateUtils.isBetweenRange(startDate.plusDays(3), startDate, endDate));
+		assertTrue(DateUtils.isBetweenRange(startDate.plusDays(4), startDate, endDate));
+		assertFalse(DateUtils.isBetweenRange(endDate.plusDays(1), startDate, endDate));
 	}
 
 }

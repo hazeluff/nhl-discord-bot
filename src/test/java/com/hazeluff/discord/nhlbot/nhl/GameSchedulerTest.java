@@ -51,6 +51,7 @@ import com.hazeluff.discord.nhlbot.bot.GameDayChannelsManager;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
+import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -272,7 +273,7 @@ public class GameSchedulerTest {
 
 	@SuppressWarnings("serial")
 	@Test
-	@PrepareForTest({ Utils.class, GameDayChannel.class })
+	@PrepareForTest({ DateUtils.class, GameDayChannel.class })
 	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet() {
 		LOGGER.info("updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet");
 		BiFunction<Integer, ZonedDateTime, Game> mockGame = (gamePk, date) -> {
@@ -281,20 +282,26 @@ public class GameSchedulerTest {
 			when(mGame.getDate()).thenReturn(date);
 			return mGame;
 		};
-		ZonedDateTime g1Time = ZonedDateTime.now();
-		ZonedDateTime g2Time = g1Time.plusSeconds(1l);
-		ZonedDateTime g3Time = g2Time.plusSeconds(1l); // time of game that is past the last fetched game
+		ZonedDateTime now = ZonedDateTime.now();
+		ZonedDateTime g1Time = now.plusDays(1);
+		ZonedDateTime g2Time = now.plusDays(2);
+		ZonedDateTime g3Time = now.plusDays(6);
+		ZonedDateTime g4Time = now.plusDays(8);
 		
 		Game newMockGame1 = mockGame.apply(1, g1Time);
 		Game mockGame2 = mockGame.apply(2, g2Time);
 		Game newMockGame2 = mockGame.apply(2, g2Time);
 		Game mockGame3 = mockGame.apply(3, g3Time);
+		Game mockGame4 = mockGame.apply(4, g4Time);
 		
-		mockStatic(Utils.class);
-		when(Utils.getCurrentTime()).thenReturn(0L, GameScheduler.GAME_SCHEDULE_UPDATE_RATE + 1);
+		mockStatic(DateUtils.class);
+		when(DateUtils.now()).thenReturn(now);
+		when(DateUtils.isBetweenRange(eq(g1Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(true);
+		when(DateUtils.isBetweenRange(eq(g2Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(true);
+		when(DateUtils.isBetweenRange(eq(g3Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(true);
+		when(DateUtils.isBetweenRange(eq(g4Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(false);
 		
-		
-		gameScheduler = new GameScheduler(Sets.newSet(mockGame2, mockGame3), null);
+		gameScheduler = new GameScheduler(Sets.newSet(mockGame2, mockGame3, mockGame4), null);
 		spyGameScheduler = spy(gameScheduler);
 
 		doReturn(Collections.emptyList()).when(spyGameScheduler).getGames(any(Team.class), any(), any());
@@ -303,8 +310,9 @@ public class GameSchedulerTest {
 		spyGameScheduler.updateGameSchedule();
 		assertEquals(
 				new LinkedHashSet<Game>() {{
-					add(newMockGame1);
-					add(mockGame2);
+						add(newMockGame1);
+						add(mockGame2);
+						add(mockGame4);
 				}}, 
 				spyGameScheduler.getGames());
 		verify(mockGame1, never()).updateTo(any(Game.class));

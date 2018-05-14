@@ -33,6 +33,20 @@ public class DateUtils {
 	}
 
 	/**
+	 * Determines if a date is between a date range
+	 * 
+	 * @param date
+	 * @param start
+	 *            start of the range
+	 * @param end
+	 *            end of the range
+	 * @return true if the date is between the range
+	 */
+	public static boolean isBetweenRange(ZonedDateTime date, ZonedDateTime start, ZonedDateTime end) {
+		return diffMs(start, date) > 0 && diffMs(date, end) > 0;
+	}
+
+	/**
 	 * Gets {@link ZonedDateTime#now()}. Used for stubbing in tests.
 	 * 
 	 * @return
