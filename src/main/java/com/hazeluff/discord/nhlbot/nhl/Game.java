@@ -145,10 +145,6 @@ public class Game {
 	 * @return true, if team is a participant<br>
 	 *         false, otherwise
 	 */
-	public boolean isContain(Team team) {
-		return homeTeam == team || awayTeam == team;
-	}
-
 	public boolean containsTeam(Team team) {
 		return awayTeam == team || homeTeam == team;
 	}

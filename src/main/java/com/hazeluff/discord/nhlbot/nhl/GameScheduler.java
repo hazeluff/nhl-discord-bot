@@ -145,8 +145,8 @@ public class GameScheduler extends Thread {
 		for (Team team : Team.values()) {
 			ZonedDateTime startDate = DateUtils.now();
 			ZonedDateTime endDate = startDate.plusDays(7);
-			List<Game> updatedGames = getGames(team, startDate, endDate);
-			updatedGames.forEach(updatedGame -> {
+			List<Game> fetchedGames = getGames(team, startDate, endDate);
+			fetchedGames.forEach(updatedGame -> {
 				Game existingGame = games.stream()
 						.filter(game -> game.getGamePk() == updatedGame.getGamePk()).findAny()
 						.orElse(null);
@@ -156,10 +156,12 @@ public class GameScheduler extends Thread {
 					existingGame.updateTo(updatedGame);
 				}
 			});
-			if (!updatedGames.isEmpty()) {
+			LOGGER.info("Fetched games for team [{}]: {}", team, fetchedGames);
+			if (!fetchedGames.isEmpty()) {
 				List<Game> gamesToRemove = games.stream()
+						.filter(game -> game.containsTeam(team))
 						.filter(game -> DateUtils.isBetweenRange(game.getDate(), startDate, endDate))
-						.filter(game -> updatedGames.stream()
+						.filter(game -> fetchedGames.stream()
 								.noneMatch(updatedGame -> updatedGame.getGamePk() == game.getGamePk()))
 						.collect(Collectors.toList());
 				LOGGER.info("Removing games: " + gamesToRemove);

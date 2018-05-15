@@ -280,6 +280,7 @@ public class GameSchedulerTest {
 			Game mGame = mock(Game.class);
 			when(mGame.getGamePk()).thenReturn(gamePk);
 			when(mGame.getDate()).thenReturn(date);
+			when(mGame.containsTeam(TEAM)).thenReturn(true);
 			return mGame;
 		};
 		ZonedDateTime now = ZonedDateTime.now();
