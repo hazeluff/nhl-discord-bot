@@ -37,10 +37,14 @@ public class WelcomeChannel extends Thread {
 
 	public static WelcomeChannel get(NHLBot nhlBot, IGuild guild) {
 		List<IChannel> channels = guild.getChannelsByName("welcome");
-		IChannel channel = channels.isEmpty() ? null : guild.getChannelsByName("welcome").get(0);
-		WelcomeChannel welcomeChannel = new WelcomeChannel(nhlBot, channel);
-		welcomeChannel.start();
-		return welcomeChannel;
+		try {
+			IChannel channel = channels.isEmpty() ? null : guild.getChannelsByName("welcome").get(0);
+			WelcomeChannel welcomeChannel = new WelcomeChannel(nhlBot, channel);
+			welcomeChannel.start();
+			return welcomeChannel;
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	@Override
@@ -59,7 +63,11 @@ public class WelcomeChannel extends Thread {
 				
 				if (!strStatsMessage.equals(statsCommand.buildMessage())) {
 					strStatsMessage = statsCommand.buildMessage();
-					nhlBot.getDiscordManager().updateMessage(statsMessage, strStatsMessage);
+					if (strStatsMessage != null) {
+						nhlBot.getDiscordManager().updateMessage(statsMessage, strStatsMessage);
+					} else {
+						LOGGER.debug("Build message was null. Error must have occurred.");
+					}
 				}
 			}
 		} else {

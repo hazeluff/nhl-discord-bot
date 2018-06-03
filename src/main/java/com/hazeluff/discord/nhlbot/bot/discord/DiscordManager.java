@@ -11,10 +11,12 @@ import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
+import sx.blah.discord.handle.obj.ActivityType;
 import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
@@ -406,6 +408,13 @@ public class DiscordManager {
 				.findAny()
 				.orElse(null);
 	}
+	
+	public List<IGuild> getGuilds() {
+		return performRequest(
+				() -> client.getGuilds(),
+				"Could not get Guilds.",
+				new ArrayList<IGuild>());
+	}
 
 	/**
 	 * Moves the given channel into the given category.
@@ -429,6 +438,11 @@ public class DiscordManager {
 		LOGGER.debug("Moving channel into category. channel={}, category={}", channel.getName(), category.getName());
 		performRequest(() -> channel.changeCategory(category),
 				String.format("Could not move channel [%s] into category [%s]", channel.getName(), category.getName()));
+	}
+
+	public void changePresence(StatusType status, ActivityType activity, String text) {
+		performRequest(() -> client.changePresence(status, activity, text),
+				String.format("Could not set status: status=[%s], activity=[%s], text=[%s]", status, activity, text));
 	}
 
 	private void logNullArgumentsStackTrace(String message) {

@@ -291,12 +291,12 @@ public class PreferencesManagerTest {
 	@Test
 	public void getSubscribedGuildsShouldReturnListOfGuilds() {
 		LOGGER.info("getSubscribedGuildsShouldReturnListOfGuilds");
-		when(nhlBot.getDiscordClient().getGuilds()).thenReturn(
+		when(nhlBot.getDiscordManager().getGuilds()).thenReturn(
 				Arrays.asList(mock(IGuild.class), mock(IGuild.class), mock(IGuild.class), mock(IGuild.class)));
-		when(nhlBot.getDiscordClient().getGuilds().get(0).getLongID()).thenReturn(GUILD_ID);
-		when(nhlBot.getDiscordClient().getGuilds().get(1).getLongID()).thenReturn(GUILD_ID2);
-		when(nhlBot.getDiscordClient().getGuilds().get(2).getLongID()).thenReturn(GUILD_ID3);
-		when(nhlBot.getDiscordClient().getGuilds().get(3).getLongID()).thenReturn(GUILD_ID4);
+		when(nhlBot.getDiscordManager().getGuilds().get(0).getLongID()).thenReturn(GUILD_ID);
+		when(nhlBot.getDiscordManager().getGuilds().get(1).getLongID()).thenReturn(GUILD_ID2);
+		when(nhlBot.getDiscordManager().getGuilds().get(2).getLongID()).thenReturn(GUILD_ID3);
+		when(nhlBot.getDiscordManager().getGuilds().get(3).getLongID()).thenReturn(GUILD_ID4);
 
 		preferencesManager = new PreferencesManager(
 				nhlBot, 
@@ -307,10 +307,11 @@ public class PreferencesManagerTest {
 				}},
 				null);
 		
-		assertEquals(Arrays.asList(nhlBot.getDiscordClient().getGuilds().get(0),
-				nhlBot.getDiscordClient().getGuilds().get(2)),
+		assertEquals(
+				Arrays.asList(nhlBot.getDiscordManager().getGuilds().get(0),
+						nhlBot.getDiscordManager().getGuilds().get(2)),
 				preferencesManager.getSubscribedGuilds(TEAM));
-		assertEquals(Arrays.asList(nhlBot.getDiscordClient().getGuilds().get(1)),
+		assertEquals(Arrays.asList(nhlBot.getDiscordManager().getGuilds().get(1)),
 				preferencesManager.getSubscribedGuilds(TEAM2));
 	}
 	

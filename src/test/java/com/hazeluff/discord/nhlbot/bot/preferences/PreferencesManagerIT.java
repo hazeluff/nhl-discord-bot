@@ -15,12 +15,11 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
+import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
-
-import sx.blah.discord.api.IDiscordClient;
 
 /*
  * Note: We are not using @RunWith(PowerMockRunner.class) as it causes an ExceptionInInitializationError with
@@ -57,7 +56,7 @@ public class PreferencesManagerIT {
 		mongoDatabase = mongoClient.getDatabase(Config.MONGO_TEST_DATABASE_NAME);
 		nhlBot = mock(NHLBot.class);
 		when(nhlBot.getMongoDatabase()).thenReturn(mongoDatabase);
-		when(nhlBot.getDiscordClient()).thenReturn(mock(IDiscordClient.class));
+		when(nhlBot.getDiscordManager()).thenReturn(mock(DiscordManager.class));
 		preferencesManager = new PreferencesManager(nhlBot);
 	}
 

@@ -183,7 +183,7 @@ public class PreferencesManager {
 	 * @return list of IGuilds
 	 */
 	public List<IGuild> getSubscribedGuilds(Team team) {
-		return nhlBot.getDiscordClient().getGuilds().stream()
+		return nhlBot.getDiscordManager().getGuilds().stream()
 				.filter(guild -> {
 					if (!guildPreferences.containsKey(guild.getLongID())) {
 						return false;

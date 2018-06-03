@@ -45,8 +45,6 @@ public class NextGameCommandTest {
 	private static final long GUILD_ID = Utils.getRandomLong();
 	private static final long USER_ID = Utils.getRandomLong();
 	private static final String CHANNEL_NAME = "ChannelName";
-	private static final Team GUILD_TEAM = Team.COLORADO_AVALANCH;
-	private static final Team USER_TEAM = Team.FLORIDA_PANTHERS;
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;

@@ -162,22 +162,22 @@ public class DiscordManagerTest {
 		RequestBuffer.request(captorVoidRequest.capture());
 		IVoidRequest request = captorVoidRequest.getValue();
 
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 
 		reset(mockVoidDiscordRequest);
 		when(mockVoidDiscordRequest.perform()).thenThrow(DiscordException.class);
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 
 		reset(mockVoidDiscordRequest);
 		when(mockVoidDiscordRequest.perform()).thenThrow(MissingPermissionsException.class);
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 
 		reset(mockVoidDiscordRequest);
 		when(mockVoidDiscordRequest.perform()).thenThrow(NullPointerException.class);
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 	}
 

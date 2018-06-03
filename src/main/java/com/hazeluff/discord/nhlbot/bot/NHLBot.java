@@ -14,6 +14,8 @@ import com.mongodb.client.MongoDatabase;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
+import sx.blah.discord.handle.obj.ActivityType;
+import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
 
 public class NHLBot {
@@ -51,6 +53,7 @@ public class NHLBot {
 
 		// Init DiscordClient and DiscordManager
 		nhlBot.initDiscord(botToken);
+		nhlBot.discordManager.changePresence(StatusType.DND, ActivityType.WATCHING, "itself start up.");
 
 		// Init MongoClient/GuildPreferences
 		nhlBot.initPreferences();
@@ -60,13 +63,20 @@ public class NHLBot {
 
 		// Register listeners
 		nhlBot.registerListeners();
-
+		
 		// Manage WelcomeChannels
 		LOGGER.info("Posting update to Discord channel.");
-		nhlBot.discordClient.getGuilds().stream().filter(guild -> {
+		nhlBot.discordManager.getGuilds().stream().filter(guild -> {
 			long id = guild.getLongID();
 			return id == 268247727400419329l || id == 276953120964083713l;
 		}).forEach(guild -> WelcomeChannel.get(nhlBot, guild));
+
+		while (!nhlBot.getGameScheduler().isInit()) {
+			LOGGER.info("Waiting for GameScheduler...");
+			Utils.sleep(2000);
+		}
+
+		nhlBot.discordManager.changePresence(StatusType.ONLINE, ActivityType.PLAYING, Config.STATUS_MESSAGE);
 
 		return nhlBot;
 	}
@@ -111,10 +121,9 @@ public class NHLBot {
 		}
 		while (!client.isReady()) {
 			LOGGER.info("Waiting for client to be ready.");
-			Utils.sleep(5000);
+			Utils.sleep(2000);
 		}
 		LOGGER.info("Client is ready.");
-		client.changePlayingText(Config.STATUS_MESSAGE);
 
 		return client;
 	}
@@ -123,10 +132,6 @@ public class NHLBot {
 	static MongoDatabase getMongoDatabaseInstance() {
 		// No need to close the connection.
 		return new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT).getDatabase(Config.MONGO_DATABASE_NAME);
-	}
-
-	public IDiscordClient getDiscordClient() {
-		return discordClient;
 	}
 
 	public MongoDatabase getMongoDatabase() {

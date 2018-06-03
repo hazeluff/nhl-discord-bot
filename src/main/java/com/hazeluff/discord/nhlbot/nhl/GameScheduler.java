@@ -15,6 +15,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -42,6 +43,8 @@ public class GameScheduler extends Thread {
 	static final long UPDATE_RATE = 1800000L;
 
 	private Set<Game> games = new TreeSet<>(GAME_COMPARATOR);
+	private AtomicBoolean init = new AtomicBoolean(false);
+
 	/**
 	 * To be applied to the overall games list, so that it removes duplicates and sorts all games in order. Duplicates
 	 * are determined by the gamePk being identicle. Games are sorted by game date.
@@ -91,6 +94,7 @@ public class GameScheduler extends Thread {
 		initGames();
 		initTrackers();
 
+		init.set(true);
 
 		lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
 		while (!isStop()) {
@@ -436,6 +440,10 @@ public class GameScheduler extends Thread {
 	 */
 	boolean isStop() {
 		return false;
+	}
+
+	public boolean isInit() {
+		return init.get();
 	}
 
 	public LocalDate getLastUpdate() {
