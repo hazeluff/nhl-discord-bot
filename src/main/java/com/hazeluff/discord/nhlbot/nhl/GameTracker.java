@@ -80,8 +80,8 @@ public class GameTracker extends Thread {
 
 	@Override
 	public void run() {
-		setName(GameDayChannel.getChannelName(game));
 		try {
+			setName(GameDayChannel.getChannelName(game));
 			if (game.getStatus() != GameStatus.FINAL) {
 				// Wait until close to start of game
 				LOGGER.info("Idling until near game start.");

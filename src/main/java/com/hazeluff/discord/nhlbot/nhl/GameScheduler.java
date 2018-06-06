@@ -111,7 +111,7 @@ public class GameScheduler extends Thread {
 				Utils.sleep(UPDATE_RATE);
 			}
 		} catch (HttpException e) {
-			LOGGER.error("Error occured when updating the game.", e);
+			LOGGER.error("Error occured when updating games.", e);
 			throw new RuntimeException(e);
 		}
 	}
