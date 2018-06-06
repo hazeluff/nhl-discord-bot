@@ -1,5 +1,6 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -15,6 +16,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -42,7 +44,7 @@ public class GameScheduler extends Thread {
 	// Poll for if the day has rolled over every 30 minutes
 	static final long UPDATE_RATE = 1800000L;
 
-	private Set<Game> games = new TreeSet<>(GAME_COMPARATOR);
+	private Set<Game> games = new ConcurrentSkipListSet<>(GAME_COMPARATOR);
 	private AtomicBoolean init = new AtomicBoolean(false);
 
 	/**
@@ -206,8 +208,6 @@ public class GameScheduler extends Thread {
 	 */
 	List<Game> getGames(Team team, ZonedDateTime startDate, ZonedDateTime endDate) {
 		LOGGER.info("Retrieving games of [" + team + "]");
-		URIBuilder uriBuilder = null;
-		String strJSONSchedule = null;
 		ZonedDateTime latestDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
 		if (endDate.compareTo(latestDate) > 0) {
 			endDate = latestDate;
@@ -218,22 +218,29 @@ public class GameScheduler extends Thread {
 		String strStartDate = startDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 		String strEndDate = endDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
+		URI uri;
 		try {
-			uriBuilder = new URIBuilder(Config.NHL_API_URL + "/schedule");
+			URIBuilder uriBuilder = new URIBuilder(Config.NHL_API_URL + "/schedule");
 			uriBuilder.addParameter("startDate", strStartDate);
 			uriBuilder.addParameter("endDate", strEndDate);
 			uriBuilder.addParameter("teamId", String.valueOf(team.getId()));
 			uriBuilder.addParameter("expand", "schedule.scoringplays");
-			strJSONSchedule = HttpUtils.get(uriBuilder.build());
+			uri = uriBuilder.build();
 		} catch (URISyntaxException e) {
 			String message = "Error building URI";
 			RuntimeException runtimeException = new RuntimeException(message, e);
 			LOGGER.error(message, runtimeException);
 			throw runtimeException;
 		}
+
+		String strJSONSchedule = Utils.getAndRetry(
+				() -> HttpUtils.get(uri), 
+				288, // 288 retries (tries over a day)
+				300000l, // Wait 5 minutes between tries
+				"Get Games.");
+		List<Game> games = new ArrayList<>();
 		JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
 		JSONArray jsonDates = jsonSchedule.getJSONArray("dates");
-		List<Game> games = new ArrayList<>();
 		for (int i = 0; i < jsonDates.length(); i++) {
 			JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
 			Game game = Game.parse(jsonGame);

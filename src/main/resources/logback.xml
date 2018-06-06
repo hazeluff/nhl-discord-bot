@@ -13,10 +13,10 @@
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
         <fileNamePattern>logs/nhlbot.%i.log</fileNamePattern>
         <minIndex>1</minIndex>
-        <maxIndex>5</maxIndex>
+        <maxIndex>10</maxIndex>
       </rollingPolicy>
       <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-        <maxFileSize>25MB</maxFileSize>
+        <maxFileSize>1MB</maxFileSize>
       </triggeringPolicy>
       <encoder>
         <pattern>${pattern}</pattern>
@@ -28,10 +28,10 @@
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
         <fileNamePattern>logs/nhlbot.%i.log</fileNamePattern>
         <minIndex>1</minIndex>
-        <maxIndex>5</maxIndex>
+        <maxIndex>10</maxIndex>
       </rollingPolicy>
       <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-        <maxFileSize>25MB</maxFileSize>
+        <maxFileSize>1MB</maxFileSize>
       </triggeringPolicy>
       <encoder>
         <pattern>${pattern}</pattern>

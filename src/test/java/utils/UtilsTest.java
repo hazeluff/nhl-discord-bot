@@ -4,7 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
+import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.time.Duration;
@@ -12,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,6 +25,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.ThrowableAssert;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 @RunWith(PowerMockRunner.class)
@@ -80,5 +86,20 @@ public class UtilsTest {
 		assertEquals("1", set.toArray()[0]);
 		assertEquals("2", set.toArray()[1]);
 		assertEquals("3", set.toArray()[2]);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void getAndRetryShouldFunctionCorrectly() {
+		Supplier<Object> supplier = mock(Supplier.class);
+		when(supplier.get()).thenThrow(RuntimeException.class);
+		ThrowableAssert.assertException(() -> Utils.getAndRetry(supplier, 5, 0, ""));
+		verify(supplier, times(5)).get();
+		
+		Supplier<Object> supplier2 = mock(Supplier.class);
+		Object obj = new Object();
+		when(supplier2.get()).thenThrow(RuntimeException.class).thenThrow(RuntimeException.class).thenReturn(obj);
+		assertEquals(obj, Utils.getAndRetry(supplier2, 5, 0, ""));
+		verify(supplier2, times(3)).get();
 	}
 }
