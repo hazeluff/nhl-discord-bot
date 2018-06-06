@@ -168,6 +168,7 @@ public class GameDayChannel extends Thread {
 						updateEndOfGameMessage();
 					}
 				}
+				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}
 
 			updatePinnedMessage();
@@ -519,7 +520,6 @@ public class GameDayChannel extends Thread {
 		if (pinnedMessage != null) {
 			nhlBot.getDiscordManager().updateMessage(pinnedMessage, buildEndOfGameMessage());
 		}
-
 	}
 
 	/**
