@@ -5,6 +5,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -52,6 +55,7 @@ import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -195,7 +199,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	public void runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams() {
+	public void runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams() throws HttpException {
 		LOGGER.info("runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams");
 		doNothing().when(spyGameScheduler).initGames();
 		doNothing().when(spyGameScheduler).initTrackers();
@@ -209,7 +213,7 @@ public class GameSchedulerTest {
 
 	@Test
 	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void runShouldLoopAndInvokeMethodsWhenNewDayHasPassed() {
+	public void runShouldLoopAndInvokeMethodsWhenNewDayHasPassed() throws HttpException {
 		LOGGER.info("runShouldLoopAndInvokeMethods");
 		mockStatic(Utils.class);
 		doNothing().when(spyGameScheduler).initGames();
@@ -274,7 +278,7 @@ public class GameSchedulerTest {
 	@SuppressWarnings("serial")
 	@Test
 	@PrepareForTest({ DateUtils.class, GameDayChannel.class })
-	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet() {
+	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet() throws HttpException {
 		LOGGER.info("updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet");
 		BiFunction<Integer, ZonedDateTime, Game> mockGame = (gamePk, date) -> {
 			Game mGame = mock(Game.class);
@@ -333,7 +337,8 @@ public class GameSchedulerTest {
 		when(mockURIBuilder.build()).thenReturn(mockURI);
 		
 		mockStatic(HttpUtils.class, Game.class);
-		when(HttpUtils.get(mockURI)).thenReturn("{"
+		when(HttpUtils.getAndRetry(eq(mockURI), anyInt(), anyLong(), anyString()))
+				.thenReturn("{"
 				+ "dates:["
 				+ "{"
 					+ "games:["
@@ -373,7 +378,7 @@ public class GameSchedulerTest {
 		when(mockURIBuilder.build()).thenReturn(new URI("mockURI"));
 		
 		mockStatic(HttpUtils.class);
-		when(HttpUtils.get(any(URI.class))).thenReturn("{dates:[]}");
+		when(HttpUtils.getAndRetry(any(URI.class), anyInt(), anyLong(), anyString())).thenReturn("{dates:[]}");
 		
 		gameScheduler.getGames(TEAM, startDate, endDate);
 
@@ -381,7 +386,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	public void getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate() {
+	public void getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate() throws HttpException {
 		LOGGER.info("getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate");
 		ZonedDateTime startDate = ZonedDateTime.of(2016, 7, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 		ZonedDateTime endDate = ZonedDateTime.of(2016, 6, 1, 0, 0, 0, 0, ZoneOffset.UTC);

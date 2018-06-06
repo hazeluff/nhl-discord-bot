@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -90,30 +91,38 @@ public class GameScheduler extends Thread {
 	 */
 	@Override
 	public void run() {
-		/*
-		 * Initialize games, trackers, guild channels.
-		 */
-		initGames();
-		initTrackers();
+		try {
+			/*
+			 * Initialize games, trackers, guild channels.
+			 */
+			initGames();
+			initTrackers();
 
-		init.set(true);
+			init.set(true);
 
-		lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
-		while (!isStop()) {
-			LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
-			if (today.compareTo(lastUpdate) > 0) {
-				updateGameSchedule();
-				updateTrackers();
-				lastUpdate = today;
+			lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
+			while (!isStop()) {
+				LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
+				if (today.compareTo(lastUpdate) > 0) {
+					updateGameSchedule();
+					updateTrackers();
+					lastUpdate = today;
+				}
+				Utils.sleep(UPDATE_RATE);
 			}
-			Utils.sleep(UPDATE_RATE);
+		} catch (HttpException e) {
+			LOGGER.error("Error occured when updating the game.", e);
+			throw new RuntimeException(e);
 		}
 	}
 
 	/**
-	 * Gets game information from NHL API and initializes creates Game objects for them.
+	 * Gets game information from NHL API and initializes creates Game objects for
+	 * them.
+	 * 
+	 * @throws HttpException
 	 */
-	public void initGames() {
+	public void initGames() throws HttpException {
 		LOGGER.info("Initializing");
 		// Retrieve schedule/game information from NHL API
 		for (Team team : Team.values()) {
@@ -143,9 +152,12 @@ public class GameScheduler extends Thread {
 
 
 	/**
-	 * Updates the game schedule and adds games in a recent time frame to the list of games.
+	 * Updates the game schedule and adds games in a recent time frame to the list
+	 * of games.
+	 * 
+	 * @throws HttpException
 	 */
-	void updateGameSchedule() {
+	void updateGameSchedule() throws HttpException {
 		LOGGER.info("Updating game schedule.");
 		// Update schedule
 		for (Team team : Team.values()) {
@@ -205,8 +217,9 @@ public class GameScheduler extends Thread {
 	 * @param team
 	 *            team to get games of
 	 * @return list of games
+	 * @throws HttpException
 	 */
-	List<Game> getGames(Team team, ZonedDateTime startDate, ZonedDateTime endDate) {
+	List<Game> getGames(Team team, ZonedDateTime startDate, ZonedDateTime endDate) throws HttpException {
 		LOGGER.info("Retrieving games of [" + team + "]");
 		ZonedDateTime latestDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
 		if (endDate.compareTo(latestDate) > 0) {
@@ -233,8 +246,7 @@ public class GameScheduler extends Thread {
 			throw runtimeException;
 		}
 
-		String strJSONSchedule = Utils.getAndRetry(
-				() -> HttpUtils.get(uri), 
+		String strJSONSchedule = HttpUtils.getAndRetry(uri, 
 				288, // 288 retries (tries over a day)
 				300000l, // Wait 5 minutes between tries
 				"Get Games.");

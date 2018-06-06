@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.ThrowableAssert;
+import com.hazeluff.discord.nhlbot.utils.CheckedSupplier;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 @RunWith(PowerMockRunner.class)
@@ -90,13 +90,13 @@ public class UtilsTest {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void getAndRetryShouldFunctionCorrectly() {
-		Supplier<Object> supplier = mock(Supplier.class);
+	public void getAndRetryShouldFunctionCorrectly() throws Exception {
+		CheckedSupplier<Object> supplier = mock(CheckedSupplier.class);
 		when(supplier.get()).thenThrow(RuntimeException.class);
 		ThrowableAssert.assertException(() -> Utils.getAndRetry(supplier, 5, 0, ""));
 		verify(supplier, times(5)).get();
 		
-		Supplier<Object> supplier2 = mock(Supplier.class);
+		CheckedSupplier<Object> supplier2 = mock(CheckedSupplier.class);
 		Object obj = new Object();
 		when(supplier2.get()).thenThrow(RuntimeException.class).thenThrow(RuntimeException.class).thenReturn(obj);
 		assertEquals(obj, Utils.getAndRetry(supplier2, 5, 0, ""));

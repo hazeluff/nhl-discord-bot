@@ -7,7 +7,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +124,7 @@ public class Utils {
 		return new LinkedHashSet<T>(Arrays.asList(elements));
 	}
 
-	public static <T> T getAndRetry(Supplier<T> supplier, int retries, long sleepMs, String description) {
+	public static <T> T getAndRetry(CheckedSupplier<T> supplier, int retries, long sleepMs, String description) {
 		for (int tries = 0; tries < retries; tries++) {
 			try {
 				return supplier.get();
@@ -134,6 +133,6 @@ public class Utils {
 				Utils.sleep(sleepMs);
 			}
 		}
-		throw new RuntimeException(String.format("Failed to get [%s] after retries [%s]", description, retries));
+		throw new TimeoutException(String.format("Failed to get [%s] after retries [%s]", description, retries));
 	}
 }

@@ -285,7 +285,6 @@ public class GameDayChannel extends Thread {
 		boolean alreadyStarted = game.getStatus() != GameStatus.PREVIEW;
 		boolean started = false;
 		do {
-			game.update();
 			started = game.getStatus() != GameStatus.PREVIEW;
 			if (!started && !isInterrupted()) {
 				LOGGER.trace("Game almost started. Sleeping for [" + ACTIVE_POLL_RATE_MS + "]");
