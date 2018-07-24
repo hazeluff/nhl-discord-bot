@@ -5,8 +5,8 @@
 
 # Add NHLBot to your server:
 
-### [Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=126032) Use this link to add the bot to your server.
-### [Development](https://discordapp.com/oauth2/authorize?client_id=257345572162371588&scope=bot&permissions=126032) (not for you)
+### [Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=126032) - Use this link to add the bot to your server.
+### [Development](https://discordapp.com/oauth2/authorize?client_id=257345572162371588&scope=bot&permissions=126032) - This is to add the DEV bot I use to test my in development stuff.
 
 ## Permissions for NHLBot
 
