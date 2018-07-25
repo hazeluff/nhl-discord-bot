@@ -1,0 +1,15 @@
+[Unit]
+Description = NHLBot Service
+After network.target = auditd.service
+
+[Service]
+Environment=PATH_TO_JAR=/nhlbot/builds/nhlbot
+Environment=BOT_KEY=<BOT_SECRET_KEY>
+WorkingDirectory=/nhlbot
+ExecStart = /usr/bin/java -cp $PATH_TO_JAR com.hazeluff.discord.nhlbot.BotRunner $BOT_KEY
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy = multi-user.target
