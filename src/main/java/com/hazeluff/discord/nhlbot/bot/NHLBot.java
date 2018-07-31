@@ -90,6 +90,7 @@ public class NHLBot {
 	void initDiscord(String botToken) {
 		this.discordClient = getClient(botToken);
 		this.discordManager = new DiscordManager(discordClient);
+		setStartingUpStatus();
 		this.id = discordManager.getApplicationClientId();
 		LOGGER.info("NHLBot. id [" + id + "]");
 	}
@@ -110,7 +111,6 @@ public class NHLBot {
 			LOGGER.info("Waiting for client to be ready.");
 			Utils.sleep(2000);
 		}
-		LOGGER.info("Client is ready.");
 
 		return client;
 	}
