@@ -29,8 +29,7 @@ public class NHLBot {
 	private GameDayChannelsManager gameDayChannelsManager;
 	private String id;
 
-	private NHLBot() {
-	}
+	private NHLBot() {}
 
 	NHLBot(IDiscordClient discordClient, DiscordManager discordManager, MongoDatabase mongoDatabase,
 			PreferencesManager preferencesManager, GameScheduler gameScheduler,
@@ -53,7 +52,6 @@ public class NHLBot {
 
 		// Init DiscordClient and DiscordManager
 		nhlBot.initDiscord(botToken);
-		nhlBot.discordManager.changePresence(StatusType.DND, ActivityType.WATCHING, "itself start up.");
 
 		// Init MongoClient/GuildPreferences
 		nhlBot.initPreferences();
@@ -76,22 +74,45 @@ public class NHLBot {
 			Utils.sleep(2000);
 		}
 
-		nhlBot.discordManager.changePresence(StatusType.ONLINE, ActivityType.PLAYING, Config.STATUS_MESSAGE);
+		nhlBot.setPlayingStatus();
 
 		return nhlBot;
 	}
 
+	void setStartingUpStatus() {
+		discordManager.changePresence(StatusType.DND, ActivityType.WATCHING, "itself start up.");
+	}
+
+	void setPlayingStatus() {
+		discordManager.changePresence(StatusType.ONLINE, ActivityType.PLAYING, Config.STATUS_MESSAGE);
+	}
+
 	void initDiscord(String botToken) {
 		this.discordClient = getClient(botToken);
+		this.discordManager = new DiscordManager(discordClient);
+		this.id = discordManager.getApplicationClientId();
+		LOGGER.info("NHLBot. id [" + id + "]");
+	}
+
+	static IDiscordClient getClient(String token) {
+		ClientBuilder clientBuilder = new ClientBuilder();
+		clientBuilder.withToken(token);
+		IDiscordClient client;
+		LOGGER.info("Logging in...");
 		try {
-			this.id = discordClient.getApplicationClientID();
-			LOGGER.info("NHLBot. id [" + id + "]");
+			client = clientBuilder.login();
 		} catch (DiscordException e) {
-			LOGGER.error("Failed to get Application Client ID", e);
+			LOGGER.error("Could not log in.", e);
 			throw new NHLBotException(e);
 		}
-		this.discordManager = new DiscordManager(discordClient);
 
+		while (!client.isReady()) {
+			LOGGER.info("Waiting for client to be ready.");
+			Utils.sleep(2000);
+		}
+		LOGGER.info("Client is ready.");
+
+		return client;
 	}
 
 	void initPreferences() {
@@ -107,25 +128,7 @@ public class NHLBot {
 	void registerListeners() {
 		EventDispatcher dispatcher = discordClient.getDispatcher();
 		dispatcher.registerListener(new MessageListener(this));
-	}
-
-	static IDiscordClient getClient(String token) {
-		ClientBuilder clientBuilder = new ClientBuilder();
-		clientBuilder.withToken(token);
-		IDiscordClient client;
-		try {
-			client = clientBuilder.login();
-		} catch (DiscordException e) {
-			LOGGER.error("Could not log in.", e);
-			throw new NHLBotException(e);
-		}
-		while (!client.isReady()) {
-			LOGGER.info("Waiting for client to be ready.");
-			Utils.sleep(2000);
-		}
-		LOGGER.info("Client is ready.");
-
-		return client;
+		dispatcher.registerListener(new ConnectionListener(this));
 	}
 
 	@SuppressWarnings("resource")

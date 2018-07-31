@@ -7,6 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.NHLBotException;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.api.IDiscordClient;
@@ -32,6 +33,10 @@ public class DiscordManager {
 
 	public DiscordManager(IDiscordClient client) {
 		this.client = client;
+	}
+
+	public IDiscordClient getClient() {
+		return client;
 	}
 
 	/**
@@ -443,6 +448,16 @@ public class DiscordManager {
 	public void changePresence(StatusType status, ActivityType activity, String text) {
 		performRequest(() -> client.changePresence(status, activity, text),
 				String.format("Could not set status: status=[%s], activity=[%s], text=[%s]", status, activity, text));
+	}
+
+	public String getApplicationClientId() {
+
+		try {
+			return client.getApplicationClientID();
+		} catch (DiscordException e) {
+			LOGGER.error("Failed to get Application Client ID", e);
+			throw new NHLBotException(e);
+		}
 	}
 
 	private void logNullArgumentsStackTrace(String message) {

@@ -57,10 +57,14 @@ public class WelcomeChannel extends Thread {
 			aboutCommand.sendEmbed(channel);
 			String strStatsMessage = statsCommand.buildMessage();
 			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
-			
+
+			while (!isStop()) {
+				Utils.sleep(5000l);
+				// System.out.println(nhlBot.getDiscordManager().getClient().getGuildByID(276953120964083713l).getName());
+			}
+
 			while (!isStop() && !isInterrupted()) {
 				Utils.sleep(UPDATE_RATE);
-				
 				if (!strStatsMessage.equals(statsCommand.buildMessage())) {
 					strStatsMessage = statsCommand.buildMessage();
 					if (strStatsMessage != null) {
