@@ -89,15 +89,14 @@ public class GameDayChannelTest {
 		when(mockGame.getHomeScore()).thenReturn(HOME_SCORE);
 		when(mockGame.getDate()).thenReturn(DATE);
 
-		gameDayChannel = new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, mockChannel,
-				team);
+		gameDayChannel = new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, mockChannel);
 		spyGameDayChannel = spy(gameDayChannel);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void runShouldInvokClasses() {
-		LOGGER.info("runShouldInvokClasses");
+	public void runShouldInvokeClasses() {
+		LOGGER.info("runShouldInvokeClasses");
 
 		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED, GameStatus.STARTED, GameStatus.FINAL);
 		doNothing().when(spyGameDayChannel).sendReminders();
@@ -372,7 +371,7 @@ public class GameDayChannelTest {
 		GameEvent gameEvent = mock(GameEvent.class);
 		when(gameEvent.getId()).thenReturn(Utils.getRandomInt());
 		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -392,7 +391,7 @@ public class GameDayChannelTest {
 		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
 		List<GameEvent> events = new ArrayList<>();
 		events.add(gameEvent);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -415,7 +414,7 @@ public class GameDayChannelTest {
 		when(gameEvent2.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
 		List<GameEvent> events = Arrays.asList(gameEvent, gameEvent2);
 		List<GameEvent> retrievedEvents = Arrays.asList(gameEvent2);
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -435,7 +434,7 @@ public class GameDayChannelTest {
 		when(gameEvent.getPlayers()).thenReturn(Arrays.asList(mock(Player.class)));
 		List<GameEvent> events = Arrays.asList(gameEvent);
 		List<GameEvent> retrievedEvents = new ArrayList<>();
-		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null, team));
+		gameDayChannel = spy(new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, null));
 		doNothing().when(gameDayChannel).sendEventMessage(any());
 		doNothing().when(gameDayChannel).updateEventMessage(any());
 		doNothing().when(gameDayChannel).sendDeletedEventMessage(any());
@@ -515,15 +514,15 @@ public class GameDayChannelTest {
 		List<GameEvent> event2List = Arrays.asList(mock(GameEvent.class), mock(GameEvent.class));
 
 		// returns false when fetchedGameEvents is not empty
-		gameDayChannel = new GameDayChannel(null, null, null, null, null, null, null);
+		gameDayChannel = new GameDayChannel(null, null, null, null, null, null);
 		assertFalse(gameDayChannel.isRetryEventFetch(event1List));
 
 		// returns true if existing list is larger than 1
-		gameDayChannel = new GameDayChannel(null, null, null, event2List, null, null, null);
+		gameDayChannel = new GameDayChannel(null, null, null, event2List, null, null);
 		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
 
 		// when list is 1, returns true until iterations reaches threshold
-		gameDayChannel = new GameDayChannel(null, null, null, event1List, null, null, null);
+		gameDayChannel = new GameDayChannel(null, null, null, event1List, null, null);
 		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
 		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
 		assertTrue(gameDayChannel.isRetryEventFetch(emptyList));
