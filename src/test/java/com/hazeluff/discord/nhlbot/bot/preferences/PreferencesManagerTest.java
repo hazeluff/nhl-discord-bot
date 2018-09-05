@@ -1,18 +1,19 @@
 package com.hazeluff.discord.nhlbot.bot.preferences;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +34,6 @@ import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.UpdateOptions;
 
 import sx.blah.discord.handle.obj.IGuild;
 
@@ -44,11 +44,9 @@ public class PreferencesManagerTest {
 	private static final long GUILD_ID = Utils.getRandomLong();
 	private static final long GUILD_ID2 = Utils.getRandomLong();
 	private static final long GUILD_ID3 = Utils.getRandomLong();
-	private static final long GUILD_ID4 = Utils.getRandomLong();
-	private static final long USER_ID = Utils.getRandomLong();
-	private static final long USER_ID2 = Utils.getRandomLong();
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 	private static final Team TEAM2 = Team.EDMONTON_OILERS;
+	private static final Team TEAM3 = Team.CALGARY_FLAMES;
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	NHLBot nhlBot;
@@ -81,210 +79,116 @@ public class PreferencesManagerTest {
 	public void loadPreferencesShouldLoadDocumentsIntoPreferencesMap() {
 		LOGGER.info("loadPreferencesShouldLoadDocumentsIntoPreferencesMap");
 		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getGuildCollection();
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getUserCollection();
 		when(spyPreferencesManager.getGuildCollection().find()).thenReturn(mock(FindIterable.class));
-		when(spyPreferencesManager.getUserCollection().find()).thenReturn(mock(FindIterable.class));
 		MongoCursor<Document> mockGuildIterator = mock(MongoCursor.class);
-		MongoCursor<Document> mockUserIterator = mock(MongoCursor.class);
 		when(spyPreferencesManager.getGuildCollection().find().iterator()).thenReturn(mockGuildIterator);
-		when(spyPreferencesManager.getUserCollection().find().iterator()).thenReturn(mockUserIterator);
 		// Guilds
 		when(mockGuildIterator.hasNext()).thenReturn(true, true, false);
 		Document mockGuildDocument1 = mock(Document.class);
 		when(mockGuildDocument1.getLong("id")).thenReturn(GUILD_ID);
-		when(mockGuildDocument1.containsKey("team")).thenReturn(true);
-		when(mockGuildDocument1.getInteger("team")).thenReturn(TEAM.getId());
+		when(mockGuildDocument1.containsKey("teams")).thenReturn(true);
+		when(mockGuildDocument1.get("teams")).thenReturn(Arrays.asList(TEAM.getId(), TEAM2.getId()));
 		Document mockGuildDocument2 = mock(Document.class);
 		when(mockGuildDocument2.getLong("id")).thenReturn(GUILD_ID2);
-		when(mockGuildDocument2.containsKey("team")).thenReturn(false);
-		// Users
-		when(mockUserIterator.hasNext()).thenReturn(true, true, false);
-		Document mockUserDocument1 = mock(Document.class);
-		when(mockUserDocument1.getLong("id")).thenReturn(USER_ID);
-		when(mockUserDocument1.containsKey("team")).thenReturn(true);
-		when(mockUserDocument1.getInteger("team")).thenReturn(TEAM.getId());
-		Document mockUserDocument2 = mock(Document.class);
-		when(mockUserDocument2.getLong("id")).thenReturn(USER_ID2);
-		when(mockUserDocument2.containsKey("team")).thenReturn(false);
+		when(mockGuildDocument2.containsKey("teams")).thenReturn(false);
 		when(mockGuildIterator.next()).thenReturn(mockGuildDocument1, mockGuildDocument2);
-		when(mockUserIterator.next()).thenReturn(mockUserDocument1, mockUserDocument2);
 
 		spyPreferencesManager.loadPreferences();
 		Map<Long, GuildPreferences> guildPreferences = spyPreferencesManager.getGuildPreferences();
-		Map<Long, UserPreferences> userPreferences = spyPreferencesManager.getUserPreferences();
-		
-		assertEquals(TEAM, guildPreferences.get(GUILD_ID).getTeam());
-		assertNull(guildPreferences.get(GUILD_ID2).getTeam());
-		assertEquals(TEAM, userPreferences.get(USER_ID).getTeam());
-		assertNull(userPreferences.get(USER_ID2).getTeam());
+		assertTrue(Utils.isListEquivalent(guildPreferences.get(GUILD_ID).getTeams(), Arrays.asList(TEAM, TEAM2)));
+		assertTrue(guildPreferences.get(GUILD_ID2).getTeams().isEmpty());
 	}
 
 	@SuppressWarnings("serial")
 	@Test
-	public void getTeamByGuildShouldReturnPreferedTeamOfGuild() {
-		LOGGER.info("getTeamByGuildShouldReturnPreferedTeamOfGuild");
+	public void getTeamsShouldReturnPreferedTeamsOfGuild() {
+		LOGGER.info("getTeamByGuildShouldReturnPreferedTeamsOfGuild");
 		preferencesManager = new PreferencesManager(
 				nhlBot, 
 				new HashMap<Long, GuildPreferences>() {{
-					put(GUILD_ID, new GuildPreferences(TEAM));
-					put(GUILD_ID2, new GuildPreferences(TEAM2));
-				}},
-				null);
-
-		assertEquals(TEAM, preferencesManager.getTeamByGuild(GUILD_ID));
-		assertEquals(TEAM2, preferencesManager.getTeamByGuild(GUILD_ID2));
-	}
-	
-	@Test
-	public void getTeamByGuildShouldReturnNullIfPreferencesDoNotExist() {
-		LOGGER.info("getTeamByGuildShouldReturnNullIfPreferencesDoNotExist");
-		assertNull(preferencesManager.getTeamByGuild(GUILD_ID));
-	}
-
-	@SuppressWarnings("serial")
-	@Test
-	public void getTeamByUserShouldReturnPreferedTeamOfGuild() {
-		LOGGER.info("getTeamByUserShouldReturnPreferedTeamOfGuild");
-		preferencesManager = new PreferencesManager(
-				nhlBot,
-				null, 
-				new HashMap<Long, UserPreferences>() {{
-					put(USER_ID, new UserPreferences(TEAM));
-					put(USER_ID2, new UserPreferences(TEAM2));
+						put(GUILD_ID, new GuildPreferences(Utils.asSet(TEAM)));
+						put(GUILD_ID2, new GuildPreferences(Utils.asSet(TEAM2, TEAM3)));
 				}});
 
-		assertEquals(TEAM, preferencesManager.getTeamByUser(USER_ID));
-		assertEquals(TEAM2, preferencesManager.getTeamByUser(USER_ID2));
+		assertEquals(Arrays.asList(TEAM), preferencesManager.getTeams(GUILD_ID));
+		assertEquals(Arrays.asList(TEAM2, TEAM3), preferencesManager.getTeams(GUILD_ID2));
 	}
 	
 	@Test
-	public void getTeamByUserShouldReturnNullIfPreferencesDoNotExist() {
-		LOGGER.info("getTeamByUserShouldReturnNullIfPreferencesDoNotExist");
-		assertNull(preferencesManager.getTeamByUser(USER_ID));
+	public void getTeamsShouldReturnEmptyListIfPreferencesDoNotExist() {
+		LOGGER.info("getTeamsShouldReturnEmptyListIfPreferencesDoNotExist");
+		assertTrue(preferencesManager.getTeams(GUILD_ID).isEmpty());
 	}
 
 	@SuppressWarnings("serial")
 	@Test
-	public void subscribeGuildShouldUpdateExistingPreferenceWhenItExists() {
-		LOGGER.info("subscribeGuildShouldUpdateExistingPreferenceWhenItExists");
+	public void subscribeGuildShouldAddToListOfTeams() {
+		LOGGER.info("subscribeGuildShouldAddToListOfTeams");
 		preferencesManager = new PreferencesManager(
 				nhlBot, 
 				new HashMap<Long, GuildPreferences>() {{
-					put(GUILD_ID, new GuildPreferences(TEAM));
-				}},
-				null);
+						put(GUILD_ID, new GuildPreferences(Utils.asSet(TEAM)));
+				}});
 		spyPreferencesManager = spy(preferencesManager);
 		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getGuildCollection();
 
 		spyPreferencesManager.subscribeGuild(GUILD_ID, TEAM2);
 
-		assertEquals(TEAM2, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
-		verify(spyPreferencesManager.getGuildCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
+		assertEquals(Arrays.asList(TEAM, TEAM2), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
+		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
 	}
 
 	@Test
-	public void subscribeGuildShouldCreatePreferenceWhenItDoesNotExists() {
-		LOGGER.info("subscribeGuildShouldCreatePreferenceWhenItDoesNotExists");
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getGuildCollection();
-		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID));
-		
-		spyPreferencesManager.subscribeGuild(GUILD_ID, TEAM2);
+	public void subscribeGuildShouldCreatePreferences() {
+		LOGGER.info("subscribeGuildShouldCreatePreferences");
+		preferencesManager = new PreferencesManager(nhlBot);
+		spyPreferencesManager = spy(preferencesManager);
+		doNothing().when(spyPreferencesManager).saveToGuildCollection(anyLong());
 
-		assertEquals(TEAM2, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
-		verify(spyPreferencesManager.getGuildCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
-	}
+		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 
-	@SuppressWarnings("unchecked")
-	@Test
-	public void unsubscribeGuildShouldCreatePreferenceWhenItExists() {
-		LOGGER.info("unsubscribeGuildShouldCreatePreferenceWhenItExists");
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getGuildCollection();
-		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID));
+		spyPreferencesManager.subscribeGuild(GUILD_ID, TEAM);
 
-		spyPreferencesManager.subscribeGuild(GUILD_ID, TEAM2);
-		reset(spyPreferencesManager.getGuildCollection());
-		spyPreferencesManager.unsubscribeGuild(GUILD_ID);
-
-		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
-		verify(spyPreferencesManager.getGuildCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
-	}
-
-	@Test
-	public void unsubscribeGuildShouldCreatePreferenceWhenItDoesNotExist() {
-		LOGGER.info("unsubscribeGuildShouldCreatePreferenceWhenItDoesNotExist");
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getGuildCollection();
-		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID));
-
-		spyPreferencesManager.unsubscribeGuild(GUILD_ID);
-
-		assertNull(preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
-		verify(spyPreferencesManager.getGuildCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
+		assertEquals(Arrays.asList(TEAM), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
+		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
 	}
 
 	@SuppressWarnings("serial")
 	@Test
-	public void subscribeUserShouldUpdateExistingPreferenceWhenItExists() {
-		LOGGER.info("subscribeUserShouldUpdateExistingPreferenceWhenItExists");
+	public void unsubscribeShouldRemoveFromListOfTeams() {
+		LOGGER.info("unsubscribeShouldRemoveFromListOfTeams");
 		preferencesManager = new PreferencesManager(
-				nhlBot,
-				null, 
-				new HashMap<Long, UserPreferences>() {{
-					put(USER_ID, new UserPreferences(TEAM));
+				nhlBot, 
+				new HashMap<Long, GuildPreferences>() {{
+						put(GUILD_ID, new GuildPreferences(Utils.asSet(TEAM, TEAM2)));
 				}});
 		spyPreferencesManager = spy(preferencesManager);
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getUserCollection();
-
-		spyPreferencesManager.subscribeUser(USER_ID, TEAM2);
-
-		assertEquals(TEAM2, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
-		verify(spyPreferencesManager.getUserCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
-	}
-
-	@Test
-	public void subscribeUserShouldCreatePreferenceWhenItDoesNotExists() {
-		LOGGER.info("subscribeUserShouldCreatePreferenceWhenItDoesNotExists");
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getUserCollection();
-		assertNull(preferencesManager.getUserPreferences().get(USER_ID));
 		
-		spyPreferencesManager.subscribeUser(USER_ID, TEAM2);
+		doNothing().when(spyPreferencesManager).saveToGuildCollection(anyLong());
 
-		assertEquals(TEAM2, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
-		verify(spyPreferencesManager.getUserCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
+		spyPreferencesManager.unsubscribeGuild(GUILD_ID, TEAM);
+
+		assertEquals(Arrays.asList(TEAM2), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
+		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("serial")
 	@Test
-	public void unsubscribeUserShouldCreatePreferenceWhenItExists() {
-		LOGGER.info("unsubscribeUserShouldCreatePreferenceWhenItExists");
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getUserCollection();
-		assertNull(preferencesManager.getUserPreferences().get(USER_ID));
+	public void unsubscribeShouldRemoveAllTeams() {
+		LOGGER.info("unsubscribeShouldRemoveAllTeams");
+		preferencesManager = new PreferencesManager(
+				nhlBot, 
+				new HashMap<Long, GuildPreferences>() {{
+						put(GUILD_ID, new GuildPreferences(Utils.asSet(TEAM, TEAM2)));
+				}});
+		spyPreferencesManager = spy(preferencesManager);
+		
+		doNothing().when(spyPreferencesManager).saveToGuildCollection(anyLong());
 
-		spyPreferencesManager.subscribeUser(USER_ID, TEAM2);
-		reset(spyPreferencesManager.getUserCollection());
-		spyPreferencesManager.unsubscribeUser(USER_ID);
+		spyPreferencesManager.unsubscribeGuild(GUILD_ID, null);
 
-		assertNull(preferencesManager.getUserPreferences().get(USER_ID).getTeam());
-		verify(spyPreferencesManager.getUserCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
-	}
-
-	@Test
-	public void unsubscribeUserShouldCreatePreferenceWhenItDoesNotExist() {
-		LOGGER.info("unsubscribeUserShouldCreatePreferenceWhenItDoesNotExist");
-		doReturn(mock(MongoCollection.class)).when(spyPreferencesManager).getUserCollection();
-		assertNull(preferencesManager.getUserPreferences().get(USER_ID));
-
-		spyPreferencesManager.unsubscribeUser(USER_ID);
-
-		assertNull(preferencesManager.getUserPreferences().get(USER_ID).getTeam());
-		verify(spyPreferencesManager.getUserCollection()).updateOne(any(Document.class), any(Document.class),
-				any(UpdateOptions.class));
+		assertEquals(Collections.emptyList(), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
+		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
 	}
 	
 	@SuppressWarnings("serial")
@@ -296,23 +200,30 @@ public class PreferencesManagerTest {
 		when(nhlBot.getDiscordManager().getGuilds().get(0).getLongID()).thenReturn(GUILD_ID);
 		when(nhlBot.getDiscordManager().getGuilds().get(1).getLongID()).thenReturn(GUILD_ID2);
 		when(nhlBot.getDiscordManager().getGuilds().get(2).getLongID()).thenReturn(GUILD_ID3);
-		when(nhlBot.getDiscordManager().getGuilds().get(3).getLongID()).thenReturn(GUILD_ID4);
 
 		preferencesManager = new PreferencesManager(
 				nhlBot, 
 				new HashMap<Long, GuildPreferences>() {{
-					put(GUILD_ID, new GuildPreferences(TEAM));
-					put(GUILD_ID2, new GuildPreferences(TEAM2));
-					put(GUILD_ID3, new GuildPreferences(TEAM));
-				}},
-				null);
+						put(GUILD_ID, new GuildPreferences(Utils.asSet(TEAM, TEAM2)));
+						put(GUILD_ID2, new GuildPreferences(Utils.asSet(TEAM2, TEAM3)));
+						put(GUILD_ID3, new GuildPreferences(Utils.asSet(TEAM, TEAM3)));
+				}});
 		
 		assertEquals(
-				Arrays.asList(nhlBot.getDiscordManager().getGuilds().get(0),
+				Arrays.asList(
+						nhlBot.getDiscordManager().getGuilds().get(0),
 						nhlBot.getDiscordManager().getGuilds().get(2)),
 				preferencesManager.getSubscribedGuilds(TEAM));
-		assertEquals(Arrays.asList(nhlBot.getDiscordManager().getGuilds().get(1)),
+		assertEquals(
+				Arrays.asList(
+						nhlBot.getDiscordManager().getGuilds().get(0),
+						nhlBot.getDiscordManager().getGuilds().get(1)),
 				preferencesManager.getSubscribedGuilds(TEAM2));
+		assertEquals(
+				Arrays.asList(
+						nhlBot.getDiscordManager().getGuilds().get(1),
+						nhlBot.getDiscordManager().getGuilds().get(2)),
+				preferencesManager.getSubscribedGuilds(TEAM3));
 	}
 	
 }

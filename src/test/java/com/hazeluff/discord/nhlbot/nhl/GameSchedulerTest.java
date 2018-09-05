@@ -128,7 +128,7 @@ public class GameSchedulerTest {
 		when(mockChannel3.getName()).thenReturn(GAME_CHANNEL_NAME3);
 		when(mockChannel4.getName()).thenReturn(GAME_CHANNEL_NAME4);
 		when(mockGuild1.getLongID()).thenReturn(GUILD_ID1);
-		when(mockPreferencesManager.getTeamByGuild(GUILD_ID1)).thenReturn(TEAM);
+		when(mockPreferencesManager.getTeams(GUILD_ID1)).thenReturn(Arrays.asList(TEAM, TEAM2));
 		when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2, mockChannel3));
 		GAMES = Utils.asSet(mockGame1, mockGame2, mockGame3);
 		GAME_TRACKERS = new HashMap<>();

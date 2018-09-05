@@ -283,7 +283,8 @@ public enum Team {
 			"Go Knights Go!",
 			0xB9975B,
 			ZoneId.of("America/Los_Angeles"));
-	
+
+	public static final String MULTI_TEAM_CHEER = "Lets Go!";
 
 	private final int id;
 	private final String location;

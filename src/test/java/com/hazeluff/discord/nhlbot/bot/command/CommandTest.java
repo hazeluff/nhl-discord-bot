@@ -3,18 +3,17 @@ package com.hazeluff.discord.nhlbot.bot.command;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -24,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -41,7 +41,6 @@ import com.hazeluff.discord.nhlbot.utils.Utils;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
 
@@ -70,6 +69,7 @@ public class CommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommandTest.class);
 
 	private static final Team TEAM = Team.COLORADO_AVALANCH;
+	private static final Team TEAM2 = Team.NEW_JERSEY_DEVILS;
 	private static final String CHANNEL_ID = RandomStringUtils.randomAlphanumeric(10);
 	private static final String CHANNEL_NAME_CURRENT = "CurrentGameChannelName";
 	private static final String CHANNEL_NAME_LAST = "LastGameChannelName";
@@ -127,14 +127,18 @@ public class CommandTest {
 		LOGGER.info("getRunInGameDayChannelMessageShouldReturnMessage");
 		String channelMention = "ChannelMention";
 		doReturn(channelMention).when(spyCommand).getLatestGameChannelMention(mockGuild, TEAM);
+		String channelMention2 = "ChannelMention2";
+		doReturn(channelMention2).when(spyCommand).getLatestGameChannelMention(mockGuild, TEAM2);
 		
-		String result = spyCommand.getRunInGameDayChannelMessage(mockGuild, TEAM);
+		String result = spyCommand.getRunInGameDayChannelsMessage(mockGuild, Arrays.asList(TEAM, TEAM2));
 		
+		assertTrue(result.contains(channelMention));
 		assertTrue(result.contains(channelMention));
 	}
 
 	@Test
 	public void getLatestGameChannelMentionShouldReturnMentionForCurrentGame() {
+		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionForCurrentGame");
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
 		
 		command.getLatestGameChannelMention(mockGuild, TEAM);
@@ -145,6 +149,7 @@ public class CommandTest {
 
 	@Test
 	public void getLatestGameChannelMentionShouldReturnMentionForLastGame() {
+		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionForLastGame");
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockLastGame);
 
 		command.getLatestGameChannelMention(mockGuild, TEAM);
@@ -154,6 +159,7 @@ public class CommandTest {
 
 	@Test
 	public void getLatestGameChannelMentionShouldReturnMentionIfChannelExists() {
+		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionIfChannelExists");
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
 		when(mockGuild.getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase()))
 				.thenReturn(Arrays.asList(mockChannel));
@@ -166,6 +172,7 @@ public class CommandTest {
 
 	@Test
 	public void getLatestGameChannelMentionShouldReturnMentionIfChannelDoesNotExist() {
+		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionIfChannelDoesNotExist");
 		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
 		when(mockGuild.getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase()))
 				.thenReturn(Collections.emptyList());
@@ -177,33 +184,56 @@ public class CommandTest {
 	}
 
 	@Test
-	public void hasPermissionShouldReturnFalseWhenUserIsNotOwnderAndDoesNotHavePermissions() {
-		LOGGER.info("hasPermissionShouldReturnFalseWhenUserIsNotOwnderAndDoesNotHavePermissions");
-		List<IRole> userRoles = Arrays.asList(mock(IRole.class));
-		when(userRoles.get(0).getPermissions()).thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
+	public void hasSubscribePermissionsShouldFunctionCorrectly() {
+		LOGGER.info("hasSubscribePermissionsShouldFunctionCorrectly");
+		IMessage message = mock(IMessage.class, Mockito.RETURNS_DEEP_STUBS);
+		IUser user = message.getAuthor();
+		IGuild guild = message.getGuild();
 
-		assertFalse(command.hasAdminPermission(mockMessage));
-	}
+		// None
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.noneOf(Permissions.class));
+		doReturn(false).when(spyCommand).isOwner(user, guild);
+		assertFalse(spyCommand.hasSubscribePermissions(message));
 
-	@Test
-	public void hasPermissionShouldReturnTrueWhenUserIsOwner() {
-		LOGGER.info("hasPermissionShouldReturnTrueWhenUserIsOwner");
-		when(mockAuthorUser.getRolesForGuild(mockGuild)).thenReturn(Collections.emptyList());
-		when(mockOwnerUser.getLongID()).thenReturn(USER_ID_AUTHOR);
+		// Has Admin Role
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+		doReturn(false).when(spyCommand).isOwner(user, guild);
+		assertTrue(spyCommand.hasSubscribePermissions(message));
 
-		assertTrue(command.hasAdminPermission(mockMessage));
-	}
+		// Has Manage Channels Roles
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.of(Permissions.MANAGE_CHANNELS));
+		doReturn(false).when(spyCommand).isOwner(user, guild);
+		assertTrue(spyCommand.hasSubscribePermissions(message));
 
-	@Test
-	public void hasPermissionShouldReturnTrueWhenUserHasRolePermissions() {
-		LOGGER.info("hasPermissionShouldReturnTrueWhenUserHasRolePermissions");
-		List<IRole> userRoles = Arrays.asList(mock(IRole.class), mock(IRole.class));
-		when(userRoles.get(0).getPermissions()).thenReturn(EnumSet.of(Permissions.READ_MESSAGES));
-		when(userRoles.get(1).getPermissions())
-				.thenReturn(EnumSet.of(Permissions.CHANGE_NICKNAME, Permissions.ADMINISTRATOR));
-		when(mockAuthorUser.getRolesForGuild(mockGuild)).thenReturn(userRoles);
+		// Is Owner
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.noneOf(Permissions.class));
+		doReturn(true).when(spyCommand).isOwner(user, guild);
+		assertTrue(spyCommand.hasSubscribePermissions(message));
 
-		assertTrue(command.hasAdminPermission(mockMessage));
+		// Mixed
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR, Permissions.MANAGE_CHANNELS));
+		doReturn(false).when(spyCommand).isOwner(user, guild);
+		assertTrue(spyCommand.hasSubscribePermissions(message));
+
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
+		doReturn(true).when(spyCommand).isOwner(user, guild);
+		assertTrue(spyCommand.hasSubscribePermissions(message));
+
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.of(Permissions.MANAGE_CHANNELS));
+		doReturn(true).when(spyCommand).isOwner(user, guild);
+		assertTrue(spyCommand.hasSubscribePermissions(message));
+
+		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
+				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR, Permissions.MANAGE_CHANNELS));
+		doReturn(true).when(spyCommand).isOwner(user, guild);
+		assertTrue(spyCommand.hasSubscribePermissions(message));
 	}
 
 }

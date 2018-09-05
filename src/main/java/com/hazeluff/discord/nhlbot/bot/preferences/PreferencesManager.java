@@ -1,6 +1,9 @@
 package com.hazeluff.discord.nhlbot.bot.preferences;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,18 +32,14 @@ public class PreferencesManager {
 
 	// GuildID -> GuildPreferences
 	private Map<Long, GuildPreferences> guildPreferences = new HashMap<>();
-	// UserID -> UserPreferences
-	private Map<Long, UserPreferences> userPreferences = new HashMap<>();
 
 	PreferencesManager(NHLBot nhlBot) {
 		this.nhlBot = nhlBot;
 	}
 
-	PreferencesManager(NHLBot nhlBot, Map<Long, GuildPreferences> guildPreferences,
-			Map<Long, UserPreferences> userPreferences) {
+	PreferencesManager(NHLBot nhlBot, Map<Long, GuildPreferences> guildPreferences) {
 		this.nhlBot = nhlBot;
 		this.guildPreferences = guildPreferences;
-		this.userPreferences = userPreferences;
 	}
 
 	public static PreferencesManager getInstance(NHLBot nhlBot) {
@@ -57,24 +56,43 @@ public class PreferencesManager {
 		return nhlBot.getMongoDatabase().getCollection("users");
 	}
 
+	@SuppressWarnings("unchecked")
 	void loadPreferences() {
 		LOGGER.info("Loading preferences...");
+
 		MongoCursor<Document> iterator = getGuildCollection().find().iterator();
 		// Load Guild preferences
 		while (iterator.hasNext()) {
 			Document doc = iterator.next();
-			guildPreferences.put(doc.getLong("id"),
-					new GuildPreferences(Team.parse(doc.containsKey("team") ? doc.getInteger("team") : null)));
+			long id = doc.getLong("id");
+			List<Team> teams;
+
+			if (doc.containsKey("team")) {
+				// Legacy Data
+				teams = Arrays.asList(Team.parse(doc.getInteger("team")));
+			} else if (doc.containsKey("teams")) {
+				teams = ((List<Integer>) doc.get("teams")).stream().map(Team::parse).collect(Collectors.toList());
+			} else {
+				teams = new ArrayList<>();
+			}
+
+			guildPreferences.put(id, new GuildPreferences(new HashSet<>(teams)));
+
+			if (doc.containsKey("team")) {
+				saveToGuildCollection(id);
+			}
+
 		}
 
-		// Load User preferences
-		iterator = getUserCollection().find().iterator();
-		while (iterator.hasNext()) {
-			Document doc = iterator.next();
-			userPreferences.put(doc.getLong("id"),
-					new UserPreferences(Team.parse(doc.containsKey("team") ? doc.getInteger("team") : null)));
-		}
 		LOGGER.info("Preferences loaded.");
+	}
+
+	public GuildPreferences getGuildPreferences(long guildId) {
+		if (!guildPreferences.containsKey(guildId)) {
+			guildPreferences.put(guildId, new GuildPreferences(new HashSet<>()));
+		}
+
+		return guildPreferences.get(guildId);
 	}
 
 	/**
@@ -84,25 +102,12 @@ public class PreferencesManager {
 	 *            id of the guild
 	 * @return the team the guild is subscribed to
 	 */
-	public Team getTeamByGuild(long guildId) {
+	@Deprecated
+	public List<Team> getTeams(long guildId) {
 		if (!guildPreferences.containsKey(guildId)) {
-			return null;
+			return new ArrayList<>();
 		}
-		return guildPreferences.get(guildId).getTeam();
-	}
-
-	/**
-	 * Gets the team that the specified user is subscribed to.
-	 * 
-	 * @param userId
-	 *            id of the user
-	 * @return the team the user is subscribed to
-	 */
-	public Team getTeamByUser(long userId) {
-		if (!userPreferences.containsKey(userId)) {
-			return null;
-		}
-		return userPreferences.get(userId).getTeam();
+		return new ArrayList<>(guildPreferences.get(guildId).getTeams());
 	}
 
 	/**
@@ -114,13 +119,14 @@ public class PreferencesManager {
 	 *            team to subscribe to
 	 */
 	public void subscribeGuild(long guildId, Team team) {
-		LOGGER.info(String.format("Subscribing guild to team. guildId=[%s], team=[%s]", guildId, team));
+		LOGGER.info("Subscribing guild to team. guildId={}, team={}", guildId, team);
 		if (!guildPreferences.containsKey(guildId)) {
 			guildPreferences.put(guildId, new GuildPreferences());
 		}
-		guildPreferences.get(guildId).setTeam(team);
-		getGuildCollection().updateOne(new Document("id", guildId),
-				new Document("$set", new Document("team", team.getId())), new UpdateOptions().upsert(true));
+
+		guildPreferences.get(guildId).addTeam(team);
+
+		saveToGuildCollection(guildId);
 	}
 
 	/**
@@ -129,49 +135,27 @@ public class PreferencesManager {
 	 * @param guildId
 	 *            id of the guild
 	 */
-	public void unsubscribeGuild(long guildId) {
-		LOGGER.info(String.format("Unsubscribing guild from team. guildId=[%s]", guildId));
-		if (!guildPreferences.containsKey(guildId)) {
+	public void unsubscribeGuild(long guildId, Team team) {
+		LOGGER.info("Unsubscribing guild from team. guildId={} team={}", guildId, team);
+
+		if (!guildPreferences.containsKey(guildId) || team == null) {
 			guildPreferences.put(guildId, new GuildPreferences());
 		}
-		guildPreferences.get(guildId).setTeam(null);
+
+		if (team != null) {
+			guildPreferences.get(guildId).removeTeam(team);
+		}
+
+		saveToGuildCollection(guildId);
+	}
+	
+	void saveToGuildCollection(long guildId) {
+		List<Integer> teamIds = guildPreferences.get(guildId).getTeams().stream()
+				.map(preferedTeam -> preferedTeam.getId())
+				.collect(Collectors.toList());
 		getGuildCollection().updateOne(
-				new Document("id", guildId), 
-				new Document("$unset", new Document("team", "")),
-				new UpdateOptions().upsert(true));
-	}
-
-	/**
-	 * Updates the team that the specified user is subscribed to.
-	 * 
-	 * @param userId
-	 *            id of the guild
-	 * @param team
-	 *            team to subscribe to
-	 */
-	public void subscribeUser(long userId, Team team) {
-		LOGGER.info(String.format("Subscribing user to team. guildId=[%s], team=[%s]", userId, team));
-		if (!userPreferences.containsKey(userId)) {
-			userPreferences.put(userId, new UserPreferences());
-		}
-		userPreferences.get(userId).setTeam(team);
-		getUserCollection().updateOne(new Document("id", userId),
-				new Document("$set", new Document("team", team.getId())), new UpdateOptions().upsert(true));
-	}
-
-	/**
-	 * Updates the guild to have no subscribed team.
-	 * 
-	 * @param userId
-	 *            id of the guild
-	 */
-	public void unsubscribeUser(long userId) {
-		LOGGER.info(String.format("Unsubscribing user from team. userId=[%s]", userId));
-		if (!userPreferences.containsKey(userId)) {
-			userPreferences.put(userId, new UserPreferences());
-		}
-		userPreferences.get(userId).setTeam(null);
-		getUserCollection().updateOne(new Document("id", userId), new Document("$unset", new Document("team", "")),
+				new Document("id", guildId),
+				new Document("$set", new Document("teams", teamIds)), 
 				new UpdateOptions().upsert(true));
 	}
 
@@ -188,16 +172,12 @@ public class PreferencesManager {
 					if (!guildPreferences.containsKey(guild.getLongID())) {
 						return false;
 					}
-					return guildPreferences.get(guild.getLongID()).getTeam() == team;
+					return guildPreferences.get(guild.getLongID()).getTeams().contains(team);
 				})
 				.collect(Collectors.toList());
 	}
 
 	Map<Long, GuildPreferences> getGuildPreferences() {
 		return guildPreferences;
-	}
-
-	Map<Long, UserPreferences> getUserPreferences() {
-		return userPreferences;
 	}
 }

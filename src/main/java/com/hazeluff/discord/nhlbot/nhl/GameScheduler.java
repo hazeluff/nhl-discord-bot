@@ -7,6 +7,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -297,6 +298,19 @@ public class GameScheduler extends Thread {
 			}
 		}
 		return list;
+	}
+
+	/**
+	 * Gets the latest games for multiple teams.
+	 * 
+	 * @param teams
+	 * @return
+	 */
+	public List<Game> getActiveGames(List<Team> teams) {
+		return new ArrayList<>(new HashSet<>(teams.stream()
+				.map(team -> getActiveGames(team))
+				.flatMap(Collection::stream)
+				.collect(Collectors.toList())));
 	}
 
 	/**

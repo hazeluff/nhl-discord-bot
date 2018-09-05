@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.utils;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -82,6 +83,16 @@ public class Utils {
 		int x = random.nextInt(enumClass.getEnumConstants().length);
 		return enumClass.getEnumConstants()[x];
 	}
+	
+	public static <T> List<T> getRandomList(List<T> sourceList, int numberOfElements) {
+		List<T> copiedList = new ArrayList<>(sourceList);
+		List<T> randomList = new ArrayList<>();
+		for (int i = 0; i < numberOfElements; i++) {
+			int indexToRemove = random.nextInt(copiedList.size());
+			randomList.add(copiedList.remove(indexToRemove));
+		}
+		return randomList;
+	}
 
 	/**
 	 * Gets the current epoch time in ms.
@@ -134,5 +145,9 @@ public class Utils {
 			}
 		}
 		throw new TimeoutException(String.format("Failed to get [%s] after retries [%s]", description, retries));
+	}
+
+	public static <T> boolean isListEquivalent(List<T> listA, List<T> listB) {
+		return listA.containsAll(listB) && listB.containsAll(listA) && listA.size() == listB.size();
 	}
 }

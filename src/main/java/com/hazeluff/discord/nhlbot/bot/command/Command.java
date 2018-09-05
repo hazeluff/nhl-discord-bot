@@ -1,7 +1,11 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -11,23 +15,19 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
 
 /**
  * Interface for commands that the NHLBot can accept and the replies to those commands.
  */
 public abstract class Command {
-	private static final String USER_SUBSCRIBE_FIRST_MESSAGE = "Please subscribe "
-			+ "to a team by using the command `@NHLBot subscribe [team]`, "
-			+ "where [team] is the 3 letter code for your team.\n"
-			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
 	private static final String GUILD_SUBSCRIBE_FIRST_MESSAGE = "Please have your admin first subscribe your guild "
 			+ "to a team by using the command `@NHLBot subscribe [team]`, "
 			+ "where [team] is the 3 letter code for your team.\n"
 			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
 	static final String GAME_NOT_STARTED_MESSAGE = "The game hasn't started yet.";
 	static final String RUN_IN_SERVER_CHANNEL_MESSAGE = "This can only be run on a server's 'Game Day Channel'.";
-	static final String NO_NEXT_GAME_MESSAGE = "There may not be a next game.";
 	
 	final NHLBot nhlBot;
 
@@ -90,24 +90,36 @@ public abstract class Command {
 	 * @param team
 	 * @return
 	 */
-	String getRunInGameDayChannelMessage(IGuild guild, Team team) {
-		return String.format("Please run this command in a 'Game Day Channel'.\nLatest game channel: %s",
-				getLatestGameChannelMention(guild, team));
+	String getRunInGameDayChannelsMessage(IGuild guild, List<Team> teams) {
+		String channelMentions = StringUtils.join(
+				teams.stream().map(team -> getLatestGameChannelMention(guild, team)).collect(Collectors.toList()));
+		return String.format("Please run this command in a 'Game Day Channel'.\nLatest game channel(s): %s",
+				channelMentions);
 	}
 
 	/**
-	 * Determines if the author of the message has permissions to subscribe the guild to a team. The author of the
-	 * message must either have the ADMIN role permission or be the owner of the guild.
+	 * Determines if the author of the message has permissions to subscribe the
+	 * guild to a team. The author of the message must either have the ADMIN role
+	 * permission or be the owner of the guild.
 	 * 
 	 * @param message
-	 *            message the user sent. Used to get role permissions and owner of guild.
+	 *            message the user sent. Used to get role permissions and owner of
+	 *            guild.
 	 * @return true, if user has permissions<br>
 	 *         false, otherwise
 	 */
-	boolean hasAdminPermission(IMessage message) {
-		return message.getAuthor().getRolesForGuild(message.getGuild()).stream().anyMatch(
-				role -> role.getPermissions().stream().anyMatch(permission -> permission == Permissions.ADMINISTRATOR))
-				|| message.getGuild().getOwner().getLongID() == message.getAuthor().getLongID();
+	boolean hasSubscribePermissions(IMessage message) {
+		IUser user = message.getAuthor();
+		IGuild guild = message.getGuild();
+		EnumSet<Permissions> userGuildPermissions = user.getPermissionsForGuild(guild);
+		boolean hasAdminRole = userGuildPermissions.contains(Permissions.ADMINISTRATOR);
+		boolean hasManageChannelsRole = userGuildPermissions.contains(Permissions.MANAGE_CHANNELS);
+		boolean owner = isOwner(user, guild);
+		return hasAdminRole || hasManageChannelsRole || owner;
+	}
+
+	boolean isOwner(IUser user, IGuild guild) {
+		return guild.getOwner().getLongID() == user.getLongID();
 	}
 
 	/**
@@ -137,12 +149,8 @@ public abstract class Command {
 	 *            the source message
 	 * @return the subscribed team for the User/Guild
 	 */
-	Team getTeam(IMessage message) {
-		if (message.getChannel().isPrivate()) {
-			return nhlBot.getPreferencesManager().getTeamByUser(message.getAuthor().getLongID());
-		} else {
-			return nhlBot.getPreferencesManager().getTeamByGuild(message.getGuild().getLongID());
-		}
+	List<Team> getTeams(IMessage message) {
+		return nhlBot.getPreferencesManager().getTeams(message.getGuild().getLongID());
 	}
 
 	/**
@@ -168,7 +176,7 @@ public abstract class Command {
 	 * @return
 	 */
 	IMessage sendSubscribeFirstMessage(IChannel channel) {
-		String message = channel.isPrivate() ? USER_SUBSCRIBE_FIRST_MESSAGE : GUILD_SUBSCRIBE_FIRST_MESSAGE;
+		String message = GUILD_SUBSCRIBE_FIRST_MESSAGE;
 		return nhlBot.getDiscordManager().sendMessage(channel, message);
 	}
 }

@@ -18,6 +18,8 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.function.Supplier;
 
 import org.junit.Before;
@@ -70,6 +72,7 @@ public class ScheduleCommandTest {
 		IMessage message = mock(IMessage.class, Answers.RETURNS_DEEP_STUBS.get());
 		when(message.getChannel()).thenReturn(mock(IChannel.class));
 		Team team = Team.VANCOUVER_CANUCKS;
+		Team team2 = Team.WINNIPEG_JETS;
 		String teamListBlock = "TeamList ```team1, team2```";
 		Supplier<ScheduleCommand> getScheduleCommandSpy = () -> {
 			ScheduleCommand spyScheduleCommand = spy(new ScheduleCommand(nhlBot));
@@ -88,16 +91,17 @@ public class ScheduleCommandTest {
 		
 		// No team argument; Is subscribed
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		when(spyScheduleCommand.getTeam(message)).thenReturn(team);
+		when(spyScheduleCommand.getTeams(message)).thenReturn(Arrays.asList(team, team2));
 		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule" });
 		verify(spyScheduleCommand).sendSchedule(message.getChannel(), team);
+		verify(spyScheduleCommand).sendSchedule(message.getChannel(), team2);
 		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
 		verifyNoMoreInteractions(nhlBot.getDiscordManager());
 
 		// No team argument; Not subscribed
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		when(spyScheduleCommand.getTeam(message)).thenReturn(null);
+		when(spyScheduleCommand.getTeams(message)).thenReturn(Collections.emptyList());
 		spyScheduleCommand.replyTo(message, new String[] { "nhlbot", "schedule" });
 		verify(spyScheduleCommand).sendSubscribeFirstMessage(message.getChannel());
 		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));

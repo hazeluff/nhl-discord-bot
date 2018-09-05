@@ -1,5 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import java.util.List;
+
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
@@ -23,15 +25,13 @@ public class ScoreCommand extends Command {
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
 		IGuild guild = message.getGuild();
-		Team preferredTeam;
-		if (channel.isPrivate()) {
-			nhlBot.getDiscordManager().sendMessage(channel, RUN_IN_SERVER_CHANNEL_MESSAGE);
-		} else if ((preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(guild.getLongID())) == null) {
+		List<Team> preferredTeam = nhlBot.getPreferencesManager().getTeams(guild.getLongID());
+		if (preferredTeam.isEmpty()) {
 			sendSubscribeFirstMessage(channel);
 		} else {
 			Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
 			if (game == null) {
-				nhlBot.getDiscordManager().sendMessage(channel, getRunInGameDayChannelMessage(guild, preferredTeam));
+				nhlBot.getDiscordManager().sendMessage(channel, getRunInGameDayChannelsMessage(guild, preferredTeam));
 			} else if (game.getStatus() == GameStatus.PREVIEW) {
 				nhlBot.getDiscordManager().sendMessage(channel, GAME_NOT_STARTED_MESSAGE);
 			} else {

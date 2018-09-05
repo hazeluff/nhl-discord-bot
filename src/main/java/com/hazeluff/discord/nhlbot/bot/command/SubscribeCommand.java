@@ -1,9 +1,15 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
 
 /**
@@ -11,7 +17,8 @@ import sx.blah.discord.handle.obj.IMessage;
  */
 public class SubscribeCommand extends Command {
 
-	static final String MUST_BE_ADMIN_TO_SUBSCRIBE_MESSAGE = "You must be an admin to subscribe the guild to a team.";
+	static final String MUST_HAVE_PERMISSIONS_MESSAGE = "You must have _Admin_ or _Manage Channels_ roles"
+			+ "to subscribe the guild to a team.";
 	static final String SPECIFY_TEAM_MESSAGE = "You must specify a parameter for what team you want to subscribe to. "
 			+ "`@NHLBot subscribe [team]`";
 
@@ -22,7 +29,7 @@ public class SubscribeCommand extends Command {
 	@Override
 	public void replyTo(IMessage message, String[] arguments) {
 		IChannel channel = message.getChannel();
-		if (channel.isPrivate() || hasAdminPermission(message)) {
+		if (hasSubscribePermissions(message)) {
 			if (arguments.length < 3) {
 				nhlBot.getDiscordManager().sendMessage(channel, SPECIFY_TEAM_MESSAGE);
 			} else if (arguments[2].equalsIgnoreCase("help")) {
@@ -39,16 +46,21 @@ public class SubscribeCommand extends Command {
 				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
 			} else if (Team.isValid(arguments[2])) {
 				Team team = Team.parse(arguments[2]);
-				if (channel.isPrivate()) {
-					// Subscribe user
-					nhlBot.getPreferencesManager().subscribeUser(message.getAuthor().getLongID(), team);
+				IGuild guild = message.getGuild();
+				// Subscribe guild
+				nhlBot.getGameDayChannelsManager().updateChannels(guild);
+				nhlBot.getPreferencesManager().subscribeGuild(guild.getLongID(), team);
+				nhlBot.getGameDayChannelsManager().initChannels(guild);
+				List<Team> subscribedTeams = nhlBot.getPreferencesManager().getTeams(guild.getLongID());
+				if (subscribedTeams.size() > 1) {
+					String teamsStr = StringUtils.join(
+							subscribedTeams.stream().map(subbedTeam -> subbedTeam.getFullName())
+									.collect(Collectors.toList()),
+							"\n");
 					nhlBot.getDiscordManager().sendMessage(channel,
-							"You are now subscribed to games of the **" + team.getFullName() + "**!");
+							"This server is now subscribed to:\n" + teamsStr);
+
 				} else {
-					// Subscribe guild
-					nhlBot.getGameDayChannelsManager().removeAllChannels(message.getGuild());
-					nhlBot.getPreferencesManager().subscribeGuild(message.getGuild().getLongID(), team);
-					nhlBot.getGameDayChannelsManager().initChannels(message.getGuild());
 					nhlBot.getDiscordManager().sendMessage(channel,
 							"This server is now subscribed to games of the **" + team.getFullName() + "**!");
 				}
@@ -57,7 +69,7 @@ public class SubscribeCommand extends Command {
 						+ "Use `@NHLBot subscribe help` to get a full list of team");
 			}
 		} else {
-			nhlBot.getDiscordManager().sendMessage(channel, MUST_BE_ADMIN_TO_SUBSCRIBE_MESSAGE);
+			nhlBot.getDiscordManager().sendMessage(channel, MUST_HAVE_PERMISSIONS_MESSAGE);
 		}
 	}
 

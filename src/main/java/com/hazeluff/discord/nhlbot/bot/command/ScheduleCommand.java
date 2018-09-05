@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.time.ZoneId;
+import java.util.List;
 import java.util.function.Function;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
@@ -45,11 +46,13 @@ public class ScheduleCommand extends Command {
 				sendInvalidCodeMessage(channel, arguments[2], "schedule");
 			}
 		} else {
-			Team preferredTeam = getTeam(message);
-			if (preferredTeam == null) {
+			List<Team> preferredTeams = getTeams(message);
+			if (preferredTeams.isEmpty()) {
 				sendSubscribeFirstMessage(channel);
 			} else {
-				sendSchedule(channel, preferredTeam);
+				for (Team team : preferredTeams) {
+					sendSchedule(channel, team);					
+				}
 			}
 		}
 	}

@@ -2,9 +2,15 @@ package com.hazeluff.discord.nhlbot.bot.preferences;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.bson.Document;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -20,6 +26,7 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 
 /*
  * Note: We are not using @RunWith(PowerMockRunner.class) as it causes an ExceptionInInitializationError with
@@ -30,8 +37,8 @@ public class PreferencesManagerIT {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManagerIT.class);
 
 	private static final long GUILD_ID = Utils.getRandomLong();
-	private static final long USER_ID = Utils.getRandomLong();
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
+	private static final Team TEAM2 = Team.CALGARY_FLAMES;
 
 	static MongoClient mongoClient;
 	MongoDatabase mongoDatabase;
@@ -69,54 +76,52 @@ public class PreferencesManagerIT {
 	public void subscribeGuildShouldWriteToDatabase() {
 		LOGGER.info("subscribeGuildShouldWriteToDatabase");
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM);
+		preferencesManager.subscribeGuild(GUILD_ID, TEAM2);
 
 		// Reload
 		preferencesManager = new PreferencesManager(nhlBot);
 		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 		preferencesManager.loadPreferences();
 
-		assertEquals(TEAM, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+		assertTrue(Utils.isListEquivalent(Arrays.asList(TEAM, TEAM2),
+				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
 	}
 
 	@Test
 	public void unsubscribeGuildShouldWriteToDatabase() {
 		LOGGER.info("unsubscribeGuildShouldWriteToDatabase");
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM);
-		preferencesManager.unsubscribeGuild(GUILD_ID);
+		preferencesManager.subscribeGuild(GUILD_ID, TEAM2);
+		preferencesManager.unsubscribeGuild(GUILD_ID, TEAM);
 
 		// Reload
 		preferencesManager = new PreferencesManager(nhlBot);
 		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 		preferencesManager.loadPreferences();
 
-		assertEquals(null, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+		assertTrue(Utils.isListEquivalent(
+				Arrays.asList(TEAM2),
+				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
 	}
-
+	
+	@SuppressWarnings("unchecked")
 	@Test
-	public void subscribeUserShouldWriteToDatabase() {
-		LOGGER.info("subscribeUserShouldWriteToDatabase");
-		preferencesManager.subscribeUser(USER_ID, TEAM);
-
-		// Reload
+	public void loadPreferencesShouldLoadLegacyTeamData() {
 		preferencesManager = new PreferencesManager(nhlBot);
-		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
+		preferencesManager.getGuildCollection().updateOne(
+				new Document("id", GUILD_ID),
+				new Document("$set", new Document("team", TEAM.getId())), 
+				new UpdateOptions().upsert(true));
+
 		preferencesManager.loadPreferences();
 
-		assertEquals(TEAM, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
-	}
+		assertTrue(Utils.isListEquivalent(Arrays.asList(TEAM),
+				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
 
-	@Test
-	public void unsubscribeUserShouldWriteToDatabase() {
-		LOGGER.info("unsubscribeUserShouldWriteToDatabase");
-		preferencesManager.subscribeUser(USER_ID, TEAM);
-		preferencesManager.unsubscribeUser(USER_ID);
-
-		// Reload
-		preferencesManager = new PreferencesManager(nhlBot);
-		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
-		preferencesManager.loadPreferences();
-
-		assertEquals(null, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
+		Document doc = preferencesManager.getGuildCollection().find().iterator().next();
+		
+		assertEquals(Arrays.asList(TEAM),
+				((List<Integer>) doc.get("teams")).stream().map(Team::parse).collect(Collectors.toList()));
 	}
 
 }
