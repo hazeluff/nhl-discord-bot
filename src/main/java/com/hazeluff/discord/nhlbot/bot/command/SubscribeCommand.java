@@ -58,7 +58,7 @@ public class SubscribeCommand extends Command {
 									.collect(Collectors.toList()),
 							"\n");
 					nhlBot.getDiscordManager().sendMessage(channel,
-							"This server is now subscribed to:\n" + teamsStr);
+							"This server is now subscribed to:\n```" + teamsStr + "```");
 
 				} else {
 					nhlBot.getDiscordManager().sendMessage(channel,
