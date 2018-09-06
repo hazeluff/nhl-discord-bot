@@ -18,8 +18,10 @@ import sx.blah.discord.handle.obj.ActivityType;
 import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
 
-public class NHLBot {
+public class NHLBot extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBot.class);
+
+	private static long UPDATE_PLAY_STATUS_INTERVAL = 3600000l;
 
 	private IDiscordClient discordClient;
 	private DiscordManager discordManager;
@@ -27,7 +29,7 @@ public class NHLBot {
 	private PreferencesManager preferencesManager;
 	private GameScheduler gameScheduler;
 	private GameDayChannelsManager gameDayChannelsManager;
-	private String id;
+	private String userId;
 
 	private NHLBot() {}
 
@@ -40,7 +42,7 @@ public class NHLBot {
 		this.preferencesManager = preferencesManager;
 		this.gameScheduler = gameScheduler;
 		this.gameDayChannelsManager = gameDayChannelsManager;
-		this.id = id;
+		this.userId = id;
 	}
 
 	public static NHLBot create(String botToken, GameScheduler gameScheduler) {
@@ -76,7 +78,17 @@ public class NHLBot {
 
 		nhlBot.setPlayingStatus();
 
+		nhlBot.start();
+
 		return nhlBot;
+	}
+
+	@Override
+	public void run() {
+		while (!isInterrupted()) {
+			setPlayingStatus();
+			Utils.sleep(UPDATE_PLAY_STATUS_INTERVAL);
+		}
 	}
 
 	void setStartingUpStatus() {
@@ -91,8 +103,8 @@ public class NHLBot {
 		this.discordClient = getClient(botToken);
 		this.discordManager = new DiscordManager(discordClient);
 		setStartingUpStatus();
-		this.id = discordManager.getApplicationClientId();
-		LOGGER.info("NHLBot. id [" + id + "]");
+		this.userId = discordManager.getApplicationClientId();
+		LOGGER.info("NHLBot. id [" + userId + "]");
 	}
 
 	static IDiscordClient getClient(String token) {
@@ -128,7 +140,6 @@ public class NHLBot {
 	void registerListeners() {
 		EventDispatcher dispatcher = discordClient.getDispatcher();
 		dispatcher.registerListener(new MessageListener(this));
-		dispatcher.registerListener(new ConnectionListener(this));
 	}
 
 	@SuppressWarnings("resource")
@@ -157,17 +168,18 @@ public class NHLBot {
 		return gameDayChannelsManager;
 	}
 
-	public String getId() {
-		return id;
+	public String getUserId() {
+		return userId;
 	}
 
 	/**
-	 * Gets the id of the bot, in the format displayed in a message.
+	 * Gets the mention for the bot. It is how the raw message displays a mention of
+	 * the bot's user.
 	 * 
 	 * @return
 	 */
-	public String getMentionId() {
-		return "<@" + id + ">";
+	public String getMention() {
+		return "<@" + userId + ">";
 	}
 
 	/**
@@ -177,6 +189,6 @@ public class NHLBot {
 	 * @return
 	 */
 	public String getNicknameMentionId() {
-		return "<@!" + id + ">";
+		return "<@!" + userId + ">";
 	}
 }

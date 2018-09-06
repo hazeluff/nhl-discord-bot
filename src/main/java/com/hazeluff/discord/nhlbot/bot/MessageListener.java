@@ -209,7 +209,7 @@ public class MessageListener {
 	 */
 	String[] getBotCommand(IMessage message) {
 		String messageContent = message.getContent();
-		if (messageContent.startsWith(nhlBot.getMentionId())
+		if (messageContent.startsWith(nhlBot.getMention())
 				|| messageContent.startsWith(nhlBot.getNicknameMentionId())) {
 			return messageContent.split("\\s+");
 		}
@@ -242,7 +242,7 @@ public class MessageListener {
 	 */
 	boolean isBotMentioned(IMessage message) {
 		String messageContent = message.getContent();
-		return messageContent.contains(nhlBot.getMentionId()) 
+		return messageContent.contains(nhlBot.getMention()) 
 				|| messageContent.contains(nhlBot.getNicknameMentionId())
 				|| message.getChannel().isPrivate();
 	}

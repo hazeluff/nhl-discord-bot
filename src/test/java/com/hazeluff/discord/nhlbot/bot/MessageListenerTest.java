@@ -87,8 +87,8 @@ public class MessageListenerTest {
 		when(mockChannel.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getGuild()).thenReturn(mockGuild);
 		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
-		when(mockNHLBot.getId()).thenReturn(BOT_ID);
-		when(mockNHLBot.getMentionId()).thenReturn(BOT_MENTION_ID);
+		when(mockNHLBot.getUserId()).thenReturn(BOT_ID);
+		when(mockNHLBot.getMention()).thenReturn(BOT_MENTION_ID);
 		when(mockNHLBot.getNicknameMentionId()).thenReturn(BOT_NICKNAME_MENTION_ID);
 		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
 		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
