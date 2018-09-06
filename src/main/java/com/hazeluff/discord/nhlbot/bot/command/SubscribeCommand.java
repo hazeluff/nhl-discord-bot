@@ -37,7 +37,8 @@ public class SubscribeCommand extends Command {
 						"Subscribed to any of the following teams by typing `@NHLBot subscribe [team]`, "
 								+ "where [team] is the one of the three letter codes for your team below: ")
 										.append("```");
-				for (Team team : Team.values()) {
+				List<Team> teams = Team.getSortedLValues();
+				for (Team team : teams) {
 					response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
 				}
 				response.append("```\n");
@@ -54,7 +55,7 @@ public class SubscribeCommand extends Command {
 				List<Team> subscribedTeams = nhlBot.getPreferencesManager().getTeams(guild.getLongID());
 				if (subscribedTeams.size() > 1) {
 					String teamsStr = StringUtils.join(
-							subscribedTeams.stream().map(subbedTeam -> subbedTeam.getFullName())
+							subscribedTeams.stream().map(subbedTeam -> subbedTeam.getFullName()).sorted()
 									.collect(Collectors.toList()),
 							"\n");
 					nhlBot.getDiscordManager().sendMessage(channel,

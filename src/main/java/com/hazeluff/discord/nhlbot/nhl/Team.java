@@ -1,7 +1,10 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public enum Team {
@@ -297,6 +300,7 @@ public enum Team {
 
 	private static final Map<Integer, Team> VALUES_MAP = new HashMap<>();
 	private static final Map<String, Team> CODES_MAP = new HashMap<>();
+	private static final List<Team> SORTED_VALUES;
 
 	static {
 		for (Team t : Team.values()) {
@@ -305,6 +309,9 @@ public enum Team {
 		for (Team t : Team.values()) {
 			CODES_MAP.put(t.code, t);
 		}
+
+		SORTED_VALUES = new ArrayList<>(EnumSet.allOf(Team.class));
+		SORTED_VALUES.sort((t1, t2) -> t1.getFullName().compareTo(t2.getFullName()));
 	}
 
 	private Team(int id, String location, String name, String code, Division division, String cheer, int color,
@@ -386,5 +393,9 @@ public enum Team {
 			throw new IllegalArgumentException("No value exists for: " + code);
 		}
 		return result;
+	}
+
+	public static List<Team> getSortedLValues() {
+		return new ArrayList<>(SORTED_VALUES);
 	}
 }
