@@ -1,7 +1,6 @@
 package com.hazeluff.discord.nhlbot.bot.preferences;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,10 +66,7 @@ public class PreferencesManager {
 			long id = doc.getLong("id");
 			List<Team> teams;
 
-			if (doc.containsKey("team")) {
-				// Legacy Data
-				teams = Arrays.asList(Team.parse(doc.getInteger("team")));
-			} else if (doc.containsKey("teams")) {
+			if (doc.containsKey("teams")) {
 				teams = ((List<Integer>) doc.get("teams")).stream().map(Team::parse).collect(Collectors.toList());
 			} else {
 				teams = new ArrayList<>();
