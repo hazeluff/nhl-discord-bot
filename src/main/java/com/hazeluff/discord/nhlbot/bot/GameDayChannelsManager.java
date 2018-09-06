@@ -59,18 +59,28 @@ public class GameDayChannelsManager extends Thread {
 		gameDayChannels.get(guildId).put(gamePk, gameDayChannel);
 	}
 
-	void removeGameDayChannel(long guildId, int gamePk) {
+	/**
+	 * 
+	 * @param guildId
+	 * @param gamePk
+	 * @return true - if channel was stopped and removed.<br>
+	 *         false - otherwise
+	 */
+	boolean removeGameDayChannel(long guildId, int gamePk) {
 		if (gameDayChannels.containsKey(guildId)) {
 			Map<Integer, GameDayChannel> guildChannels = gameDayChannels.get(guildId);
 			GameDayChannel gameDayChannel = guildChannels.remove(gamePk);
-			if (gameDayChannel != null) {
+			boolean stopAndRemove = gameDayChannel != null;
+			if (stopAndRemove) {
 				gameDayChannel.stopAndRemoveGuildChannel();
 			}
 			
 			if (guildChannels.isEmpty()) {
 				gameDayChannels.remove(guildId);
 			}
+			return stopAndRemove;
 		}
+		return false;
 	}
 
 	/**
@@ -212,29 +222,27 @@ public class GameDayChannelsManager extends Thread {
 	 * #deleteInactiveGuildChannels(IGuild).
 	 */
 	void deleteInactiveGuildChannel(IChannel channel, GuildPreferences preferences) {
-		System.out.println(channel.getName());
 		if (!GameDayChannel.isInCategory(channel)) {
-			System.out.println("not cat");
 			return;
 		}
 
 		if (!GameDayChannel.isChannelNameFormat(channel.getName())) {
-			System.out.println("not for");
 			return;
 		}
 
 		String channelName = channel.getName();
 		if (isGameActive(preferences.getTeams(), channelName)) {
-			System.out.println("not act");
 			return;
 		}
 
 		IGuild guild = channel.getGuild();
 		Game game = nhlBot.getGameScheduler().getGameByChannelName(channelName);
+		boolean removedChannel = false;
 		if (game != null) {
-			System.out.println("not null");
-			removeGameDayChannel(guild.getLongID(), game.getGamePk());
-		} else {
+			removedChannel = removeGameDayChannel(guild.getLongID(), game.getGamePk());
+		}
+
+		if (!removedChannel) {
 			nhlBot.getDiscordManager().deleteChannel(channel);
 		}
 	}
