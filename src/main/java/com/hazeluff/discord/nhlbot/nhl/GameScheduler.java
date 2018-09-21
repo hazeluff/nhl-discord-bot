@@ -257,7 +257,7 @@ public class GameScheduler extends Thread {
 		for (int i = 0; i < jsonDates.length(); i++) {
 			JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
 			Game game = Game.parse(jsonGame);
-			if (game.getStatus() != GameStatus.SCHEDULED) {
+			if (game != null && game.getStatus() != GameStatus.SCHEDULED) {
 				LOGGER.debug("Adding additional game [" + game + "]");
 				games.add(game);
 			}

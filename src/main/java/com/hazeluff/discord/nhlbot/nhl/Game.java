@@ -49,16 +49,21 @@ public class Game {
 	}
 
 	public static Game parse(JSONObject jsonGame) {
-		ZonedDateTime date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
-		int gamePk = jsonGame.getInt("gamePk");
-		Team awayTeam = Team
-				.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
-		Team homeTeam = Team
-				.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
-		Game game = new Game(date, gamePk, awayTeam, homeTeam);
-		game.updateState(jsonGame);
+		try {
+			ZonedDateTime date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
+			int gamePk = jsonGame.getInt("gamePk");
+			Team awayTeam = Team
+					.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
+			Team homeTeam = Team
+					.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
+			Game game = new Game(date, gamePk, awayTeam, homeTeam);
+			game.updateState(jsonGame);
 
-		return game;
+			return game;
+		} catch (Exception e) {
+			LOGGER.error("Could not parse game.", e);
+			return null;
+		}
 	}
 
 	/**

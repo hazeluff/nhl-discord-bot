@@ -382,7 +382,7 @@ public class GameSchedulerTest {
 		
 		gameScheduler.getGames(TEAM, startDate, endDate);
 
-		verify(mockURIBuilder).addParameter("endDate", "2018-06-15");
+		verify(mockURIBuilder).addParameter("endDate", (Config.SEASON_YEAR + 1) + "-06-15");
 	}
 
 	@Test
