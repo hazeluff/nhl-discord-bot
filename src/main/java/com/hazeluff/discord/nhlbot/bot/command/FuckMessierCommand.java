@@ -20,7 +20,9 @@ public class FuckMessierCommand extends Command {
 					+ "• No hate messenges about any hockey player and team except for Messier; "
 					+ "e.g. \"I hope (player) gets injured\" unless player is Matheson based off server name",
 			"Matheson: \"I did it because I'm irrelavent and stupid.\"",
-			"I bet Matheson is the type of dude who doesn't hold doors for people");
+			"I bet Matheson is the type of dude who doesn't hold doors for people",
+			"༼ つ ◕\\_◕ ༽つPETEY TAKE MY HEAD ༼ つ ◕\\_◕ ༽つ",
+			"Matheson puts the box of cookies back into the cupboard when he finishes them");
 
 	public FuckMessierCommand(NHLBot nhlBot) {
 		super(nhlBot);
