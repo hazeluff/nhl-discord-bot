@@ -21,12 +21,12 @@ import sx.blah.discord.handle.obj.IUser;
 public class UserThrottler extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UserThrottler.class);
 	static final long CLEANUP_INTERVAL = 3600000;
-	static final long THRESHOLD_MS = 10000;
+	static final long THRESHOLD_MS = 5000;
 	/**
 	 * Number of messages within the threshold which would cause messages to be
 	 * throttled.
 	 */
-	private static final int THRESHOLD_NUM = 2;
+	private static final int THRESHOLD_NUM = 3;
 
 	private Map<Long, List<ZonedDateTime>> userTimeStamps = new ConcurrentHashMap<>();
 	

@@ -170,8 +170,6 @@ public class GameDayChannel extends Thread {
 				}
 				Utils.sleep(ACTIVE_POLL_RATE_MS);
 			}
-
-			updatePinnedMessage();
 		} else {
 			LOGGER.info("Game is already finished");
 		}
@@ -486,7 +484,8 @@ public class GameDayChannel extends Thread {
 				endOfGameMessage = sendMessage(buildEndOfGameMessage());
 			}
 			if (endOfGameMessage != null) {
-				LOGGER.info("Sent end of game message for game.");
+				LOGGER.info("Sent end of game message for game. Pinning it...");
+				nhlBot.getDiscordManager().pinMessage(channel, endOfGameMessage);
 			}
 		} else {
 			LOGGER.trace("End of game message already sent.");
@@ -524,19 +523,6 @@ public class GameDayChannel extends Thread {
 			}
 		}
 		return message;
-	}
-
-	/**
-	 * Update the pinned message of the channel to include details (score/goals) of
-	 * the game.
-	 */
-	public void updatePinnedMessage() {
-		LOGGER.info("Updating pinned message.");
-		IMessage pinnedMessage = nhlBot.getDiscordManager().getPinnedMessages(channel).stream()
-				.filter(message -> nhlBot.getDiscordManager().isAuthorOfMessage(message)).findFirst().orElse(null);
-		if (pinnedMessage != null) {
-			nhlBot.getDiscordManager().updateMessage(pinnedMessage, buildEndOfGameMessage());
-		}
 	}
 
 	/**

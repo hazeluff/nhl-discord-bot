@@ -112,7 +112,6 @@ public class GameDayChannelTest {
 		doNothing().when(spyGameDayChannel).updateMessages(any());
 		doNothing().when(spyGameDayChannel).updateEvents(any());
 		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
-		doNothing().when(spyGameDayChannel).updatePinnedMessage();
 
 		spyGameDayChannel.run();
 
@@ -125,7 +124,6 @@ public class GameDayChannelTest {
 		io.verify(spyGameDayChannel).updateMessages(newEvents);
 		io.verify(spyGameDayChannel).updateEvents(newEvents);
 		io.verify(spyGameDayChannel).updateEndOfGameMessage();
-		io.verify(spyGameDayChannel).updatePinnedMessage();
 	}
 
 	@Test
@@ -143,7 +141,6 @@ public class GameDayChannelTest {
 		doNothing().when(spyGameDayChannel).updateMessages(any());
 		doNothing().when(spyGameDayChannel).updateEvents(any());
 		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
-		doNothing().when(spyGameDayChannel).updatePinnedMessage();
 
 		spyGameDayChannel.run();
 
@@ -171,7 +168,6 @@ public class GameDayChannelTest {
 		doNothing().when(spyGameDayChannel).updateMessages(any());
 		doNothing().when(spyGameDayChannel).updateEvents(any());
 		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
-		doNothing().when(spyGameDayChannel).updatePinnedMessage();
 
 		spyGameDayChannel.run();
 

@@ -99,21 +99,28 @@ public class GameScheduler extends Thread {
 			initGames();
 			initTrackers();
 
-			init.set(true);
+		} catch (HttpException e) {
+			LOGGER.error("Error occured when initializing games.", e);
+			throw new RuntimeException(e);
+		}
 
-			lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
-			while (!isStop()) {
-				LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
-				if (today.compareTo(lastUpdate) > 0) {
+		init.set(true);
+
+		lastUpdate = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
+		while (!isStop()) {
+			LocalDate today = Utils.getCurrentDate(Config.DATE_START_TIME_ZONE);
+			if (today.compareTo(lastUpdate) > 0) {
+				try {
 					updateGameSchedule();
 					updateTrackers();
 					lastUpdate = today;
+
+				} catch (HttpException e) {
+					LOGGER.error("Error occured when updating games.", e);
+					throw new RuntimeException(e);
 				}
-				Utils.sleep(UPDATE_RATE);
 			}
-		} catch (HttpException e) {
-			LOGGER.error("Error occured when updating games.", e);
-			throw new RuntimeException(e);
+			Utils.sleep(UPDATE_RATE);
 		}
 	}
 
