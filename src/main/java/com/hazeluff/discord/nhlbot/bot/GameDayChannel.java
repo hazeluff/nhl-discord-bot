@@ -82,6 +82,7 @@ public class GameDayChannel extends Thread {
 
 	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Game game, List<GameEvent> events, IGuild guild,
 			IChannel channel) {
+		setUncaughtExceptionHandler(new ExceptionHandler(GameDayChannelsManager.class));
 		this.nhlBot = nhlBot;
 		this.gameTracker = gameTracker;
 		this.game = game;

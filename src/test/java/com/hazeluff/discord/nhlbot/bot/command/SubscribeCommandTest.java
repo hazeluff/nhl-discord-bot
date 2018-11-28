@@ -116,7 +116,7 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "help" });
 
-		verify(mockNHLBot.getGameDayChannelsManager(), never()).updateChannels(any(IGuild.class));
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).deleteInactiveGuildChannels(any(IGuild.class));
 		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
 		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
@@ -136,7 +136,7 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
 
-		verify(mockNHLBot.getGameDayChannelsManager()).updateChannels(any(IGuild.class));
+		verify(mockNHLBot.getGameDayChannelsManager()).deleteInactiveGuildChannels(any(IGuild.class));
 		verify(mockNHLBot.getPreferencesManager()).subscribeGuild(GUILD_ID, TEAM);
 		verify(mockNHLBot.getGameDayChannelsManager()).initChannels(mockGuild);
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
@@ -150,7 +150,7 @@ public class SubscribeCommandTest {
 
 		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "ZZZ" });
 
-		verify(mockNHLBot.getGameDayChannelsManager(), never()).updateChannels(any(IGuild.class));
+		verify(mockNHLBot.getGameDayChannelsManager(), never()).deleteInactiveGuildChannels(any(IGuild.class));
 		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
 		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());

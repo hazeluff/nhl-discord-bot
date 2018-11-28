@@ -56,8 +56,8 @@ public class MessageListener {
 	public MessageListener(NHLBot nhlBot) {
 		this.nhlBot = nhlBot;
 		commands = new ArrayList<>();
-		commands.add(new FuckMessierCommand(nhlBot));
 		commands.add(new FuckMathesonCommand(nhlBot));
+		commands.add(new FuckMessierCommand(nhlBot));
 		commands.add(new HelpCommand(nhlBot));
 		commands.add(new AboutCommand(nhlBot));
 		commands.add(new SubscribeCommand(nhlBot));
@@ -73,7 +73,7 @@ public class MessageListener {
 		topics.add(new LovelyTopic(nhlBot));
 		topics.add(new RudeTopic(nhlBot));
 		topics.add(new WhatsUpTopic(nhlBot));
-		
+
 		userThrottler = new UserThrottler();
 	}
 
@@ -89,19 +89,13 @@ public class MessageListener {
 		IUser user = event.getAuthor();
 		IMessage message = event.getMessage();
 		if (!userThrottler.isThrottle(user)) {
-			if(message.getChannel().isPrivate()) {
-				LOGGER.trace(String.format("[Direct Message][%s][%s][%s]",
-						message.getChannel().getName(),
-						message.getAuthor().getName(),
-						message.getContent()));			
+			if (message.getChannel().isPrivate()) {
+				LOGGER.trace(String.format("[Direct Message][%s][%s][%s]", message.getChannel().getName(),
+						message.getAuthor().getName(), message.getContent()));
 			} else {
-				LOGGER.trace(String.format("[%s][%s][%s][%s]",
-						message.getGuild().getName(),
-						message.getChannel().getName(),
-						message.getAuthor().getName(),
-						message.getContent()));			
+				LOGGER.trace(String.format("[%s][%s][%s][%s]", message.getGuild().getName(),
+						message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
 			}
-			
 
 			if (replyToCommand(message)) {
 				userThrottler.add(user);
@@ -128,7 +122,8 @@ public class MessageListener {
 	}
 
 	/**
-	 * Sends a message if the message in the form of a command (Starts with "@NHLBot")
+	 * Sends a message if the message in the form of a command (Starts with
+	 * "@NHLBot")
 	 * 
 	 * @param channel
 	 *            channel to send the message to
@@ -140,23 +135,17 @@ public class MessageListener {
 	boolean replyToCommand(IMessage message) {
 		String[] arguments = getBotCommand(message);
 		if (arguments.length > 1) {
-			if(message.getChannel().isPrivate()) {
+			if (message.getChannel().isPrivate()) {
 				LOGGER.info(
-						String.format("Received Command:[Direct Message][%s][%s][%s]",
-						message.getChannel().getName(), 
-						message.getAuthor().getName(),
-						"Command:" + Arrays.toString(arguments)));	
+						String.format("Received Command:[Direct Message][%s][%s][%s]", message.getChannel().getName(),
+								message.getAuthor().getName(), "Command:" + Arrays.toString(arguments)));
 			} else {
-				LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]", 
-						message.getChannel().getGuild().getName(),
-						message.getChannel().getName(), 
-						message.getAuthor().getName(),
-						"Command:" + Arrays.toString(arguments)));
+				LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]",
+						message.getChannel().getGuild().getName(), message.getChannel().getName(),
+						message.getAuthor().getName(), "Command:" + Arrays.toString(arguments)));
 			}
 
-			Optional<Command> matchedCommand = commands
-					.stream()
-					.filter(command -> command.isAccept(message, arguments))
+			Optional<Command> matchedCommand = commands.stream().filter(command -> command.isAccept(message, arguments))
 					.findFirst();
 			if (matchedCommand.isPresent()) {
 				matchedCommand.get().replyTo(message, arguments);
@@ -168,7 +157,8 @@ public class MessageListener {
 	}
 
 	/**
-	 * Sends a message if NHLBot is mentioned and phrases match ones that have responses.
+	 * Sends a message if NHLBot is mentioned and phrases match ones that have
+	 * responses.
 	 * 
 	 * @param message
 	 *            message received
@@ -177,27 +167,20 @@ public class MessageListener {
 	 */
 	boolean replyToMention(IMessage message) {
 		if (isBotMentioned(message)) {
-			if(message.getChannel().isPrivate()) {
-				LOGGER.info(String.format("Received Mention:[Direct Message][%s][%s][%s]", 
-						message.getChannel().getName(), 
-						message.getAuthor().getName(), 
-						message.getContent()));
+			if (message.getChannel().isPrivate()) {
+				LOGGER.info(String.format("Received Mention:[Direct Message][%s][%s][%s]",
+						message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
 			} else {
-				LOGGER.info(String.format("Received Mention:[%s][%s][%s][%s]", 
-						message.getChannel().getGuild().getName(),
-						message.getChannel().getName(), 
-						message.getAuthor().getName(), 
-						message.getContent()));
+				LOGGER.info(
+						String.format("Received Mention:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
+								message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
 			}
-			Optional<Topic> matchedCommand = topics
-					.stream()
-					.filter(topic -> topic.isReplyTo(message))
-					.findFirst();
+			Optional<Topic> matchedCommand = topics.stream().filter(topic -> topic.isReplyTo(message)).findFirst();
 			if (matchedCommand.isPresent()) {
 				matchedCommand.get().replyTo(message);
 				return true;
 			}
-		}		
+		}
 
 		return false;
 	}
@@ -244,15 +227,15 @@ public class MessageListener {
 	 */
 	boolean isBotMentioned(IMessage message) {
 		String messageContent = message.getContent();
-		return messageContent.contains(nhlBot.getMention()) 
-				|| messageContent.contains(nhlBot.getNicknameMentionId())
+		return messageContent.contains(nhlBot.getMention()) || messageContent.contains(nhlBot.getNicknameMentionId())
 				|| message.getChannel().isPrivate();
 	}
 
 	/**
-	 * Parses message for if 'messier' is mentioned and increments a counter. Returns true to indicate a message should
-	 * be sent to the channel with "Fuck Messier" if the number of submissions in the last minute is over 5. Resets the
-	 * counter once reached.
+	 * Parses message for if 'messier' is mentioned and increments a counter.
+	 * Returns true to indicate a message should be sent to the channel with "Fuck
+	 * Messier" if the number of submissions in the last minute is over 5. Resets
+	 * the counter once reached.
 	 * 
 	 * @param message
 	 *            message to reply to
@@ -262,7 +245,7 @@ public class MessageListener {
 	public boolean shouldFuckMessier(IMessage message) {
 		IChannel channel = message.getChannel();
 		String messageLowerCase = message.getContent().toLowerCase();
-		if(!messierCounter.containsKey(channel)) {
+		if (!messierCounter.containsKey(channel)) {
 			messierCounter.put(channel, new ArrayList<Long>());
 		}
 		List<Long> counter = messierCounter.get(channel);

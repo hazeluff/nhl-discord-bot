@@ -103,6 +103,7 @@ public class GameDayChannelsManager extends Thread {
 	public GameDayChannelsManager(NHLBot nhlBot) {
 		this.nhlBot = nhlBot;
 		gameDayChannels = new ConcurrentHashMap<>();
+		setUncaughtExceptionHandler(new ExceptionHandler(GameDayChannelsManager.class));
 	}
 
 	@Override
@@ -198,7 +199,7 @@ public class GameDayChannelsManager extends Thread {
 	 * channels written in the format that represents a game channel will be
 	 * removed.
 	 */
-	void deleteInactiveGuildChannels(IGuild guild) {
+	public void deleteInactiveGuildChannels(IGuild guild) {
 		LOGGER.info("Cleaning up old channels: guild={}", guild.getName());
 		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID());
 		for (IChannel channel : guild.getChannels()) {

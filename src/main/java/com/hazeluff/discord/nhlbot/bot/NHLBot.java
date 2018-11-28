@@ -140,6 +140,7 @@ public class NHLBot extends Thread {
 	void registerListeners() {
 		EventDispatcher dispatcher = discordClient.getDispatcher();
 		dispatcher.registerListener(new MessageListener(this));
+		dispatcher.registerListener(new ConnectionListener(this));
 	}
 
 	@SuppressWarnings("resource")

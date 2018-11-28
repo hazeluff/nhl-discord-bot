@@ -49,7 +49,7 @@ public class SubscribeCommand extends Command {
 				Team team = Team.parse(arguments[2]);
 				IGuild guild = message.getGuild();
 				// Subscribe guild
-				nhlBot.getGameDayChannelsManager().updateChannels(guild);
+				nhlBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
 				nhlBot.getPreferencesManager().subscribeGuild(guild.getLongID(), team);
 				nhlBot.getGameDayChannelsManager().initChannels(guild);
 				List<Team> subscribedTeams = nhlBot.getPreferencesManager().getTeams(guild.getLongID());

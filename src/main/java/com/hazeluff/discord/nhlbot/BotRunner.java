@@ -16,7 +16,7 @@ public class BotRunner {
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
-		Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
+		Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(BotRunner.class));
 
 		GameScheduler gameScheduler = new GameScheduler();
 
