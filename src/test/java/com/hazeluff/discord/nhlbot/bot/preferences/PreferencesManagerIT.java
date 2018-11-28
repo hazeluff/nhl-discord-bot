@@ -1,16 +1,12 @@
 package com.hazeluff.discord.nhlbot.bot.preferences;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import org.bson.Document;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -26,7 +22,6 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.UpdateOptions;
 
 /*
  * Note: We are not using @RunWith(PowerMockRunner.class) as it causes an ExceptionInInitializationError with
@@ -102,26 +97,6 @@ public class PreferencesManagerIT {
 		assertTrue(Utils.isListEquivalent(
 				Arrays.asList(TEAM2),
 				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Test
-	public void loadPreferencesShouldLoadLegacyTeamData() {
-		preferencesManager = new PreferencesManager(nhlBot);
-		preferencesManager.getGuildCollection().updateOne(
-				new Document("id", GUILD_ID),
-				new Document("$set", new Document("team", TEAM.getId())), 
-				new UpdateOptions().upsert(true));
-
-		preferencesManager.loadPreferences();
-
-		assertTrue(Utils.isListEquivalent(Arrays.asList(TEAM),
-				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
-
-		Document doc = preferencesManager.getGuildCollection().find().iterator().next();
-		
-		assertEquals(Arrays.asList(TEAM),
-				((List<Integer>) doc.get("teams")).stream().map(Team::parse).collect(Collectors.toList()));
 	}
 
 }
