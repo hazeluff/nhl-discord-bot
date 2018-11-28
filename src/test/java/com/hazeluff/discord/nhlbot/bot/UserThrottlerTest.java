@@ -87,6 +87,8 @@ public class UserThrottlerTest {
 		userThrottler.put(user, notExpired);
 		assertFalse(userThrottler.isThrottle(user));
 		userThrottler.put(user, notExpired);
+		assertFalse(userThrottler.isThrottle(user));
+		userThrottler.put(user, notExpired);
 		assertTrue(userThrottler.isThrottle(user));
 	}
 

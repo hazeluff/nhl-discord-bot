@@ -36,11 +36,11 @@ public class FuckMessierCommandTest {
 	@Captor
 	private ArgumentCaptor<String> captorString;
 
-	private FuckMathesonCommand fuckMessierCommand;
+	private FuckMessierCommand fuckMessierCommand;
 
 	@Before
 	public void setup() {
-		fuckMessierCommand = new FuckMathesonCommand(mockNHLBot);
+		fuckMessierCommand = new FuckMessierCommand(mockNHLBot);
 		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
 	}
 
