@@ -19,6 +19,7 @@ import com.hazeluff.discord.nhlbot.bot.command.AboutCommand;
 import com.hazeluff.discord.nhlbot.bot.command.Command;
 import com.hazeluff.discord.nhlbot.bot.command.FuckMathesonCommand;
 import com.hazeluff.discord.nhlbot.bot.command.FuckMessierCommand;
+import com.hazeluff.discord.nhlbot.bot.command.FuckPaterynCommand;
 import com.hazeluff.discord.nhlbot.bot.command.GoalsCommand;
 import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
 import com.hazeluff.discord.nhlbot.bot.command.NextGameCommand;
@@ -56,6 +57,7 @@ public class MessageListener {
 	public MessageListener(NHLBot nhlBot) {
 		this.nhlBot = nhlBot;
 		commands = new ArrayList<>();
+		commands.add(new FuckPaterynCommand(nhlBot));
 		commands.add(new FuckMathesonCommand(nhlBot));
 		commands.add(new FuckMessierCommand(nhlBot));
 		commands.add(new HelpCommand(nhlBot));
