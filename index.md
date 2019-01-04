@@ -6,17 +6,10 @@
 # Add NHLBot to your server:
 
 ### [Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=126032) - Use this link to add the bot to your server.
-### [Development](https://discordapp.com/oauth2/authorize?client_id=257345572162371588&scope=bot&permissions=126032) - This is to add the DEV bot I use to test my in-development stuff.
-## Permissions for NHLBot
 
-- Manage Channels
-- Read Messages
-- Embed Links
-- Read Message History
-- Send Messages
-- Manage Messages
-- Attach Files
-- Add Reactions
+1. Use the link above to add the bot to your server. Make sure you do not change the permissions of the bot.
+2. Use `?subscribe [team]` to create game day channels for your team(s). 
+   - Use `?subscribe help` to get the list of codes for your team (It is the 3 letter code you see on the tv score display.
 
 # Features
 ## Game Day Channels
@@ -27,7 +20,7 @@
 - [x] Special messages for when canucks score.
 
 ## Commands
-`@NHLBot [command]`
+`?nhlbot [command]`
 - `fuckmessier` Fuck Messier.
 - `subscribe [team]` Subscribes you or your guild to the team specified by `[team]`. `[team]` is the 3 letter code representing the team you want to subscribe to. This must be done by an user with admin priveledges on the server/guild. 
 - `unsubscribe` Unsubscribes you or your guild from all teams.
@@ -41,3 +34,16 @@
 
 # Support / Contact Me
 [![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square&logo=twitter)](https://twitter.com/hazeluff)
+
+# Other
+
+## Permissions for NHLBot
+
+- Manage Channels
+- Read Messages
+- Embed Links
+- Read Message History
+- Send Messages
+- Manage Messages
+- Attach Files
+- Add Reactions
