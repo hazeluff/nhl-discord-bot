@@ -11,6 +11,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,13 +81,13 @@ public class SubscribeCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsSubscribe() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsSubscribe");
-		assertTrue(subscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "subscribe" }));
+		assertTrue(subscribeCommand.isAccept(null, Arrays.asList("subscribe")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotSubscribe() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotSubscribe");
-		assertFalse(subscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(subscribeCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test
@@ -104,7 +106,7 @@ public class SubscribeCommandTest {
 		LOGGER.info("replyToShouldSendSpecifyTeamMessageWhenMissingTeamArgument");
 		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe" });
+		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe"));
 
 		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, SubscribeCommand.SPECIFY_TEAM_MESSAGE);
 	}
@@ -114,7 +116,7 @@ public class SubscribeCommandTest {
 		LOGGER.info("replyToShouldSendHelpMessageWhenArgumentIsHelp");
 		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "help" });
+		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe", "help"));
 
 		verify(mockNHLBot.getGameDayChannelsManager(), never()).deleteInactiveGuildChannels(any(IGuild.class));
 		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
@@ -134,7 +136,7 @@ public class SubscribeCommandTest {
 		when(mockChannel.isPrivate()).thenReturn(false);
 		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", TEAM.getCode() });
+		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe", TEAM.getCode()));
 
 		verify(mockNHLBot.getGameDayChannelsManager()).deleteInactiveGuildChannels(any(IGuild.class));
 		verify(mockNHLBot.getPreferencesManager()).subscribeGuild(GUILD_ID, TEAM);
@@ -148,7 +150,7 @@ public class SubscribeCommandTest {
 		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenTeamIsNotValid");
 		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spySubscribeCommand.replyTo(mockMessage, new String[] { "<@NHLBOT>", "subscribe", "ZZZ" });
+		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe", "ZZZ"));
 
 		verify(mockNHLBot.getGameDayChannelsManager(), never()).deleteInactiveGuildChannels(any(IGuild.class));
 		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));

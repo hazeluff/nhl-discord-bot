@@ -1,5 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import java.util.List;
+
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
@@ -18,14 +20,14 @@ public class AboutCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		sendEmbed(channel);
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("about");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("about");
 	}
 
 	public void sendEmbed(IChannel channel) {

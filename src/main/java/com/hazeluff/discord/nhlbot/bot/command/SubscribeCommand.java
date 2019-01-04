@@ -27,12 +27,12 @@ public class SubscribeCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		if (hasSubscribePermissions(message)) {
-			if (arguments.length < 3) {
+			if (arguments.size() < 2) {
 				nhlBot.getDiscordManager().sendMessage(channel, SPECIFY_TEAM_MESSAGE);
-			} else if (arguments[2].equalsIgnoreCase("help")) {
+			} else if (arguments.get(1).equalsIgnoreCase("help")) {
 				StringBuilder response = new StringBuilder(
 						"Subscribed to any of the following teams by typing `@NHLBot subscribe [team]`, "
 								+ "where [team] is the one of the three letter codes for your team below: ")
@@ -45,8 +45,8 @@ public class SubscribeCommand extends Command {
 				response.append("You can unsbscribe using:\n");
 				response.append("`@NHLBot unsubscribe`");
 				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
-			} else if (Team.isValid(arguments[2])) {
-				Team team = Team.parse(arguments[2]);
+			} else if (Team.isValid(arguments.get(1))) {
+				Team team = Team.parse(arguments.get(1));
 				IGuild guild = message.getGuild();
 				// Subscribe guild
 				nhlBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
@@ -66,7 +66,7 @@ public class SubscribeCommand extends Command {
 							"This server is now subscribed to games of the **" + team.getFullName() + "**!");
 				}
 			} else {
-				nhlBot.getDiscordManager().sendMessage(channel, "[" + arguments[2] + "] is not a valid team code. "
+				nhlBot.getDiscordManager().sendMessage(channel, "[" + arguments.get(1) + "] is not a valid team code. "
 						+ "Use `@NHLBot subscribe help` to get a full list of team");
 			}
 		} else {
@@ -75,8 +75,8 @@ public class SubscribeCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("subscribe");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("subscribe");
 	}
 
 }

@@ -1,5 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import java.util.List;
+
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 
 import sx.blah.discord.handle.obj.IChannel;
@@ -15,14 +17,14 @@ public class FuckPaterynCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		nhlBot.getDiscordManager().sendMessage(channel, "FUCK PATERYN");
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("fuckpateryn");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("fuckpateryn");
 	}
 
 }

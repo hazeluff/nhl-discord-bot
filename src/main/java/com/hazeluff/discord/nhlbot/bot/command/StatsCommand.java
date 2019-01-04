@@ -28,15 +28,15 @@ public class StatsCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 
 		nhlBot.getDiscordManager().sendMessage(channel, buildMessage());
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("stats");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("stats");
 	}
 
 	public String buildMessage() {

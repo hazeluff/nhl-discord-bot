@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,6 @@ import sx.blah.discord.handle.obj.IUser;
 public class MessageListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
 
-	static final String DIRECT_MESSAGE_COMMAND_INSERT = "DirectMessage";
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
 	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
@@ -92,12 +92,11 @@ public class MessageListener {
 		IMessage message = event.getMessage();
 		if (!userThrottler.isThrottle(user)) {
 			if (message.getChannel().isPrivate()) {
-				LOGGER.trace(String.format("[Direct Message][%s][%s][%s]", message.getChannel().getName(),
-						message.getAuthor().getName(), message.getContent()));
-			} else {
-				LOGGER.trace(String.format("[%s][%s][%s][%s]", message.getGuild().getName(),
-						message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
+				return;
 			}
+
+			LOGGER.trace(String.format("[%s][%s][%s][%s]", message.getGuild().getName(), message.getChannel().getName(),
+					message.getAuthor().getName(), message.getContent()));
 
 			if (replyToCommand(message)) {
 				userThrottler.add(user);
@@ -109,7 +108,8 @@ public class MessageListener {
 				return;
 			}
 
-			if (isBotCommand(message)) {
+			// Message is a command
+			if (getCommand(message) != null) {
 				nhlBot.getDiscordManager().sendMessage(message.getChannel(),
 						"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
 				return;
@@ -135,24 +135,13 @@ public class MessageListener {
 	 *         false, otherwise
 	 */
 	boolean replyToCommand(IMessage message) {
-		String[] arguments = getBotCommand(message);
-		if (arguments.length > 1) {
-			if (message.getChannel().isPrivate()) {
-				LOGGER.info(
-						String.format("Received Command:[Direct Message][%s][%s][%s]", message.getChannel().getName(),
-								message.getAuthor().getName(), "Command:" + Arrays.toString(arguments)));
-			} else {
-				LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]",
-						message.getChannel().getGuild().getName(), message.getChannel().getName(),
-						message.getAuthor().getName(), "Command:" + Arrays.toString(arguments)));
-			}
-
-			Optional<Command> matchedCommand = commands.stream().filter(command -> command.isAccept(message, arguments))
-					.findFirst();
-			if (matchedCommand.isPresent()) {
-				matchedCommand.get().replyTo(message, arguments);
-				return true;
-			}
+		Command command = getCommand(message);
+		if (command != null) {
+			List<String> commandArgs = parseToCommandArguments(message);
+			LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
+					message.getChannel().getName(), message.getAuthor().getName(), "Command:" + commandArgs));
+			command.replyTo(message, commandArgs);
+			return true;
 		}
 
 		return false;
@@ -192,31 +181,46 @@ public class MessageListener {
 	 * 
 	 * @param strMessage
 	 *            message to determine if NHLBot is mentioned in
-	 * @return true, if NHLBot is mentioned; false, otherwise.
+	 * @return list of commands if command; null if not a command
 	 */
-	String[] getBotCommand(IMessage message) {
+	List<String> parseToCommandArguments(IMessage message) {
 		String messageContent = message.getContent();
+
 		if (messageContent.startsWith(nhlBot.getMention())
-				|| messageContent.startsWith(nhlBot.getNicknameMentionId())) {
-			return messageContent.split("\\s+");
+				|| messageContent.startsWith(nhlBot.getNicknameMentionId())
+				|| messageContent.toLowerCase().startsWith("?nhlbot")) {
+			List<String> commandArgs = Arrays.stream(messageContent.split("\\s+")).collect(Collectors.toList());
+			commandArgs.remove(0);
+			return commandArgs;
 		}
 
-		if (message.getChannel().isPrivate()) {
-			return (DIRECT_MESSAGE_COMMAND_INSERT + " " + messageContent).split("\\s+");
+		if (message.getContent().startsWith("?")) {
+			String[] commandArray = messageContent.split("\\s+");
+			if (commandArray[0].length() > 1) {
+				commandArray[0] = commandArray[0].substring(1, commandArray[0].length());
+				return Arrays.asList(commandArray);
+			}
 		}
-		return new String[0];
+
+		return null;
 	}
 
 	/**
-	 * Determines if the specified message is a NHLBot command.
+	 * Gets the Command for the given message.
 	 * 
 	 * @param message
-	 *            message to determine if it is a NHLBot command.
-	 * @return true, if NHLBot is mentioned.<br>
-	 *         false, otherwise.
+	 *            the message received
+	 * @return the {@link Command} for the message/arguments
 	 */
-	boolean isBotCommand(IMessage message) {
-		return getBotCommand(message).length > 0;
+	Command getCommand(IMessage message) {
+		List<String> commandArgs = parseToCommandArguments(message);
+
+		return commandArgs == null
+				? null
+				: commands.stream()
+					.filter(command -> command.isAccept(message, commandArgs))
+					.findFirst()
+					.orElseGet(() -> null);
 	}
 
 	/**

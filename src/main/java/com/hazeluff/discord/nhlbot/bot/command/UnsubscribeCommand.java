@@ -1,5 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import java.util.List;
+
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
@@ -24,26 +26,26 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		IGuild guild = message.getGuild();
 		if (hasSubscribePermissions(message)) {
-			if(arguments.length < 3) {
+			if (arguments.size() < 2) {
 				nhlBot.getDiscordManager().sendMessage(channel, SPECIFY_TEAM_MESSAGE);
-			} else if (arguments[2].equalsIgnoreCase("all")) {
+			} else if (arguments.get(1).equalsIgnoreCase("all")) {
 				// Unsubscribe from all teams
 				nhlBot.getPreferencesManager().unsubscribeGuild(guild.getLongID(), null);
 				nhlBot.getGameDayChannelsManager().updateChannels(guild);
 				nhlBot.getDiscordManager().sendMessage(channel, UNSUBSCRIBED_FROM_ALL_MESSAGE);
-			} else if (Team.isValid(arguments[2])){
+			} else if (Team.isValid(arguments.get(1))) {
 				// Unsubscribe from a team
-				Team team = Team.parse(arguments[2]);
+				Team team = Team.parse(arguments.get(1));
 				nhlBot.getPreferencesManager().unsubscribeGuild(guild.getLongID(), team);
 				nhlBot.getGameDayChannelsManager().updateChannels(guild);
 				nhlBot.getDiscordManager().sendMessage(channel, "This server is now unsubscribed from games of the **" 
 						+ team.getFullName() + "**.");
 			} else {
-				nhlBot.getDiscordManager().sendMessage(channel, "[" + arguments[2] + "] is not a valid team code. "
+				nhlBot.getDiscordManager().sendMessage(channel, "[" + arguments.get(1) + "] is not a valid team code. "
 						+ "Use `@NHLBot subscribe help` to get a full list of team");
 			}
 		} else {
@@ -52,7 +54,7 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("unsubscribe");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("unsubscribe");
 	}
 }

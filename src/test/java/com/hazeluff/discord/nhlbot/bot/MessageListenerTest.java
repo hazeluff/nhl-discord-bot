@@ -1,20 +1,24 @@
 package com.hazeluff.discord.nhlbot.bot;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -107,7 +111,7 @@ public class MessageListenerTest {
 		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
 		doReturn(false).when(spyMessageListener).replyToCommand(any(IMessage.class));
 		doReturn(false).when(spyMessageListener).replyToMention(any(IMessage.class));
-		doReturn(false).when(spyMessageListener).isBotCommand(any(IMessage.class));
+		doReturn(null).when(spyMessageListener).getCommand(any(IMessage.class));
 		doReturn(false).when(spyMessageListener).shouldFuckMessier(any(IMessage.class));
 		when(mockUserThrottler.isThrottle(any(IUser.class))).thenReturn(true);
 
@@ -115,7 +119,7 @@ public class MessageListenerTest {
 
 		verify(spyMessageListener, never()).replyToCommand(mockMessage);
 		verify(spyMessageListener, never()).replyToMention(any(IMessage.class));
-		verify(spyMessageListener, never()).isBotCommand(any(IMessage.class));
+		verify(spyMessageListener, never()).getCommand(any(IMessage.class));
 		verify(spyMessageListener, never()).shouldFuckMessier(any(IMessage.class));
 		verify(mockNHLBot.getDiscordManager(), never()).sendMessage(any(IChannel.class), anyString());
 	}
@@ -131,7 +135,7 @@ public class MessageListenerTest {
 
 		verify(spyMessageListener).replyToCommand(mockMessage);
 		verify(spyMessageListener, never()).replyToMention(any(IMessage.class));
-		verify(spyMessageListener, never()).isBotCommand(any(IMessage.class));
+		verify(spyMessageListener, never()).getCommand(any(IMessage.class));
 		verify(spyMessageListener, never()).shouldFuckMessier(any(IMessage.class));
 	}
 
@@ -147,7 +151,7 @@ public class MessageListenerTest {
 
 		verify(spyMessageListener).replyToCommand(mockMessage);
 		verify(spyMessageListener).replyToMention(mockMessage);
-		verify(spyMessageListener, never()).isBotCommand(any(IMessage.class));
+		verify(spyMessageListener, never()).getCommand(any(IMessage.class));
 		verify(spyMessageListener, never()).shouldFuckMessier(any(IMessage.class));
 	}
 
@@ -158,13 +162,13 @@ public class MessageListenerTest {
 		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
 		doReturn(false).when(spyMessageListener).replyToCommand(any(IMessage.class));
 		doReturn(false).when(spyMessageListener).replyToMention(any(IMessage.class));
-		doReturn(true).when(spyMessageListener).isBotCommand(any(IMessage.class));
+		doReturn(mock(Command.class)).when(spyMessageListener).getCommand(any(IMessage.class));
 		
 		spyMessageListener.onReceivedMessageEvent(mockEvent);
 
 		verify(spyMessageListener).replyToCommand(mockMessage);
 		verify(spyMessageListener).replyToMention(mockMessage);
-		verify(spyMessageListener).isBotCommand(mockMessage);
+		verify(spyMessageListener).getCommand(mockMessage);
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorResponse.capture());
 		assertTrue(captorResponse.getValue().contains("`@NHLBot help`"));
 		verify(mockNHLBot.getDiscordManager(), times(1)).sendMessage(any(IChannel.class), anyString());
@@ -177,7 +181,7 @@ public class MessageListenerTest {
 		spyMessageListener = spy(new MessageListener(mockNHLBot, null, null, mockUserThrottler));
 		doReturn(false).when(spyMessageListener).replyToCommand(any(IMessage.class));
 		doReturn(false).when(spyMessageListener).replyToMention(any(IMessage.class));
-		doReturn(false).when(spyMessageListener).isBotCommand(any(IMessage.class));
+		doReturn(null).when(spyMessageListener).getCommand(any(IMessage.class));
 		doReturn(true).when(spyMessageListener).shouldFuckMessier(any(IMessage.class));
 		when(mockUserThrottler.isThrottle(any(IUser.class))).thenReturn(false);
 
@@ -185,7 +189,7 @@ public class MessageListenerTest {
 
 		verify(spyMessageListener).replyToCommand(mockMessage);
 		verify(spyMessageListener).replyToMention(mockMessage);
-		verify(spyMessageListener).isBotCommand(mockMessage);
+		verify(spyMessageListener).getCommand(mockMessage);
 		verify(spyMessageListener).shouldFuckMessier(mockMessage);
 		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "FUCK MESSIER");
 		verify(mockNHLBot.getDiscordManager(), times(1)).sendMessage(any(IChannel.class), anyString());
@@ -193,85 +197,49 @@ public class MessageListenerTest {
 
 	// replyToCommand
 	@Test
-	public void replyToCommandShouldReturnFalseWhenArgumentsLengthIsOne() {
-		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsOne");
-		String[] arguments = new String[1];
-		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
-		spyMessageListener = spy(messageListener);
-		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
+	public void replyToCommand() {
+		LOGGER.info("replyToCommand");
+		Command command = mock(Command.class);
+		List<String> commandArgs = Arrays.asList("command");
 
+		// null command object
+		doReturn(Arrays.asList("command")).when(spyMessageListener).parseToCommandArguments(mockMessage);
+		doReturn(null).when(spyMessageListener).getCommand(mockMessage);
 		boolean result = spyMessageListener.replyToCommand(mockMessage);
-
 		assertFalse(result);
-		verify(commands.get(0), never()).isAccept(any(), any());
-		verify(commands.get(1), never()).isAccept(any(), any());
-		verify(commands.get(2), never()).isAccept(any(), any());
-		verify(commands.get(0), never()).replyTo(any(), any());
-		verify(commands.get(1), never()).replyTo(any(), any());
-		verify(commands.get(2), never()).replyTo(any(), any());
-	}
+		verify(spyMessageListener).getCommand(any(IMessage.class));
+		verify(command, never()).replyTo(any(IMessage.class), anyListOf(String.class));
 
-	@Test
-	public void replyToCommandShouldReturnFalseWhenArgumentsLengthIsZero() {
-		LOGGER.info("replyToCommandShouldReturnFalseWhenArgumentsLengthIsZero");
-		String[] arguments = new String[0];
-		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
-		spyMessageListener = spy(messageListener);
-		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
-
-		boolean result = spyMessageListener.replyToCommand(mockMessage);
-
-		assertFalse(result);
-		verify(commands.get(0), never()).isAccept(any(), any());
-		verify(commands.get(1), never()).isAccept(any(), any());
-		verify(commands.get(2), never()).isAccept(any(), any());
-		verify(commands.get(0), never()).replyTo(any(), any());
-		verify(commands.get(1), never()).replyTo(any(), any());
-		verify(commands.get(2), never()).replyTo(any(), any());
-	}
-
-	@Test
-	public void replyToCommandShouldReplyToAcceptedCommands() {
-		LOGGER.info("replyToCommandShouldReplyToAcceptedCommands");
-
-		String[] arguments = new String[2];
-		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
-		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
-		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(true);
-		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
-		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
-		spyMessageListener = spy(messageListener);
-		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
-
-		boolean result = spyMessageListener.replyToCommand(mockMessage);
-
+		// non-null command object
+		reset(spyMessageListener);
+		doReturn(Arrays.asList("command")).when(spyMessageListener).parseToCommandArguments(mockMessage);
+		doReturn(command).when(spyMessageListener).getCommand(mockMessage);
+		result = spyMessageListener.replyToCommand(mockMessage);
 		assertTrue(result);
-		verify(commands.get(0), never()).replyTo(any(IMessage.class), any(String[].class));
-		verify(commands.get(1)).replyTo(mockMessage, arguments);
-		verify(commands.get(2), never()).replyTo(any(IMessage.class), any(String[].class));
+		verify(spyMessageListener).getCommand(any(IMessage.class));
+		verify(command).replyTo(mockMessage, commandArgs);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void replyToCommandShouldNotReplyToNotAcceptedCommands() {
 		LOGGER.info("replyToCommandShouldNotReplyToNotAcceptedCommands");
 
-		String[] arguments = new String[2];
+		List<String> arguments = new ArrayList<>();
 		List<Command> commands = Arrays.asList(mock(Command.class), mock(Command.class), mock(Command.class));
 		when(commands.get(0).isAccept(mockMessage, arguments)).thenReturn(false);
 		when(commands.get(1).isAccept(mockMessage, arguments)).thenReturn(false);
 		when(commands.get(2).isAccept(mockMessage, arguments)).thenReturn(false);
 		messageListener = new MessageListener(mockNHLBot, commands, null, mockUserThrottler);
 		spyMessageListener = spy(messageListener);
-		doReturn(arguments).when(spyMessageListener).getBotCommand(mockMessage);
+		doReturn(arguments).when(spyMessageListener).parseToCommandArguments(mockMessage);
 		
 		boolean result = spyMessageListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		verify(commands.get(0), never()).replyTo(any(IMessage.class), any(String[].class));
-		verify(commands.get(1), never()).replyTo(any(IMessage.class), any(String[].class));
-		verify(commands.get(2), never()).replyTo(any(IMessage.class), any(String[].class));
+		verify(commands.get(0), never()).replyTo(any(IMessage.class), any(List.class));
+		verify(commands.get(1), never()).replyTo(any(IMessage.class), any(List.class));
+		verify(commands.get(2), never()).replyTo(any(IMessage.class), any(List.class));
 	}
 
 	// replyToMention
@@ -323,61 +291,71 @@ public class MessageListenerTest {
 		verify(topics.get(2), never()).replyTo(any(IMessage.class));
 	}
 
-	// getBotCommand
+	// getBotCommandArguments
 	@Test
-	public void getBotCommandShouldReturnSplitMessageWhenBotIsMentioned() {
-		LOGGER.info("getBotCommandShouldReturnSplitMessageWhenBotIsMentioned");
-		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + "  2  3");
-		when(mockMessage.getChannel().isPrivate()).thenReturn(false);
-		String[] result = messageListener.getBotCommand(mockMessage);
+	public void parseToCommandArgumentsShouldParseMessage() {
+		LOGGER.info("parseToCommandArguments");
+		
+		// By mention
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " arg1 arg2");
+		List<String> result = messageListener.parseToCommandArguments(mockMessage);
+		assertEquals(Arrays.asList("arg1", "arg2"), result);
 
-		assertArrayEquals(new String[] { BOT_MENTION_ID, "2", "3" }, result);
+		// By nickname mention
+		when(mockMessage.getContent()).thenReturn(BOT_NICKNAME_MENTION_ID + " arg1 arg2");
+		result = messageListener.parseToCommandArguments(mockMessage);
+		assertEquals(Arrays.asList("arg1", "arg2"), result);
+
+		// By ?nhlbot
+		when(mockMessage.getContent()).thenReturn("?nhlbot arg1 arg2");
+		result = messageListener.parseToCommandArguments(mockMessage);
+		assertEquals(Arrays.asList("arg1", "arg2"), result);
+
+		// By ? prefix
+		when(mockMessage.getContent()).thenReturn("?arg1 arg2");
+		result = messageListener.parseToCommandArguments(mockMessage);
+		assertEquals(Arrays.asList("arg1", "arg2"), result);
+
+		// invalid
+		when(mockMessage.getContent()).thenReturn("arg1 arg2");
+		result = messageListener.parseToCommandArguments(mockMessage);
+		assertNull(result);
+		
+		when(mockMessage.getContent()).thenReturn("");
+		result = messageListener.parseToCommandArguments(mockMessage);
+		assertNull(result);
 	}
 
+	// getCommand
+	@SuppressWarnings("unchecked")
 	@Test
-	public void getBotCommandShouldReturnSplitMessageWhenBotIsMentionedByNickname() {
-		LOGGER.info("getBotCommandShouldReturnSplitMessageWhenBotIsMentionedByNickname");
-		when(mockMessage.getContent()).thenReturn(BOT_NICKNAME_MENTION_ID + "  2  3");
-		when(mockMessage.getChannel().isPrivate()).thenReturn(false);
-		String[] result = messageListener.getBotCommand(mockMessage);
+	public void getCommandShouldReturnCorrectValues() {
+		LOGGER.info("getCommandShouldReturnCorrectValues");
+		List<String> commandArgs = mock(List.class);
+		Command acceptingCommand = mock(Command.class);
+		when(acceptingCommand.isAccept(mockMessage, commandArgs)).thenReturn(true);
+		Command rejectingCommand = mock(Command.class);
+		when(rejectingCommand.isAccept(mockMessage, commandArgs)).thenReturn(false);
 
-		assertArrayEquals(new String[] { BOT_NICKNAME_MENTION_ID, "2", "3" }, result);
+		List<Command> commands = Arrays.asList(rejectingCommand, acceptingCommand);
+		spyMessageListener = spy(new MessageListener(mockNHLBot, commands, null, mockUserThrottler));
+		doReturn(commandArgs).when(spyMessageListener).parseToCommandArguments(mockMessage);
+
+		assertEquals(acceptingCommand, spyMessageListener.getCommand(mockMessage));
+
+		commands = Arrays.asList(rejectingCommand, rejectingCommand);
+		spyMessageListener = spy(new MessageListener(mockNHLBot, commands, null, mockUserThrottler));
+		doReturn(commandArgs).when(spyMessageListener).parseToCommandArguments(mockMessage);
+
+		assertNull(spyMessageListener.getCommand(mockMessage));
+
+		commands = Arrays.asList(acceptingCommand);
+		spyMessageListener = spy(new MessageListener(mockNHLBot, commands, null, mockUserThrottler));
+		doReturn(null).when(spyMessageListener).parseToCommandArguments(mockMessage);
+
+		assertNull(spyMessageListener.getCommand(mockMessage));
 	}
 
-	@Test
-	public void getBotCommandShouldReturnSplitMessageWhenChannelIsPrivate() {
-		LOGGER.info("getBotCommandShouldReturnSplitMessageWhenChannelIsPrivate");
-		when(mockMessage.getContent()).thenReturn("  2  3");
-		when(mockMessage.getChannel().isPrivate()).thenReturn(true);
-		String[] result = messageListener.getBotCommand(mockMessage);
-
-		assertArrayEquals(new String[] { MessageListener.DIRECT_MESSAGE_COMMAND_INSERT, "2", "3" }, result);
-	}
-
-	@Test
-	public void getBotCommandShouldReturnMessageInArrayWhenBotIsNotMentioned() {
-		LOGGER.info("getBotCommandShouldReturnMessageInArrayWhenBotIsNotMentioned");
-		when(mockMessage.getContent()).thenReturn(MESSAGE_CONTENT);
-		when(mockMessage.getChannel().isPrivate()).thenReturn(false);
-		String[] result = messageListener.getBotCommand(mockMessage);
-
-		assertArrayEquals(new String[0], result);
-	}
-
-	// isBotCommand
-	@Test
-	public void isBotCommandShouldReturnTrueWhenGetBotCommandLengthIsGreaterThanZero() {
-		LOGGER.info("isBotCommandShouldReturnTrueWhenGetBotCommandLengthIsGreaterThanZero");
-		doReturn(new String[] { "", "" }).when(spyMessageListener).getBotCommand(mockMessage);
-		assertTrue(spyMessageListener.isBotCommand(mockMessage));
-	}
-
-	@Test
-	public void isBotCommandShouldReturnFalseWhenGetBotCommandLengthIsZero() {
-		LOGGER.info("isBotCommandShouldReturnFalseWhenGetBotCommandLengthIsZero");
-		doReturn(new String[0]).when(spyMessageListener).getBotCommand(mockMessage);
-		assertFalse(spyMessageListener.isBotCommand(mockMessage));
-	}
 
 	// isBotMentioned
 	@Test

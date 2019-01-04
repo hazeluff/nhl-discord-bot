@@ -44,14 +44,14 @@ public class FuckMathesonCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		nhlBot.getDiscordManager().sendMessage(channel, Utils.getRandom(replies));
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("fuckmatheson");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("fuckmatheson");
 	}
 
 }

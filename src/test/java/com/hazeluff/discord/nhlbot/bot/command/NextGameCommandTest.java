@@ -63,13 +63,13 @@ public class NextGameCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsNextGame() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsNextGame");
-		assertTrue(nextGameCommand.isAccept(null, new String[] { "<@NHLBOT>", "nextgame" }));
+		assertTrue(nextGameCommand.isAccept(null, Arrays.asList("nextgame")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotNextGame() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotNextGame");
-		assertFalse(nextGameCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(nextGameCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test

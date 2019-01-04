@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,13 +49,13 @@ public class FuckMessierCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsFuckMessier() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsFuckMessier");
-		assertTrue(fuckMessierCommand.isAccept(null, new String[] { "<@NHLBOT>", "fuckmessier" }));
+		assertTrue(fuckMessierCommand.isAccept(null, Arrays.asList("fuckmessier")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotFuckMessier() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotFuckMessier");
-		assertFalse(fuckMessierCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(fuckMessierCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test

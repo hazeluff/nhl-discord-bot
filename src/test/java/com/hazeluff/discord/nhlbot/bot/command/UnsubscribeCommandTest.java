@@ -8,6 +8,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,13 +75,13 @@ public class UnsubscribeCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsSubscribe() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsSubscribe");
-		assertTrue(unsubscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "unsubscribe" }));
+		assertTrue(unsubscribeCommand.isAccept(null, Arrays.asList("unsubscribe")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotSubscribe() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotSubscribe");
-		assertFalse(unsubscribeCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(unsubscribeCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test
@@ -99,7 +101,7 @@ public class UnsubscribeCommandTest {
 		LOGGER.info("replyToShouldSendMessageWhenUserUnsubscribesFromAllTeams");
 		doReturn(true).when(spyUnsubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spyUnsubscribeCommand.replyTo(mockMessage, new String[] { "nhlbot", "unsubscribe", "all" });
+		spyUnsubscribeCommand.replyTo(mockMessage, Arrays.asList("unsubscribe", "all"));
 
 		verify(mockNHLBot.getPreferencesManager()).unsubscribeGuild(GUILD_ID, null);
 		verify(mockNHLBot.getGameDayChannelsManager()).updateChannels(mockGuild);
@@ -114,7 +116,7 @@ public class UnsubscribeCommandTest {
 		doReturn(true).when(spyUnsubscribeCommand).hasSubscribePermissions(mockMessage);
 		Team team = Team.VANCOUVER_CANUCKS;
 
-		spyUnsubscribeCommand.replyTo(mockMessage, new String[] { "nhlbot", "unsubscribe", team.getCode() });
+		spyUnsubscribeCommand.replyTo(mockMessage, Arrays.asList("unsubscribe", team.getCode()));
 
 		verify(mockNHLBot.getPreferencesManager()).unsubscribeGuild(GUILD_ID, team);
 		verify(mockNHLBot.getGameDayChannelsManager()).updateChannels(mockGuild);

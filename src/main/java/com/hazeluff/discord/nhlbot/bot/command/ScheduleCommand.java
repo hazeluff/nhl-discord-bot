@@ -29,21 +29,21 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
-		if (arguments.length > 2) {
-			if (arguments[2].equalsIgnoreCase("help")) {
+		if (arguments.size() > 1) {
+			if (arguments.get(1).equalsIgnoreCase("help")) {
 				// Send Help Message
 				StringBuilder response = new StringBuilder(
 						"Get the game schedule any of the following teams by typing `@NHLBot schedule [team]`, "
 								+ "where [team] is the one of the three letter codes for your team below: ");
 				response.append(getTeamsListBlock());
 				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
-			} else if (Team.isValid(arguments[2])) {
+			} else if (Team.isValid(arguments.get(1))) {
 				// Send schedule for a specific team
-				sendSchedule(channel, Team.parse(arguments[2]));
+				sendSchedule(channel, Team.parse(arguments.get(1)));
 			} else {
-				sendInvalidCodeMessage(channel, arguments[2], "schedule");
+				sendInvalidCodeMessage(channel, arguments.get(1), "schedule");
 			}
 		} else {
 			List<Team> preferredTeams = getTeams(message);
@@ -131,8 +131,8 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("schedule") || arguments[1].equalsIgnoreCase("games");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("schedule") || arguments.get(0).equalsIgnoreCase("games");
 	}
 
 }

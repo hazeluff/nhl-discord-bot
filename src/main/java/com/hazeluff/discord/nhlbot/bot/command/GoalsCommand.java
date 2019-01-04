@@ -22,7 +22,7 @@ public class GoalsCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		IGuild guild = message.getGuild();
 		List<Team> preferredTeams = nhlBot.getPreferencesManager().getTeams(guild.getLongID());
@@ -43,8 +43,8 @@ public class GoalsCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("goals");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("goals");
 	}
 
 }

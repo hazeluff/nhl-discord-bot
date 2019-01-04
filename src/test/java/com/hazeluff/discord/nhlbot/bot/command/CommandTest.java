@@ -14,6 +14,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -55,12 +56,12 @@ public class CommandTest {
 		}
 
 		@Override
-		public void replyTo(IMessage message, String[] arguments) {
+		public void replyTo(IMessage message, List<String> arguments) {
 			throw new NotImplementedException("Test Class. Not Implemented.");
 		}
 
 		@Override
-		public boolean isAccept(IMessage message, String[] arguments) {
+		public boolean isAccept(IMessage message, List<String> arguments) {
 			throw new NotImplementedException("Test Class. Not Implemented.");
 		}
 		

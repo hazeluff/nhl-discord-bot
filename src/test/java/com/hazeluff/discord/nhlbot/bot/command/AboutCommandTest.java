@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,13 +74,13 @@ public class AboutCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsAbout() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsAbout");
-		assertTrue(aboutCommand.isAccept(null, new String[] { "<@NHLBOT>", "about" }));
+		assertTrue(aboutCommand.isAccept(null, Arrays.asList("about")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotAbout() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotAbout");
-		assertFalse(aboutCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(aboutCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test

@@ -31,7 +31,7 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		GuildPreferences preferences = nhlBot.getPreferencesManager()
 				.getGuildPreferences(message.getGuild().getLongID());
@@ -68,8 +68,8 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("nextgame");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("nextgame");
 	}
 
 }

@@ -91,13 +91,13 @@ public class GoalsCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsGoals() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsGoals");
-		assertTrue(goalsCommand.isAccept(null, new String[] { "<@NHLBOT>", "goals" }));
+		assertTrue(goalsCommand.isAccept(null, Arrays.asList("goals")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotGoals() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotGoals");
-		assertFalse(goalsCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(goalsCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test
