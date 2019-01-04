@@ -24,7 +24,7 @@
 - `fuckmessier` Fuck Messier.
 - `subscribe [team]` Subscribes you or your guild to the team specified by `[team]`. `[team]` is the 3 letter code representing the team you want to subscribe to. This must be done by an user with admin priveledges on the server/guild. 
 - `unsubscribe [team]` Unsubscribes you or your guild from a team.
-- `nextgame` Replies with information about the next game.
+- `schedule` Replies with information about recent and upcoming games.
 - `about` Displays information about bot/author.
 - `help` Display list of commands.
 
