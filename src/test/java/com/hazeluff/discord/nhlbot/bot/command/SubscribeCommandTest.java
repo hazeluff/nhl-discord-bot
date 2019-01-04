@@ -123,7 +123,7 @@ public class SubscribeCommandTest {
 		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
 		String message = captorString.getValue();
-		assertTrue(message.contains("`@NHLBot subscribe [team]`"));
+		assertTrue(message.contains("`?subscribe [team]`"));
 		for(Team team: Team.values()) {
 			assertTrue(message.contains(team.getCode()));
 			assertTrue(message.contains(team.getFullName()));
@@ -156,6 +156,6 @@ public class SubscribeCommandTest {
 		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
 		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
-		assertTrue(captorString.getValue().contains("`@NHLBot subscribe help`"));
+		assertTrue(captorString.getValue().contains("`?subscribe help`"));
 	}
 }

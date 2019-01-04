@@ -21,8 +21,6 @@ import sx.blah.discord.util.EmbedBuilder;
 public class ScheduleCommand extends Command {
 
 	static final String MUST_BE_ADMIN_TO_SUBSCRIBE_MESSAGE = "You must be an admin to subscribe the guild to a team.";
-	static final String SPECIFY_TEAM_MESSAGE = "You must specify a parameter for what team you want to subscribe to. "
-			+ "`@NHLBot subscribe [team]`";
 
 	public ScheduleCommand(NHLBot nhlBot) {
 		super(nhlBot);

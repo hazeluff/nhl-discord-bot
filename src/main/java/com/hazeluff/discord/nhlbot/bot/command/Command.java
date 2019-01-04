@@ -25,7 +25,7 @@ public abstract class Command {
 	private static final String GUILD_SUBSCRIBE_FIRST_MESSAGE = "Please have your admin first subscribe your guild "
 			+ "to a team by using the command `@NHLBot subscribe [team]`, "
 			+ "where [team] is the 3 letter code for your team.\n"
-			+ "To see a list of [team] codes use command `@NHLBot subscribe help`";
+			+ "To see a list of [team] codes use command `?subscribe help`";
 	static final String GAME_NOT_STARTED_MESSAGE = "The game hasn't started yet.";
 	static final String RUN_IN_SERVER_CHANNEL_MESSAGE = "This can only be run on a server's 'Game Day Channel'.";
 	
@@ -138,7 +138,7 @@ public abstract class Command {
 	IMessage sendInvalidCodeMessage(IChannel channel, String incorrectCode, String command) {
 		return nhlBot.getDiscordManager().sendMessage(channel,
 				String.format("`%s` is not a valid team code.\n"
-						+ "Use `@NHLBot %s help` to get a full list of team",
+						+ "Use `?%s help` to get a full list of team",
 						incorrectCode, command));
 	}
 

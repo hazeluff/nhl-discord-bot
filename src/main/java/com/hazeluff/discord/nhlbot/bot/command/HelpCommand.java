@@ -18,19 +18,24 @@ public class HelpCommand extends Command {
 
 	@Override
 	public void replyTo(IMessage message, List<String> arguments) {
-		IChannel channel = message.getChannel();
+		sendMessage(message.getChannel());
+	}
+
+	@Override
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("help");
+	}
+
+	public void sendMessage(IChannel channel) {
 		nhlBot.getDiscordManager().sendMessage(channel,
 				"Here are a list of commands:\n\n" 
 						+ "`subscribe [team]` - Subscribes you to a team. "
 						+ "[team] is the three letter code of your team. **(+)**\n"
 
-						+ "`unsubscribe` - Unsubscribes you from a team.\n"
+						+ "`schedule` - Displays information about the most recent and coming up games of your subscribed teams."
+						+ " **(+)**\n"
 
-						+ "`schedule` - Displays information about the most recent and coming up games. **(+)**\n"
-
-						+ "`schedule [team]` - Displays the schedule for a specific team.\n"
-
-						+ "`nextgame` - Displays information of the next game.\n"
+						+ "`unsubscribe [team]` - Unsubscribes you from a team. **(+)**\n"
 
 						+ "`score` - Displays the score of the game. "
 						+ "You must be in a 'Game Day Channel' to use this command.\n"
@@ -41,12 +46,9 @@ public class HelpCommand extends Command {
 						+ "`about` - Displays information about me.\n\n"
 
 						+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
-						+ "`@NHLBot [command] help`");
-	}
+						+ "`?nhlbot [command] help`\n\n"
 
-	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("help");
+						+ "You can use the commands by doing `?nhlbot [command]` or `?[command`.");
 	}
 
 }

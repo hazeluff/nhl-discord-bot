@@ -43,7 +43,8 @@ public class AboutCommand extends Command {
 				.appendField("Contact", Config.HAZELUFF_MENTION, true)
 				.appendField("Email", Config.HAZELUFF_EMAIL, true)
 				.appendField("Version", Config.VERSION, true)
-				.appendField("GitHub", Config.GIT_URL, true);
+				.appendField("GitHub", Config.GIT_URL, true)
+				.appendField("Email", Config.DONATION_URL, true);
 		nhlBot.getDiscordManager().sendEmbed(channel, embedResource);
 	}
 

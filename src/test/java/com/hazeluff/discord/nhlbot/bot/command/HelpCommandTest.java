@@ -69,12 +69,11 @@ public class HelpCommandTest {
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		String message = captorString.getValue();
 		assertTrue(message.contains("`subscribe [team]`"));
-		assertTrue(message.contains("`unsubscribe`"));
+		assertTrue(message.contains("`unsubscribe [team]`"));
 		assertTrue(message.contains("`schedule`"));
-		assertTrue(message.contains("`nextgame`"));
 		assertTrue(message.contains("`score`"));
 		assertTrue(message.contains("`goals`"));
 		assertTrue(message.contains("`about`"));
-		assertTrue(message.contains("`@NHLBot [command] help`"));
+		assertTrue(message.contains("`?nhlbot [command] help`"));
 	}
 }

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.command.AboutCommand;
+import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
 import com.hazeluff.discord.nhlbot.bot.command.StatsCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -25,6 +26,7 @@ public class WelcomeChannel extends Thread {
 	private final IChannel channel;
 	private final AboutCommand aboutCommand;
 	private final StatsCommand statsCommand;
+	private final HelpCommand helpCommand;
 	
 	private IMessage statsMessage = null;
 
@@ -33,6 +35,7 @@ public class WelcomeChannel extends Thread {
 		this.channel = channel;
 		aboutCommand = new AboutCommand(nhlBot);
 		statsCommand = new StatsCommand(nhlBot);
+		helpCommand = new HelpCommand(nhlBot);
 	}
 
 	public static WelcomeChannel get(NHLBot nhlBot, IGuild guild) {
@@ -55,12 +58,12 @@ public class WelcomeChannel extends Thread {
 					.forEach(message -> nhlBot.getDiscordManager().deleteMessage(message));
 			nhlBot.getDiscordManager().sendMessage(channel, UPDATED_MESSAGE);
 			aboutCommand.sendEmbed(channel);
+			helpCommand.sendMessage(channel);
 			String strStatsMessage = statsCommand.buildMessage();
 			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
 
 			while (!isStop()) {
 				Utils.sleep(5000l);
-				// System.out.println(nhlBot.getDiscordManager().getClient().getGuildByID(276953120964083713l).getName());
 			}
 
 			while (!isStop() && !isInterrupted()) {
