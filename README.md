@@ -5,9 +5,9 @@
 
 # Add NHLBot to your server:
 
-### [Production](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=126032) - Use this link to add the bot to your server.
+### [Invite NHLBot](https://discordapp.com/oauth2/authorize?client_id=257345858515894272&scope=bot&permissions=126032) - Use this link to add the bot to your server.
 
-1. Use the link above to add the bot to your server. Make sure you do not change the permissions of the bot.
+1. Use the link above to invite the bot to your server. Make sure you do not change the permissions of the bot.
 2. Use `?subscribe [team]` to create game day channels for your team(s). 
    - Use `?subscribe help` to get the list of codes for your team (It is the 3 letter code you see on the tv score display.
 
