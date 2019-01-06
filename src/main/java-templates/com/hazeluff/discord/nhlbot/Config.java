@@ -24,6 +24,8 @@ public class Config {
 	
 	public static final String GIT_URL = "http://nhlbot.hazeluff.com";
 	public static final String DONATION_URL = "https://paypal.me/hazeluff";
+	public static final String DONATION_BTC = "1AzGixATkgDSzjPHaobXWL7dWVmzBqz9JD";
+	public static final String DONATION_ETH = "0x313faE0D36BFf3F7a4817E52a71B74e2924D4b97";
 	public static final String STATUS_MESSAGE = "?nhlbot help";
 	public static final String HAZELUFF_ID = "225742618422673409";
 	public static final String HAZELUFF_MENTION = "@Hazeluff#0201";

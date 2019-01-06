@@ -32,10 +32,10 @@ public class HelpCommand extends Command {
 						+ "`subscribe [team]` - Subscribes you to a team. "
 						+ "[team] is the three letter code of your team. **(+)**\n"
 
+						+ "`unsubscribe [team]` - Unsubscribes you from a team. **(+)**\n"
+
 						+ "`schedule` - Displays information about the most recent and coming up games of your subscribed teams."
 						+ " **(+)**\n"
-
-						+ "`unsubscribe [team]` - Unsubscribes you from a team. **(+)**\n"
 
 						+ "`score` - Displays the score of the game. "
 						+ "You must be in a 'Game Day Channel' to use this command.\n"
@@ -48,7 +48,7 @@ public class HelpCommand extends Command {
 						+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
 						+ "`?nhlbot [command] help`\n\n"
 
-						+ "You can use the commands by doing `?nhlbot [command]` or `?[command`.");
+						+ "You can use the commands by doing `?nhlbot [command]` or `?[command]`.");
 	}
 
 }

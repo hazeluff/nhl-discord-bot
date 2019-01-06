@@ -44,7 +44,14 @@ public class AboutCommand extends Command {
 				.appendField("Email", Config.HAZELUFF_EMAIL, true)
 				.appendField("Version", Config.VERSION, true)
 				.appendField("GitHub", Config.GIT_URL, true)
-				.appendField("Email", Config.DONATION_URL, true);
+				.appendField(
+						"Donations",
+						"I support this bot personally. "
+								+ "Donations will help offset my costs of running the server."
+								+ "\nPaypal: " + Config.DONATION_URL
+								+ "\nBTC: " + Config.DONATION_BTC
+								+ "\nETH: " + Config.DONATION_ETH,
+						false);
 		nhlBot.getDiscordManager().sendEmbed(channel, embedResource);
 	}
 
