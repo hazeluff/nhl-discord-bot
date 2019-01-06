@@ -28,7 +28,10 @@ public class HelpCommand extends Command {
 
 	public void sendMessage(IChannel channel) {
 		nhlBot.getDiscordManager().sendMessage(channel,
-				"Here are a list of commands:\n\n" 
+				"Here are a list of commands:\n\n"
+
+						+ "You can use the commands by doing `?nhlbot [command]` or `?[command]`.\n\n"
+
 						+ "`subscribe [team]` - Subscribes you to a team. "
 						+ "[team] is the three letter code of your team. **(+)**\n"
 
@@ -46,9 +49,7 @@ public class HelpCommand extends Command {
 						+ "`about` - Displays information about me.\n\n"
 
 						+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
-						+ "`?nhlbot [command] help`\n\n"
-
-						+ "You can use the commands by doing `?nhlbot [command]` or `?[command]`.");
+						+ "`?nhlbot [command] help`");
 	}
 
 }
