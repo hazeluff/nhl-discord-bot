@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
@@ -120,6 +121,10 @@ public abstract class Command {
 
 	boolean isOwner(IUser user, IGuild guild) {
 		return guild.getOwner().getLongID() == user.getLongID();
+	}
+
+	boolean isDev(IUser user) {
+		return user.getLongID() == Config.HAZELUFF_ID;
 	}
 
 	/**

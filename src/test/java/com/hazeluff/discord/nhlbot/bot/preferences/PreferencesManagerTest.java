@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
+import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
+import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.client.FindIterable;
@@ -135,7 +137,7 @@ public class PreferencesManagerTest {
 		spyPreferencesManager.subscribeGuild(GUILD_ID, TEAM2);
 
 		assertEquals(Arrays.asList(TEAM, TEAM2), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
-		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
+		verify(spyPreferencesManager).saveToCollection(GUILD_ID);
 	}
 
 	@Test
@@ -143,14 +145,14 @@ public class PreferencesManagerTest {
 		LOGGER.info("subscribeGuildShouldCreatePreferences");
 		preferencesManager = new PreferencesManager(nhlBot);
 		spyPreferencesManager = spy(preferencesManager);
-		doNothing().when(spyPreferencesManager).saveToGuildCollection(anyLong());
+		doNothing().when(spyPreferencesManager).saveToCollection(anyLong());
 
 		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 
 		spyPreferencesManager.subscribeGuild(GUILD_ID, TEAM);
 
 		assertEquals(Arrays.asList(TEAM), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
-		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
+		verify(spyPreferencesManager).saveToCollection(GUILD_ID);
 	}
 
 	@SuppressWarnings("serial")
@@ -164,12 +166,12 @@ public class PreferencesManagerTest {
 				}});
 		spyPreferencesManager = spy(preferencesManager);
 		
-		doNothing().when(spyPreferencesManager).saveToGuildCollection(anyLong());
+		doNothing().when(spyPreferencesManager).saveToCollection(anyLong());
 
 		spyPreferencesManager.unsubscribeGuild(GUILD_ID, TEAM);
 
 		assertEquals(Arrays.asList(TEAM2), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
-		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
+		verify(spyPreferencesManager).saveToCollection(GUILD_ID);
 	}
 
 	@SuppressWarnings("serial")
@@ -183,12 +185,12 @@ public class PreferencesManagerTest {
 				}});
 		spyPreferencesManager = spy(preferencesManager);
 		
-		doNothing().when(spyPreferencesManager).saveToGuildCollection(anyLong());
+		doNothing().when(spyPreferencesManager).saveToCollection(anyLong());
 
 		spyPreferencesManager.unsubscribeGuild(GUILD_ID, null);
 
 		assertEquals(Collections.emptyList(), preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams());
-		verify(spyPreferencesManager).saveToGuildCollection(GUILD_ID);
+		verify(spyPreferencesManager).saveToCollection(GUILD_ID);
 	}
 	
 	@SuppressWarnings("serial")

@@ -1,4 +1,4 @@
-package com.hazeluff;
+package com.hazeluff.test;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.Is;

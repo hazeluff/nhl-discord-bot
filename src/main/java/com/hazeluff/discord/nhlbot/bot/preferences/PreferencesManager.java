@@ -51,10 +51,6 @@ public class PreferencesManager {
 		return nhlBot.getMongoDatabase().getCollection("guilds");
 	}
 
-	MongoCollection<Document> getUserCollection() {
-		return nhlBot.getMongoDatabase().getCollection("users");
-	}
-
 	@SuppressWarnings("unchecked")
 	void loadPreferences() {
 		LOGGER.info("Loading preferences...");
@@ -75,7 +71,7 @@ public class PreferencesManager {
 			guildPreferences.put(id, new GuildPreferences(new HashSet<>(teams)));
 
 			if (doc.containsKey("team")) {
-				saveToGuildCollection(id);
+				saveToCollection(id);
 			}
 
 		}
@@ -122,7 +118,7 @@ public class PreferencesManager {
 
 		guildPreferences.get(guildId).addTeam(team);
 
-		saveToGuildCollection(guildId);
+		saveToCollection(guildId);
 	}
 
 	/**
@@ -142,10 +138,10 @@ public class PreferencesManager {
 			guildPreferences.get(guildId).removeTeam(team);
 		}
 
-		saveToGuildCollection(guildId);
+		saveToCollection(guildId);
 	}
 	
-	void saveToGuildCollection(long guildId) {
+	void saveToCollection(long guildId) {
 		List<Integer> teamIds = guildPreferences.get(guildId).getTeams().stream()
 				.map(preferedTeam -> preferedTeam.getId())
 				.collect(Collectors.toList());

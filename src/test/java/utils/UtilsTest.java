@@ -24,9 +24,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.ThrowableAssert;
 import com.hazeluff.discord.nhlbot.utils.CheckedSupplier;
 import com.hazeluff.discord.nhlbot.utils.Utils;
+import com.hazeluff.test.ThrowableAssert;
 
 @RunWith(PowerMockRunner.class)
 public class UtilsTest {

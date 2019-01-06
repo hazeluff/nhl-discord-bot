@@ -482,6 +482,10 @@ public class GameScheduler extends Thread {
 		return false;
 	}
 
+	public void setInit(boolean value) {
+		init.set(value);
+	}
+
 	public boolean isInit() {
 		return init.get();
 	}
