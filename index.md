@@ -1,7 +1,7 @@
 # NHLBot
-[![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square&logo=twitter)](https://twitter.com/hazeluff)
+[![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square&logo=discord)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square&logo=twitter)](https://twitter.com/hazeluff)
 
-[![Donate](https://img.shields.io/badge/Donate-Paypal-%238d87a7.svg)](https://paypal.me/hazeluff)
+[![Donate](https://img.shields.io/badge/Donate-Paypal-%238d87a7.svg?style=flat-square&logo=paypal)](https://paypal.me/hazeluff)
 
 # Add NHLBot to your server:
 
