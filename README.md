@@ -1,7 +1,7 @@
 # NHLBot
-[![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square&logo=twitter)](https://twitter.com/hazeluff)
+[![Support](https://img.shields.io/badge/Discord-NHLBot_Support-7289DA.svg?style=flat-square&logo=discord)](https://discord.gg/VVHe6d3) [![Twitter](https://img.shields.io/badge/Twitter-Hazeluff-00ACED.svg?style=flat-square&logo=twitter)](https://twitter.com/hazeluff)
 
-[![Donate](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/hazeluff/donate)
+[![Donate](https://img.shields.io/badge/Donate-Paypal-%238d87a7.svg?style=flat-square&logo=paypal)](https://paypal.me/hazeluff)
 
 # Add NHLBot to your server:
 
@@ -9,7 +9,8 @@
 
 1. Use the link above to invite the bot to your server. Make sure you do not change the permissions of the bot.
 2. Use `?subscribe [team]` to create game day channels for your team(s). 
-   - Use `?subscribe help` to get the list of codes for your team (It is the 3 letter code you see on the tv score display.
+   - `[team]` is the 3 letter code for the team (same as the ones that are displayed on the tv scores)
+   - Use `?subscribe help` to get the list of codes.
 
 # Features
 ## Game Day Channels
