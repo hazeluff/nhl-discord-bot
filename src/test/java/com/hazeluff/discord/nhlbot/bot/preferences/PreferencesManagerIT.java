@@ -5,7 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.hazeluff.test.DatabaseIT;
+import com.mongodb.MongoClient;
 
 public class PreferencesManagerIT extends DatabaseIT {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManagerIT.class);
@@ -22,6 +25,23 @@ public class PreferencesManagerIT extends DatabaseIT {
 	private static final Team TEAM2 = Team.CALGARY_FLAMES;
 
 	PreferencesManager preferencesManager;
+
+	private static MongoClient client;
+
+	@Override
+	public MongoClient getClient() {
+		return client;
+	}
+
+	@BeforeClass
+	public static void setupConnection() {
+		client = createConnection();
+	}
+
+	@AfterClass
+	public static void closeConnection() {
+		closeConnection(client);
+	}
 
 	@Before
 	public void before() {

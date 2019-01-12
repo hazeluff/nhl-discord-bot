@@ -4,7 +4,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 
 import com.hazeluff.discord.nhlbot.Config;
@@ -18,29 +17,29 @@ import com.mongodb.client.MongoDatabase;
  * MongoClient. DiscordClient will not be mocked and will be null. Methods in GuildsPreferencesManager should not both
  * use DiscordClient and MongoDatabase, so that we can test them.
  */
-public class DatabaseIT {
-	private static final MongoClient mongoClient;
+public abstract class DatabaseIT {
 
 	private MongoDatabase mongoDatabase;
 	private NHLBot nhlBot;
 
-	static {
-		mongoClient = new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT);
+	public abstract MongoClient getClient();
+
+	public static MongoClient createConnection() {
+		return new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT);
+	}
+
+	public static void closeConnection(MongoClient client) {
+		if (client != null) {
+			client.close();
+		}
 	}
 
 	@Before
 	public void before() {
-		mongoDatabase = mongoClient.getDatabase(Config.MONGO_TEST_DATABASE_NAME);
+		mongoDatabase = getClient().getDatabase(Config.MONGO_TEST_DATABASE_NAME);
 		nhlBot = mock(NHLBot.class);
 		when(nhlBot.getMongoDatabase()).thenReturn(mongoDatabase);
 		when(nhlBot.getDiscordManager()).thenReturn(mock(DiscordManager.class));
-	}
-
-	@AfterClass
-	public static void afterClass() {
-		if (mongoClient != null) {
-			mongoClient.close();
-		}
 	}
 
 	@After
