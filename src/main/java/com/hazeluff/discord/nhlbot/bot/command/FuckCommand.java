@@ -25,6 +25,10 @@ import sx.blah.discord.handle.obj.IMessage;
 public class FuckCommand extends Command {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FuckCommand.class);
 
+	static final String NOT_ENOUGH_PARAMETERS_REPLY = "You're gonna have to tell me who/what to fuck. `?fuck [thing]`";
+	static final String NO_YOU_REPLY = "No U.";
+	static final String HAZELUFF_REPLY = "Hazeluff doesn't give a fuck.";
+
 	// Map<name, strResponses>
 	private Map<String, List<String>> responses = new HashMap<>();
 
@@ -38,15 +42,13 @@ public class FuckCommand extends Command {
 		IChannel channel = message.getChannel();
 		
 		if(arguments.size() < 2) {
-			nhlBot.getDiscordManager().sendMessage(channel,
-					"You're gonna have to tell me who/what to fuck. `?fuck [thing]`");
+			nhlBot.getDiscordManager().sendMessage(channel, NOT_ENOUGH_PARAMETERS_REPLY);
 			return;
 		}
 		
 		if (arguments.get(1).toLowerCase().equals("you") 
 				|| arguments.get(1).toLowerCase().equals("u")) {
-			nhlBot.getDiscordManager().sendMessage(channel, 
-					"No U.");
+			nhlBot.getDiscordManager().sendMessage(channel, NO_YOU_REPLY);
 			return;
 		}
 		
@@ -61,9 +63,8 @@ public class FuckCommand extends Command {
 
 		if (arguments.get(1).startsWith("<@") && arguments.get(1).endsWith(">")) {
 			nhlBot.getDiscordManager().deleteMessage(message);
-			String authorMention = String.format("<@%s>", message.getAuthor().getLongID());
 			nhlBot.getDiscordManager().sendMessage(channel, 
-					authorMention + ". Don't @ people, you dingus.");
+					buildDontAtReply(message));
 			return;
 		}
 
@@ -74,8 +75,7 @@ public class FuckCommand extends Command {
 				String strResponse = StringUtils.join(response.subList(3, response.size()), " ");
 				
 				add(subject, strResponse);
-				nhlBot.getDiscordManager().sendMessage(channel, 
-						String.format("Added new response.\nSubject: `%s`\nResponse: `%s`", subject, strResponse));				
+				nhlBot.getDiscordManager().sendMessage(channel, buildAddReply(subject, strResponse));
 			}
 			return;
 		}
@@ -86,12 +86,23 @@ public class FuckCommand extends Command {
 			return;
 		}
 
+		// Default
+		nhlBot.getDiscordManager().sendMessage(channel, buildFuckReply(arguments));
+	}
+
+	static String buildDontAtReply(IMessage message) {
+		String authorMention = String.format("<@%s>", message.getAuthor().getLongID());
+		return authorMention + ". Don't @ people, you dingus.";
+	}
+
+	static String buildAddReply(String subject, String response) {
+		return String.format("Added new response.\nSubject: `%s`\nResponse: `%s`", subject, response);
+	}
+
+	static String buildFuckReply(List<String> arguments) {
 		List<String> subject = new ArrayList<>(arguments);
 		subject.remove(0);
-
-		// Default
-		nhlBot.getDiscordManager().sendMessage(channel, 
-				"FUCK " + StringUtils.join(subject, " ").toUpperCase());
+		return "FUCK " + StringUtils.join(subject, " ").toUpperCase();
 	}
 
 	@Override
