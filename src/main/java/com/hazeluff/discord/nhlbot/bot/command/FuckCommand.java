@@ -68,7 +68,7 @@ public class FuckCommand extends Command {
 			return;
 		}
 
-		if (arguments.get(1).equals("add")) {
+		if (arguments.get(1).toLowerCase().equals("add")) {
 			if (isDev(message.getAuthor())) {
 				String subject = arguments.get(2);
 				List<String> response = new ArrayList<>(arguments);
@@ -80,7 +80,7 @@ public class FuckCommand extends Command {
 			return;
 		}
 
-		if (responses.containsKey(arguments.get(1))) {
+		if (hasResponses(arguments.get(1))) {
 			nhlBot.getDiscordManager().sendMessage(channel, 
 					Utils.getRandom(getResponses(arguments.get(1))));
 			return;
@@ -96,7 +96,7 @@ public class FuckCommand extends Command {
 	}
 
 	static String buildAddReply(String subject, String response) {
-		return String.format("Added new response.\nSubject: `%s`\nResponse: `%s`", subject, response);
+		return String.format("Added new response.\nSubject: `%s`\nResponse: `%s`", subject.toLowerCase(), response);
 	}
 
 	static String buildFuckReply(List<String> arguments) {
@@ -122,7 +122,7 @@ public class FuckCommand extends Command {
 		// Load Guild preferences
 		while (iterator.hasNext()) {
 			Document doc = iterator.next();
-			String subject = doc.getString("subject");
+			String subject = doc.getString("subject").toLowerCase();
 			List<String> subjectResponses = doc.containsKey("responses")
 					? (List<String>) doc.get("responses")
 					: new ArrayList<>();
@@ -139,7 +139,6 @@ public class FuckCommand extends Command {
 			responses.put(subject, new ArrayList<>());
 		}
 		responses.get(subject).add(response);
-		System.out.println(responses);
 
 		saveToCollection(subject);
 	}
@@ -153,5 +152,9 @@ public class FuckCommand extends Command {
 
 	List<String> getResponses(String subject) {
 		return new ArrayList<>(responses.get(subject.toLowerCase()));
+	}
+
+	boolean hasResponses(String subject) {
+		return responses.containsKey(subject.toLowerCase());
 	}
 }
