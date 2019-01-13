@@ -82,7 +82,7 @@ public class FuckCommand extends Command {
 
 		if (responses.containsKey(arguments.get(1))) {
 			nhlBot.getDiscordManager().sendMessage(channel, 
-					Utils.getRandom(responses.get(arguments.get(1))));
+					Utils.getRandom(getResponses(arguments.get(1))));
 			return;
 		}
 
@@ -134,11 +134,12 @@ public class FuckCommand extends Command {
 	}
 
 	void add(String subject, String response) {
+		subject = subject.toLowerCase();
 		if(!responses.containsKey(subject)) {
 			responses.put(subject, new ArrayList<>());
 		}
-
 		responses.get(subject).add(response);
+		System.out.println(responses);
 
 		saveToCollection(subject);
 	}
@@ -150,7 +151,7 @@ public class FuckCommand extends Command {
 				new UpdateOptions().upsert(true));
 	}
 
-	Map<String, List<String>> getResponses() {
-		return responses;
+	List<String> getResponses(String subject) {
+		return new ArrayList<>(responses.get(subject.toLowerCase()));
 	}
 }

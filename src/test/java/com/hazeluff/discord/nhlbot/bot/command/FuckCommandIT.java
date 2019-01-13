@@ -53,7 +53,11 @@ public class FuckCommandIT extends DatabaseIT {
 
 		fuckCommand = new FuckCommand(getNHLBot());
 
-		assertTrue(fuckCommand.getResponses().get(subject).contains(response1));
-		assertTrue(fuckCommand.getResponses().get(subject).contains(response2));
+		assertTrue(fuckCommand.getResponses(subject).contains(response1));
+		assertTrue(fuckCommand.getResponses(subject.toUpperCase()).contains(response1));
+		assertTrue(fuckCommand.getResponses(subject.toLowerCase()).contains(response1));
+		assertTrue(fuckCommand.getResponses(subject).contains(response2));
+		assertTrue(fuckCommand.getResponses(subject.toUpperCase()).contains(response2));
+		assertTrue(fuckCommand.getResponses(subject.toLowerCase()).contains(response2));
 	}
 }
