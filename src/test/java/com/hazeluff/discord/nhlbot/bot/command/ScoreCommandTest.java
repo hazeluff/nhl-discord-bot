@@ -2,11 +2,15 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
+
+import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +45,7 @@ public class ScoreCommandTest {
 	private static final long GUILD_ID = Utils.getRandomLong();
 	private static final String CHANNEL_NAME = "ChannelName";
 	private static final Team TEAM = Team.COLORADO_AVALANCH;
+	private static final Team TEAM2 = Team.CAROLINA_HURRICANES;
 	private static final String SCORE_MESSAGE = "ScoreMesage";
 
 	@Mock
@@ -84,44 +89,33 @@ public class ScoreCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsScore() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsScore");
-		assertTrue(scoreCommand.isAccept(null, new String[] { "<@NHLBOT>", "score" }));
+		assertTrue(scoreCommand.isAccept(null, Arrays.asList("score")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotScore() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotScore");
-		assertFalse(scoreCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
-	}
-
-	@Test
-	public void replyToShouldSendRunInServerChannelMessageWhenChannelIsPrivate() {
-		LOGGER.info("replyToShouldSendRunInServerChannelMessage");
-		when(mockChannel.isPrivate()).thenReturn(true);
-		when(mockMessage.getChannel()).thenReturn(mockChannel);
-
-		scoreCommand.replyTo(mockMessage, null);
-
-		verify(mockDiscordManager).sendMessage(mockChannel, Command.RUN_IN_SERVER_CHANNEL_MESSAGE);
+		assertFalse(scoreCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test
 	public void replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed() {
 		LOGGER.info("replyToShouldSendSubscribeMessageWhenGuildIsNotSubscribed");
-		when(mockChannel.isPrivate()).thenReturn(false);
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
+		doReturn(null).when(spyScoreCommand).sendSubscribeFirstMessage(any(IChannel.class));
 
-		scoreCommand.replyTo(mockMessage, null);
+		spyScoreCommand.replyTo(mockMessage, null);
 
-		verify(mockDiscordManager).sendMessage(mockChannel, Command.SUBSCRIBE_FIRST_MESSAGE);
+		verifyNoMoreInteractions(mockDiscordManager);
+		verify(spyScoreCommand).sendSubscribeFirstMessage(mockChannel);
 	}
 
 	@Test
 	public void replyToShouldSendRunInGameDayChannelMessageWhenChannelIsNotGameDayChannel() {
 		LOGGER.info("replyToShouldSendRunInGameDayChannelMessageWhenChannelIsNotGameDayChannel");
-		when(mockChannel.isPrivate()).thenReturn(false);
-		when(mockPreferencesManager.getTeamByGuild(GUILD_ID)).thenReturn(TEAM);
+		when(mockPreferencesManager.getTeams(GUILD_ID)).thenReturn(Arrays.asList(TEAM, TEAM2));
 		String message = "Message";		
-		doReturn(message).when(spyScoreCommand).getRunInGameDayChannelMessage(mockGuild, TEAM);
+		doReturn(message).when(spyScoreCommand).getRunInGameDayChannelsMessage(mockGuild, Arrays.asList(TEAM, TEAM2));
 		
 		spyScoreCommand.replyTo(mockMessage, null);
 		
@@ -131,8 +125,7 @@ public class ScoreCommandTest {
 	@Test
 	public void replyToShouldSendGameNotStartedMessageWhenGameIsNotStarted() {
 		LOGGER.info("replyToShouldSendGameNotStartedMessageWhenGameIsNotStarted");
-		when(mockChannel.isPrivate()).thenReturn(false);
-		when(mockPreferencesManager.getTeamByGuild(GUILD_ID)).thenReturn(TEAM);
+		when(mockPreferencesManager.getTeams(GUILD_ID)).thenReturn(Arrays.asList(TEAM, TEAM2));
 		when(mockGameScheduler.getGameByChannelName(CHANNEL_NAME)).thenReturn(mockGame);
 		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
 
@@ -145,7 +138,7 @@ public class ScoreCommandTest {
 	public void replyToShouldSendMessageWhenGameIsStarted() {
 		LOGGER.info("replyToShouldSendMessageWhenGameIsStarted");
 		when(mockChannel.isPrivate()).thenReturn(false);
-		when(mockPreferencesManager.getTeamByGuild(GUILD_ID)).thenReturn(TEAM);
+		when(mockPreferencesManager.getTeams(GUILD_ID)).thenReturn(Arrays.asList(TEAM, TEAM2));
 		when(mockGameScheduler.getGameByChannelName(CHANNEL_NAME)).thenReturn(mockGame);
 		when(mockGame.getStatus()).thenReturn(GameStatus.LIVE);
 

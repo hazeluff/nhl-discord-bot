@@ -17,7 +17,7 @@ import com.hazeluff.discord.nhlbot.Config;
 public class HttpUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpUtils.class);
 
-	public static String get(URI uri) {
+	public static String get(URI uri) throws HttpException {
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpGet request = new HttpGet(uri);
 		HttpResponse response = null;
@@ -34,7 +34,7 @@ public class HttpUtils {
 		if ((response == null || httpStatusCode != 200) && retries <= 0) {
 			String message = "Failed to get page after (" + Config.HTTP_REQUEST_RETRIES + ") retries.";
 			LOGGER.error(message);
-			throw new RuntimeException(message);
+			throw new HttpException(message);
 		}
 
 		BufferedReader rd;
@@ -48,7 +48,15 @@ public class HttpUtils {
 			return result.toString();
 		} catch (UnsupportedOperationException | IOException e) {
 			LOGGER.error("Error reading response");
-			throw new RuntimeException(e);
+			throw new HttpException(e);
+		}
+	}
+
+	public static String getAndRetry(URI uri, int retries, long sleepMs, String description) throws HttpException {
+		try {
+			return Utils.getAndRetry(() -> get(uri), retries, sleepMs, description);
+		} catch (TimeoutException e) {
+			throw new HttpException(e);
 		}
 	}
 }

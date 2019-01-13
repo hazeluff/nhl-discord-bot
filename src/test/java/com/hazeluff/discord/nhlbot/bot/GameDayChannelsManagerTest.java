@@ -1,14 +1,19 @@
 package com.hazeluff.discord.nhlbot.bot;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -19,9 +24,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
@@ -31,18 +34,19 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameTracker;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.impl.obj.Guild;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 
@@ -85,48 +89,44 @@ public class GameDayChannelsManagerTest {
 		assertEquals(2, gameDayChannelsManager.getGameDayChannels().size());
 
 		// removeGameDayChannel
-		verify(gameDayChannel1, never()).stopAndRemove();
-		verify(gameDayChannel2, never()).stopAndRemove();
+		verify(gameDayChannel1, never()).stopAndRemoveGuildChannel();
+		verify(gameDayChannel2, never()).stopAndRemoveGuildChannel();
 		gameDayChannelsManager.removeGameDayChannel(1, 101);
-		verify(gameDayChannel1).stopAndRemove();
-		verify(gameDayChannel2, never()).stopAndRemove();
+		verify(gameDayChannel1).stopAndRemoveGuildChannel();
+		verify(gameDayChannel2, never()).stopAndRemoveGuildChannel();
 		assertNull(gameDayChannelsManager.getGameDayChannel(1, 101));
 		assertEquals(gameDayChannel2, gameDayChannelsManager.getGameDayChannel(2, 102));
 		assertEquals(1, gameDayChannelsManager.getGameDayChannels().size());
 		gameDayChannelsManager.removeGameDayChannel(2, 102);
-		verify(gameDayChannel1).stopAndRemove();
-		verify(gameDayChannel2).stopAndRemove();
+		verify(gameDayChannel1).stopAndRemoveGuildChannel();
+		verify(gameDayChannel2).stopAndRemoveGuildChannel();
 		assertNull(gameDayChannelsManager.getGameDayChannel(1, 101));
 		assertNull(gameDayChannelsManager.getGameDayChannel(2, 102));
 		assertEquals(0, gameDayChannelsManager.getGameDayChannels().size());
 	}
-	
-	@Test
-	public void removeGameDayChannelsShouldFunctionCorrectly() {
-		LOGGER.info("removeGameDayChannelsShouldFunctionCorrectly");
-		Function<String, GameDayChannel> gdcMockBuilder = str -> {
-			GameDayChannel gameDayChannel = mock(GameDayChannel.class);
-			when(gameDayChannel.getChannelName()).thenReturn(str);
-			return gameDayChannel;
-		};
-		String channelName = "channelName";
-		GameDayChannel gameDayChannel = gdcMockBuilder.apply(channelName);
-		GameDayChannel gameDayChannel2 = gdcMockBuilder.apply("SomethingElse");
-		GameDayChannel gameDayChannel3 = gdcMockBuilder.apply(channelName);
-		IChannel channel = mock(IChannel.class);
-		when(channel.getName()).thenReturn(channelName);
-		gameDayChannelsManager.addGameDayChannel(1, 101, gameDayChannel);
-		gameDayChannelsManager.addGameDayChannel(1, 102, gameDayChannel2);
-		gameDayChannelsManager.addGameDayChannel(2, 101, gameDayChannel3);
-		
-		gameDayChannelsManager.removeGameDayChannels(channel);
 
-		assertNull(gameDayChannelsManager.getGameDayChannel(1, 101));
-		verify(gameDayChannel).stopAndRemove();
-		assertEquals(gameDayChannel2, gameDayChannelsManager.getGameDayChannel(1, 102));
-		verify(gameDayChannel2, never()).stopAndRemove();
-		assertNull(gameDayChannelsManager.getGameDayChannel(2, 101));
-		verify(gameDayChannel3).stopAndRemove();
+	@Test
+	public void removeFinishedGameDayChannelsShouldRemoveFinishedOnes() {
+		LOGGER.info("removeFinishedGameDayChannelsShouldRemoveFinishedOnes");
+
+		GameDayChannel gameDayChannel = mock(GameDayChannel.class); // t
+		doReturn(false).when(spyGameDayChannelsManager).isGameDayChannelActive(gameDayChannel);
+		GameDayChannel gameDayChannel2 = mock(GameDayChannel.class); // f
+		doReturn(true).when(spyGameDayChannelsManager).isGameDayChannelActive(gameDayChannel2);
+		GameDayChannel gameDayChannel3 = mock(GameDayChannel.class); // t
+		doReturn(false).when(spyGameDayChannelsManager).isGameDayChannelActive(gameDayChannel3);
+		spyGameDayChannelsManager.addGameDayChannel(1, 101, gameDayChannel);
+		spyGameDayChannelsManager.addGameDayChannel(1, 102, gameDayChannel2);
+		spyGameDayChannelsManager.addGameDayChannel(2, 101, gameDayChannel3);
+
+		spyGameDayChannelsManager.removeFinishedGameDayChannels();
+		assertNull(spyGameDayChannelsManager.getGameDayChannel(1, 101));
+		verify(gameDayChannel).stopAndRemoveGuildChannel();
+		assertEquals(gameDayChannel2, spyGameDayChannelsManager.getGameDayChannel(1, 102));
+		verify(gameDayChannel2, never()).stopAndRemoveGuildChannel();
+		assertNull(spyGameDayChannelsManager.getGameDayChannel(2, 101));
+		verify(gameDayChannel3).stopAndRemoveGuildChannel();
+
 	}
 
 	@Test
@@ -148,8 +148,9 @@ public class GameDayChannelsManagerTest {
 		Utils.sleep(GameDayChannelsManager.INIT_UPDATE_RATE);
 		verifyStatic(times(3));
 		Utils.sleep(GameDayChannelsManager.UPDATE_RATE);
-		verify(spyGameDayChannelsManager, times(2)).initChannels();
+		verify(spyGameDayChannelsManager, times(2)).removeFinishedGameDayChannels();
 		verify(spyGameDayChannelsManager, times(2)).deleteInactiveChannels();
+		verify(spyGameDayChannelsManager, times(2)).initChannels();
 	}
 
 	@Test
@@ -216,117 +217,64 @@ public class GameDayChannelsManagerTest {
 		IGuild guild = mock(IGuild.class);
 		long guildId = Utils.getRandomLong();
 		when(guild.getLongID()).thenReturn(guildId);
-		Team team = Utils.getRandom(Team.class);
-		when(mockNHLBot.getPreferencesManager().getTeamByGuild(guild.getLongID())).thenReturn(team);
 		GameDayChannel gameDayChannel = mock(GameDayChannel.class);
 		GameTracker gameTracker = mock(GameTracker.class);
 		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.get(mockNHLBot, gameTracker, guild, team)).thenReturn(gameDayChannel);
+		when(GameDayChannel.get(mockNHLBot, gameTracker, guild)).thenReturn(gameDayChannel);
 		
 		// GameDayChannel exists
 		doReturn(gameDayChannel).when(spyGameDayChannelsManager).getGameDayChannel(guildId, gamePk);
 		assertEquals(gameDayChannel, spyGameDayChannelsManager.createChannel(game, guild));
+		verify(spyGameDayChannelsManager, never()).addGameDayChannel(anyLong(), anyInt(), any(GameDayChannel.class));
 
 		// GameDayChannel doesn't exist; game tracker doesn't exist
 		doReturn(null).when(spyGameDayChannelsManager).getGameDayChannel(guildId, gamePk);
 		when(mockNHLBot.getGameScheduler().getGameTracker(game)).thenReturn(null);
 		assertNull(spyGameDayChannelsManager.createChannel(game, guild));
 		verifyStatic(never());
-		GameDayChannel.get(mockNHLBot, gameTracker, guild, team);
+		GameDayChannel.get(mockNHLBot, gameTracker, guild);
+		verify(spyGameDayChannelsManager, never()).addGameDayChannel(anyLong(), anyInt(), any(GameDayChannel.class));
 
 		// GameDayChannel doesn't exist; game tracker exists
 		doReturn(null).when(spyGameDayChannelsManager).getGameDayChannel(guildId, gamePk);
 		when(mockNHLBot.getGameScheduler().getGameTracker(game)).thenReturn(gameTracker);
 		assertEquals(gameDayChannel, spyGameDayChannelsManager.createChannel(game, guild));
 		verifyStatic();
-		GameDayChannel.get(mockNHLBot, gameTracker, guild, team);
-	}
-
-	@Test
-	@PrepareForTest(GameDayChannel.class)
-	public void deleteInactiveChannelsShouldRemoveChannels() {
-		LOGGER.info("deleteInactiveChannelsShouldRemoveChannels");
-		IChannel[] mockChannels = new IChannel[8];
-		Team team = Utils.getRandom(Team.class);
-		Game[] mockGames = new Game[2];
-		when(mockNHLBot.getGameScheduler().getActiveGames(any(Team.class))).thenReturn(Collections.emptyList());
-		IGuild guild = mock(Guild.class);
-		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team)).thenReturn(Arrays.asList(guild));
-		when(guild.getChannels()).thenReturn(Arrays.asList(mockChannels));
-		String matchingChannelName = RandomStringUtils.random(5);
-		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.getChannelName(mockGames[0])).thenReturn(RandomStringUtils.random(3));
-		when(GameDayChannel.getChannelName(mockGames[1])).thenReturn(matchingChannelName);
-		mockStatic(GameDayChannel.class);
-		for (int i = 0; i < mockChannels.length; i++) {
-			mockChannels[i] = mock(IChannel.class);
-			if (i % 2 == 0) {
-				when(GameDayChannel.isInCategory(mockChannels[0])).thenReturn(true);
-			}
-			if ((i / 2) % 2 == 0) {
-				when(GameDayChannel.isChannelNameFormat(mockChannels[0].getName())).thenReturn(true);
-			}
-			if ((i / 4) % 2 == 0) {
-				when(mockChannels[i].getName()).thenReturn(matchingChannelName);
-			} else {
-				when(mockChannels[i].getName()).thenReturn(RandomStringUtils.random(4));
-			}
-		}
-
-		spyGameDayChannelsManager.deleteInactiveChannels();
-
-		verify(spyGameDayChannelsManager).removeGameDayChannels(mockChannels[0]);
-		verify(mockNHLBot.getDiscordManager()).deleteChannel(mockChannels[0]);
-		for (int i = 1; i < mockChannels.length; i++) {
-			verify(spyGameDayChannelsManager, never()).removeGameDayChannels(mockChannels[i]);
-			verify(mockNHLBot.getDiscordManager(), never()).deleteChannel(mockChannels[i]);
-		}
+		GameDayChannel.get(mockNHLBot, gameTracker, guild);
+		verify(spyGameDayChannelsManager).addGameDayChannel(guildId, gamePk, gameDayChannel);
 	}
 
 	@Test
 	public void initChannelsShouldInvokeMethods() {
-		List<Game> activeGames1 = Arrays.asList(mock(Game.class));
-		when(activeGames1.get(0).getGamePk()).thenReturn(100);
-		List<Game> activeGames2 = Arrays.asList(mock(Game.class), mock(Game.class));
-		when(activeGames2.get(0).getGamePk()).thenReturn(101);
-		when(activeGames2.get(1).getGamePk()).thenReturn(102);
-		Team team1 = Team.ANAHEIM_DUCKS;
-		Team team2 = Team.BOSTON_BRUINS;
-		when(mockNHLBot.getGameScheduler().getActiveGames(team1)).thenReturn(activeGames1);
-		when(mockNHLBot.getGameScheduler().getActiveGames(team2)).thenReturn(activeGames2);
-		Function<Long, IGuild> mockGuild = id -> {
-			IGuild guild = mock(IGuild.class);
-			when(guild.getLongID()).thenReturn(id);
-			return guild;
-		};
-		IGuild guild1 = mockGuild.apply(1l);
-		IGuild guild2 = mockGuild.apply(2l);
-		IGuild guild3 = mockGuild.apply(3l);
-		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(any(Team.class)))
-				.thenReturn(Collections.emptyList());
-		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team1)).thenReturn(Arrays.asList(guild1, guild2));
-		when(mockNHLBot.getPreferencesManager().getSubscribedGuilds(team2)).thenReturn(Arrays.asList(guild3));
-		GameDayChannel gameDayChannelG1G1 = mock(GameDayChannel.class);
-		GameDayChannel gameDayChannelG1G2 = mock(GameDayChannel.class);
-		GameDayChannel gameDayChannelG2G3 = mock(GameDayChannel.class);
-		GameDayChannel gameDayChannelG3G3 = mock(GameDayChannel.class);
-		doReturn(null).when(spyGameDayChannelsManager).createChannel(any(Game.class), any(IGuild.class));
-		doReturn(gameDayChannelG1G1).when(spyGameDayChannelsManager).createChannel(activeGames1.get(0), guild1);
-		doReturn(gameDayChannelG1G2).when(spyGameDayChannelsManager).createChannel(activeGames1.get(0), guild2);
-		doReturn(gameDayChannelG2G3).when(spyGameDayChannelsManager).createChannel(activeGames2.get(0), guild3);
-		doReturn(gameDayChannelG3G3).when(spyGameDayChannelsManager).createChannel(activeGames2.get(1), guild3);
-		doNothing().when(spyGameDayChannelsManager).addGameDayChannel(anyLong(), anyInt(), any(GameDayChannel.class));
+		LOGGER.info("deleteInactiveChannelsShouldInvokeMethods");
+		IGuild guild = mock(IGuild.class);
+		IGuild guild2 = mock(IGuild.class);
+		when(mockNHLBot.getDiscordManager().getGuilds()).thenReturn(Arrays.asList(guild, guild2));
+		doNothing().when(spyGameDayChannelsManager).initGuildChannels(any(IGuild.class));
 
 		spyGameDayChannelsManager.initChannels();
 
-		verify(spyGameDayChannelsManager).addGameDayChannel(guild1.getLongID(), activeGames1.get(0).getGamePk(),
-				gameDayChannelG1G1);
-		verify(spyGameDayChannelsManager).addGameDayChannel(guild2.getLongID(), activeGames1.get(0).getGamePk(),
-				gameDayChannelG1G2);
-		verify(spyGameDayChannelsManager).addGameDayChannel(guild3.getLongID(), activeGames2.get(0).getGamePk(),
-				gameDayChannelG2G3);
-		verify(spyGameDayChannelsManager).addGameDayChannel(guild3.getLongID(), activeGames2.get(1).getGamePk(),
-				gameDayChannelG3G3);
+		verify(spyGameDayChannelsManager).initGuildChannels(guild);
+		verify(spyGameDayChannelsManager).initGuildChannels(guild2);
+	}
+
+	@Test
+	public void initGuildChannelsShouldInvokeMethods() {
+		IGuild guild = mock(IGuild.class);
+		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
+		GuildPreferences preferences = mock(GuildPreferences.class);
+		List<Team> teams = Utils.getRandomList(Arrays.asList(Team.values()), 4);
+		when(preferences.getTeams()).thenReturn(teams);
+		when(mockNHLBot.getPreferencesManager().getGuildPreferences(guild.getLongID())).thenReturn(preferences);
+		Game game = mock(Game.class);
+		Game game2 = mock(Game.class);
+		when(mockNHLBot.getGameScheduler().getActiveGames(teams)).thenReturn(Arrays.asList(game, game2));
+		doReturn(null).when(spyGameDayChannelsManager).createChannel(any(Game.class), any(IGuild.class));
+
+		spyGameDayChannelsManager.initGuildChannels(guild);
+
+		verify(spyGameDayChannelsManager).createChannel(game, guild);
+		verify(spyGameDayChannelsManager).createChannel(game2, guild);
 	}
 
 	@Test
@@ -334,13 +282,15 @@ public class GameDayChannelsManagerTest {
 		LOGGER.info("initChannelsByGuildShouldInvokeMethods");
 		IGuild guild = mock(IGuild.class);
 		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
-		Team team = Utils.getRandom(Team.class);
-		when(mockNHLBot.getPreferencesManager().getTeamByGuild(guild.getLongID())).thenReturn(team);
+		GuildPreferences preferences = mock(GuildPreferences.class);
+		List<Team> teams = Utils.getRandomList(Arrays.asList(Team.values()), 2);
+		when(preferences.getTeams()).thenReturn(teams);
+		when(mockNHLBot.getPreferencesManager().getGuildPreferences(guild.getLongID())).thenReturn(preferences);
 		Game game1 = mock(Game.class);
-		when(game1.getGamePk()).thenReturn(Utils.getRandomInt());
 		Game game2 = mock(Game.class);
-		when(game2.getGamePk()).thenReturn(Utils.getRandomInt());
-		when(mockNHLBot.getGameScheduler().getActiveGames(team)).thenReturn(Arrays.asList(game1, game2));
+		Game game3 = mock(Game.class);
+		when(mockNHLBot.getGameScheduler().getActiveGames(teams.get(0))).thenReturn(Arrays.asList(game1, game2));
+		when(mockNHLBot.getGameScheduler().getActiveGames(teams.get(1))).thenReturn(Arrays.asList(game3));
 		doReturn(null).when(spyGameDayChannelsManager).createChannel(any(Game.class), any(IGuild.class));
 		GameDayChannel gameDayChannel1 = mock(GameDayChannel.class);
 		GameDayChannel gameDayChannel2 = mock(GameDayChannel.class);
@@ -352,34 +302,174 @@ public class GameDayChannelsManagerTest {
 		spyGameDayChannelsManager.initChannels(guild);
 
 		verify(spyGameDayChannelsManager).createChannel(game1, guild);
-		verify(spyGameDayChannelsManager).addGameDayChannel(guild.getLongID(), game1.getGamePk(), gameDayChannel1);
 		verify(spyGameDayChannelsManager).createChannel(game2, guild);
-		verify(spyGameDayChannelsManager).addGameDayChannel(guild.getLongID(), game2.getGamePk(), gameDayChannel2);
+	}
+
+	@Test
+	public void deleteInactiveChannelsShouldInvokeMethods() {
+		LOGGER.info("deleteInactiveChannelsShouldInvokeMethods");
+		IGuild guild = mock(IGuild.class);
+		IGuild guild2 = mock(IGuild.class);
+		when(mockNHLBot.getDiscordManager().getGuilds()).thenReturn(Arrays.asList(guild, guild2));
+		doNothing().when(spyGameDayChannelsManager).deleteInactiveGuildChannels(any(IGuild.class));
+
+		spyGameDayChannelsManager.deleteInactiveChannels();
+
+		verify(spyGameDayChannelsManager).deleteInactiveGuildChannels(guild);
+		verify(spyGameDayChannelsManager).deleteInactiveGuildChannels(guild2);
+	}
+
+	@Test
+	public void deleteInactiveGuildChannelsShouldInvokeMethods() {
+		LOGGER.info("deleteInactiveGuildChannelsShouldInvokeMethods");
+		IGuild guild = mock(IGuild.class);
+		when(guild.getLongID()).thenReturn(Utils.getRandomLong());
+		GuildPreferences preferences = mock(GuildPreferences.class);
+		when(mockNHLBot.getPreferencesManager().getGuildPreferences(guild.getLongID())).thenReturn(preferences);
+		IChannel channel = mock(IChannel.class, Mockito.RETURNS_DEEP_STUBS);
+		IChannel channel2 = mock(IChannel.class, Mockito.RETURNS_DEEP_STUBS);
+		IChannel channel3 = mock(IChannel.class, Mockito.RETURNS_DEEP_STUBS);
+		when(guild.getChannels()).thenReturn(Arrays.asList(channel, channel2, channel3));
+		doNothing().when(spyGameDayChannelsManager).deleteInactiveGuildChannel(any(IChannel.class),
+				any(GuildPreferences.class));
+		
+		spyGameDayChannelsManager.deleteInactiveGuildChannels(guild);
+		
+		verify(spyGameDayChannelsManager).deleteInactiveGuildChannel(channel, preferences);
+		verify(spyGameDayChannelsManager).deleteInactiveGuildChannel(channel2, preferences);
+		verify(spyGameDayChannelsManager).deleteInactiveGuildChannel(channel3, preferences);
 	}
 
 	@Test
 	@PrepareForTest(GameDayChannel.class)
-	public void removeAllChannelsShouldInvokeMethods() {
-		LOGGER.info("removeAllChannelsShouldInvokeMethods");
-		IGuild guild = mock(IGuild.class);
-		when(guild.getLongID()).thenReturn(100l);
-		int gamePk = Utils.getRandomInt();
-		spyGameDayChannelsManager.addGameDayChannel(guild.getLongID(), gamePk, mock(GameDayChannel.class));
-		IChannel gameChannel = mock(IChannel.class);
-		when(gameChannel.getName()).thenReturn("matches");
-		IChannel notGameChannel = mock(IChannel.class);
-		when(notGameChannel.getName()).thenReturn("does not match");
-		when(guild.getChannels()).thenReturn(Arrays.asList(gameChannel, notGameChannel));
+	public void deleteInactiveGuildChannelShouldFunctionCorrectly() {
+		LOGGER.info("deleteInactiveGuildChannelShouldFunctionCorrectly");
 		mockStatic(GameDayChannel.class);
-		when(GameDayChannel.isChannelNameFormat("matches")).thenReturn(true);
-		when(GameDayChannel.isChannelNameFormat("does not match")).thenReturn(false);
-		doNothing().when(spyGameDayChannelsManager).removeGameDayChannels(any(IChannel.class));
+		IChannel channel = mock(IChannel.class, Mockito.RETURNS_DEEP_STUBS);
+		GuildPreferences preferences = mock(GuildPreferences.class, Mockito.RETURNS_DEEP_STUBS);
+		Game game = mock(Game.class, Mockito.RETURNS_DEEP_STUBS);
 
-		spyGameDayChannelsManager.removeAllChannels(guild);
+		// Channel is in Category
+		reset(mockNHLBot.getDiscordManager());
+		when(GameDayChannel.isInCategory(channel)).thenReturn(false);
+		spyGameDayChannelsManager.deleteInactiveGuildChannel(channel, preferences);
+		verifyStatic(never());
+		GameDayChannel.isChannelNameFormat(anyString());
+		verify(spyGameDayChannelsManager, never()).isGameActive(anyListOf(Team.class), anyString());
+		verify(mockNHLBot.getGameScheduler(), never()).getGameByChannelName(anyString());
+		verify(spyGameDayChannelsManager, never()).removeGameDayChannel(anyLong(), anyInt());
+		verify(mockNHLBot.getDiscordManager(), never()).deleteChannel(any(IChannel.class));
 
-		verify(spyGameDayChannelsManager).removeGameDayChannels(gameChannel);
-		verify(mockNHLBot.getDiscordManager()).deleteChannel(gameChannel);
-		verify(spyGameDayChannelsManager, never()).removeGameDayChannels(notGameChannel);
-		verify(mockNHLBot.getDiscordManager(), never()).deleteChannel(notGameChannel);
+		// Channel name is not correct format
+		reset(mockNHLBot.getDiscordManager());
+		spyGameDayChannelsManager = spy(new GameDayChannelsManager(mockNHLBot));
+		when(GameDayChannel.isInCategory(channel)).thenReturn(true);
+		when(GameDayChannel.isChannelNameFormat(channel.getName())).thenReturn(false);
+		spyGameDayChannelsManager.deleteInactiveGuildChannel(channel, preferences);
+		verify(spyGameDayChannelsManager, never()).isGameActive(anyListOf(Team.class), anyString());
+		verify(mockNHLBot.getGameScheduler(), never()).getGameByChannelName(anyString());
+		verify(spyGameDayChannelsManager, never()).removeGameDayChannel(anyLong(), anyInt());
+		verify(mockNHLBot.getDiscordManager(), never()).deleteChannel(any(IChannel.class));
+
+		// Channel is active
+		reset(mockNHLBot.getDiscordManager());
+		spyGameDayChannelsManager = spy(new GameDayChannelsManager(mockNHLBot));
+		when(GameDayChannel.isInCategory(channel)).thenReturn(true);
+		when(GameDayChannel.isChannelNameFormat(channel.getName())).thenReturn(true);
+		doReturn(true).when(spyGameDayChannelsManager).isGameActive(anyListOf(Team.class), anyString());
+		spyGameDayChannelsManager.deleteInactiveGuildChannel(channel, preferences);
+		verify(spyGameDayChannelsManager).isGameActive(preferences.getTeams(), channel.getName());
+		verify(mockNHLBot.getGameScheduler(), never()).getGameByChannelName(anyString());
+		verify(spyGameDayChannelsManager, never()).removeGameDayChannel(anyLong(), anyInt());
+		verify(mockNHLBot.getDiscordManager(), never()).deleteChannel(any(IChannel.class));
+
+		// Game exists; No GameDayChannel removed
+		reset(mockNHLBot.getDiscordManager());
+		spyGameDayChannelsManager = spy(new GameDayChannelsManager(mockNHLBot));
+		when(GameDayChannel.isInCategory(channel)).thenReturn(true);
+		when(GameDayChannel.isChannelNameFormat(channel.getName())).thenReturn(true);
+		doReturn(false).when(spyGameDayChannelsManager).isGameActive(anyListOf(Team.class), anyString());
+		doReturn(false).when(spyGameDayChannelsManager).removeGameDayChannel(anyLong(), anyInt());
+		when(mockNHLBot.getGameScheduler().getGameByChannelName(channel.getName())).thenReturn(game);
+		spyGameDayChannelsManager.deleteInactiveGuildChannel(channel, preferences);
+		verify(spyGameDayChannelsManager).removeGameDayChannel(channel.getGuild().getLongID(), game.getGamePk());
+		verify(mockNHLBot.getDiscordManager()).deleteChannel(any(IChannel.class));
+
+		// Game exists; GameDayChannel removed
+		reset(mockNHLBot.getDiscordManager());
+		spyGameDayChannelsManager = spy(new GameDayChannelsManager(mockNHLBot));
+		when(GameDayChannel.isInCategory(channel)).thenReturn(true);
+		when(GameDayChannel.isChannelNameFormat(channel.getName())).thenReturn(true);
+		doReturn(false).when(spyGameDayChannelsManager).isGameActive(anyListOf(Team.class), anyString());
+		doReturn(true).when(spyGameDayChannelsManager).removeGameDayChannel(anyLong(), anyInt());
+		when(mockNHLBot.getGameScheduler().getGameByChannelName(channel.getName())).thenReturn(game);
+		spyGameDayChannelsManager.deleteInactiveGuildChannel(channel, preferences);
+		verify(spyGameDayChannelsManager).removeGameDayChannel(channel.getGuild().getLongID(), game.getGamePk());
+		verify(mockNHLBot.getDiscordManager(), never()).deleteChannel(any(IChannel.class));
+
+		// Game does not exist
+		reset(mockNHLBot.getDiscordManager());
+		spyGameDayChannelsManager = spy(new GameDayChannelsManager(mockNHLBot));
+		when(GameDayChannel.isInCategory(channel)).thenReturn(true);
+		when(GameDayChannel.isChannelNameFormat(channel.getName())).thenReturn(true);
+		doReturn(false).when(spyGameDayChannelsManager).isGameActive(anyListOf(Team.class), anyString());
+		when(mockNHLBot.getGameScheduler().getGameByChannelName(channel.getName())).thenReturn(null);
+		spyGameDayChannelsManager.deleteInactiveGuildChannel(channel, preferences);
+		verify(spyGameDayChannelsManager, never()).removeGameDayChannel(anyLong(), anyInt());
+		verify(mockNHLBot.getDiscordManager()).deleteChannel(channel);
+	}
+
+	@Test
+	public void isGameActiveShouldFunctionCorrectly() {
+		LOGGER.info("isGameActiveShouldFunctionCorrectly");
+		String channelName = RandomStringUtils.random(10);
+		List<Team> teams = Utils.getRandomList(Arrays.asList(Team.values()), 3);
+
+		// Game is not active for any team
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		assertFalse(gameDayChannelsManager.isGameActive(teams, channelName));
+
+		// Game is active for any team
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(0), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(1), channelName)).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(2), channelName)).thenReturn(false);
+		assertTrue(gameDayChannelsManager.isGameActive(teams, channelName));
+
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(0), channelName)).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(1), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(2), channelName)).thenReturn(false);
+		assertTrue(gameDayChannelsManager.isGameActive(teams, channelName));
+
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(0), channelName)).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(1), channelName)).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(2), channelName)).thenReturn(true);
+		assertTrue(gameDayChannelsManager.isGameActive(teams, channelName));
+
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(0), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(1), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(2), channelName)).thenReturn(false);
+		assertTrue(gameDayChannelsManager.isGameActive(teams, channelName));
+
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(0), channelName)).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(1), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(2), channelName)).thenReturn(true);
+		assertTrue(gameDayChannelsManager.isGameActive(teams, channelName));
+
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(0), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(1), channelName)).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(2), channelName)).thenReturn(true);
+		assertTrue(gameDayChannelsManager.isGameActive(teams, channelName));
+
+		when(mockNHLBot.getGameScheduler().isGameActive(any(Team.class), anyString())).thenReturn(false);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(0), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(1), channelName)).thenReturn(true);
+		when(mockNHLBot.getGameScheduler().isGameActive(teams.get(2), channelName)).thenReturn(true);
+		assertTrue(gameDayChannelsManager.isGameActive(teams, channelName));
 	}
 }

@@ -1,11 +1,10 @@
 package com.hazeluff.discord.nhlbot.bot.preferences;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertTrue;
 
-import org.junit.After;
+import java.util.Arrays;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -13,111 +12,73 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.Config;
-import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
+import com.hazeluff.test.DatabaseIT;
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoDatabase;
 
-import sx.blah.discord.api.IDiscordClient;
-
-/*
- * Note: We are not using @RunWith(PowerMockRunner.class) as it causes an ExceptionInInitializationError with
- * MongoClient. DiscordClient will not be mocked and will be null. Methods in GuildsPreferencesManager should not both
- * use DiscordClient and MongoDatabase, so that we can test them.
- */
-public class PreferencesManagerIT {
+public class PreferencesManagerIT extends DatabaseIT {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManagerIT.class);
 
 	private static final long GUILD_ID = Utils.getRandomLong();
-	private static final long USER_ID = Utils.getRandomLong();
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
-
-	static MongoClient mongoClient;
-	MongoDatabase mongoDatabase;
-	NHLBot nhlBot;
+	private static final Team TEAM2 = Team.CALGARY_FLAMES;
 
 	PreferencesManager preferencesManager;
 
+	private static MongoClient client;
+
+	@Override
+	public MongoClient getClient() {
+		return client;
+	}
+
 	@BeforeClass
-	public static void beforeClass() {
-		mongoClient = new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT);
+	public static void setupConnection() {
+		client = createConnection();
 	}
 
 	@AfterClass
-	public static void afterClass() {
-		if (mongoClient != null) {
-			mongoClient.close();
-		}
+	public static void closeConnection() {
+		closeConnection(client);
 	}
 
 	@Before
 	public void before() {
-		mongoDatabase = mongoClient.getDatabase(Config.MONGO_TEST_DATABASE_NAME);
-		nhlBot = mock(NHLBot.class);
-		when(nhlBot.getMongoDatabase()).thenReturn(mongoDatabase);
-		when(nhlBot.getDiscordClient()).thenReturn(mock(IDiscordClient.class));
-		preferencesManager = new PreferencesManager(nhlBot);
-	}
-
-	@After
-	public void after() {
-		mongoDatabase.drop();
+		super.before();
+		preferencesManager = new PreferencesManager(getNHLBot());
 	}
 	
 	@Test
 	public void subscribeGuildShouldWriteToDatabase() {
 		LOGGER.info("subscribeGuildShouldWriteToDatabase");
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM);
+		preferencesManager.subscribeGuild(GUILD_ID, TEAM2);
 
 		// Reload
-		preferencesManager = new PreferencesManager(nhlBot);
+		preferencesManager = new PreferencesManager(getNHLBot());
 		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 		preferencesManager.loadPreferences();
 
-		assertEquals(TEAM, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
+		assertTrue(Utils.isListEquivalent(Arrays.asList(TEAM, TEAM2),
+				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
 	}
 
 	@Test
 	public void unsubscribeGuildShouldWriteToDatabase() {
 		LOGGER.info("unsubscribeGuildShouldWriteToDatabase");
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM);
-		preferencesManager.unsubscribeGuild(GUILD_ID);
+		preferencesManager.subscribeGuild(GUILD_ID, TEAM2);
+		preferencesManager.unsubscribeGuild(GUILD_ID, TEAM);
 
 		// Reload
-		preferencesManager = new PreferencesManager(nhlBot);
+		preferencesManager = new PreferencesManager(getNHLBot());
 		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 		preferencesManager.loadPreferences();
 
-		assertEquals(null, preferencesManager.getGuildPreferences().get(GUILD_ID).getTeam());
-	}
-
-	@Test
-	public void subscribeUserShouldWriteToDatabase() {
-		LOGGER.info("subscribeUserShouldWriteToDatabase");
-		preferencesManager.subscribeUser(USER_ID, TEAM);
-
-		// Reload
-		preferencesManager = new PreferencesManager(nhlBot);
-		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
-		preferencesManager.loadPreferences();
-
-		assertEquals(TEAM, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
-	}
-
-	@Test
-	public void unsubscribeUserShouldWriteToDatabase() {
-		LOGGER.info("unsubscribeUserShouldWriteToDatabase");
-		preferencesManager.subscribeUser(USER_ID, TEAM);
-		preferencesManager.unsubscribeUser(USER_ID);
-
-		// Reload
-		preferencesManager = new PreferencesManager(nhlBot);
-		assertFalse(preferencesManager.getUserPreferences().containsKey(USER_ID));
-		preferencesManager.loadPreferences();
-
-		assertEquals(null, preferencesManager.getUserPreferences().get(USER_ID).getTeam());
+		assertTrue(Utils.isListEquivalent(
+				Arrays.asList(TEAM2),
+				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
 	}
 
 }

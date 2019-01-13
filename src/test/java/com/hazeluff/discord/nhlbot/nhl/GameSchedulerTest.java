@@ -1,9 +1,13 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -30,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
@@ -37,6 +42,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.internal.util.collections.Sets;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -48,6 +54,8 @@ import com.hazeluff.discord.nhlbot.bot.GameDayChannelsManager;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
+import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -120,7 +128,7 @@ public class GameSchedulerTest {
 		when(mockChannel3.getName()).thenReturn(GAME_CHANNEL_NAME3);
 		when(mockChannel4.getName()).thenReturn(GAME_CHANNEL_NAME4);
 		when(mockGuild1.getLongID()).thenReturn(GUILD_ID1);
-		when(mockPreferencesManager.getTeamByGuild(GUILD_ID1)).thenReturn(TEAM);
+		when(mockPreferencesManager.getTeams(GUILD_ID1)).thenReturn(Arrays.asList(TEAM, TEAM2));
 		when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2, mockChannel3));
 		GAMES = Utils.asSet(mockGame1, mockGame2, mockGame3);
 		GAME_TRACKERS = new HashMap<>();
@@ -191,7 +199,7 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	public void runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams() {
+	public void runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams() throws HttpException {
 		LOGGER.info("runShouldInvokeMethodsToInitGamesAndTrackersForAllSubscribedTeams");
 		doNothing().when(spyGameScheduler).initGames();
 		doNothing().when(spyGameScheduler).initTrackers();
@@ -205,7 +213,7 @@ public class GameSchedulerTest {
 
 	@Test
 	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void runShouldLoopAndInvokeMethodsWhenNewDayHasPassed() {
+	public void runShouldLoopAndInvokeMethodsWhenNewDayHasPassed() throws HttpException {
 		LOGGER.info("runShouldLoopAndInvokeMethods");
 		mockStatic(Utils.class);
 		doNothing().when(spyGameScheduler).initGames();
@@ -269,25 +277,51 @@ public class GameSchedulerTest {
 
 	@SuppressWarnings("serial")
 	@Test
-	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToSet() {		
-		LOGGER.info("updateGameScheduleShouldGetGamesFromAllTeamsAndAddToSet");
-		mockStatic(Utils.class);
-		when(Utils.getCurrentTime()).thenReturn(0L, GameScheduler.GAME_SCHEDULE_UPDATE_RATE + 1);
-		gameScheduler = new GameScheduler(new LinkedHashSet<>(), null);
+	@PrepareForTest({ DateUtils.class, GameDayChannel.class })
+	public void updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet() throws HttpException {
+		LOGGER.info("updateGameScheduleShouldGetGamesFromAllTeamsAndAddToAndRemoveFromSet");
+		BiFunction<Integer, ZonedDateTime, Game> mockGame = (gamePk, date) -> {
+			Game mGame = mock(Game.class);
+			when(mGame.getGamePk()).thenReturn(gamePk);
+			when(mGame.getDate()).thenReturn(date);
+			when(mGame.containsTeam(TEAM)).thenReturn(true);
+			return mGame;
+		};
+		ZonedDateTime now = ZonedDateTime.now();
+		ZonedDateTime g1Time = now.plusDays(1);
+		ZonedDateTime g2Time = now.plusDays(2);
+		ZonedDateTime g3Time = now.plusDays(6);
+		ZonedDateTime g4Time = now.plusDays(8);
+		
+		Game newMockGame1 = mockGame.apply(1, g1Time);
+		Game mockGame2 = mockGame.apply(2, g2Time);
+		Game newMockGame2 = mockGame.apply(2, g2Time);
+		Game mockGame3 = mockGame.apply(3, g3Time);
+		Game mockGame4 = mockGame.apply(4, g4Time);
+		
+		mockStatic(DateUtils.class);
+		when(DateUtils.now()).thenReturn(now);
+		when(DateUtils.isBetweenRange(eq(g1Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(true);
+		when(DateUtils.isBetweenRange(eq(g2Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(true);
+		when(DateUtils.isBetweenRange(eq(g3Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(true);
+		when(DateUtils.isBetweenRange(eq(g4Time), any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(false);
+		
+		gameScheduler = new GameScheduler(Sets.newSet(mockGame2, mockGame3, mockGame4), null);
 		spyGameScheduler = spy(gameScheduler);
 
 		doReturn(Collections.emptyList()).when(spyGameScheduler).getGames(any(Team.class), any(), any());
-		doReturn(Arrays.asList(mockGame1, mockGame2)).when(spyGameScheduler).getGames(eq(TEAM), any(), any());
+		doReturn(Arrays.asList(newMockGame1, newMockGame2)).when(spyGameScheduler).getGames(eq(TEAM), any(), any());
 
 		spyGameScheduler.updateGameSchedule();
-
 		assertEquals(
 				new LinkedHashSet<Game>() {{
-					add(mockGame1);
-					add(mockGame2);
+						add(newMockGame1);
+						add(mockGame2);
+						add(mockGame4);
 				}}, 
 				spyGameScheduler.getGames());
+		verify(mockGame1, never()).updateTo(any(Game.class));
+		verify(mockGame2).updateTo(newMockGame2);
 	}
 
 	@Test
@@ -303,7 +337,8 @@ public class GameSchedulerTest {
 		when(mockURIBuilder.build()).thenReturn(mockURI);
 		
 		mockStatic(HttpUtils.class, Game.class);
-		when(HttpUtils.get(mockURI)).thenReturn("{"
+		when(HttpUtils.getAndRetry(eq(mockURI), anyInt(), anyLong(), anyString()))
+				.thenReturn("{"
 				+ "dates:["
 				+ "{"
 					+ "games:["
@@ -343,15 +378,15 @@ public class GameSchedulerTest {
 		when(mockURIBuilder.build()).thenReturn(new URI("mockURI"));
 		
 		mockStatic(HttpUtils.class);
-		when(HttpUtils.get(any(URI.class))).thenReturn("{dates:[]}");
+		when(HttpUtils.getAndRetry(any(URI.class), anyInt(), anyLong(), anyString())).thenReturn("{dates:[]}");
 		
 		gameScheduler.getGames(TEAM, startDate, endDate);
 
-		verify(mockURIBuilder).addParameter("endDate", "2018-06-15");
+		verify(mockURIBuilder).addParameter("endDate", (Config.SEASON_YEAR + 1) + "-06-15");
 	}
 
 	@Test
-	public void getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate() {
+	public void getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate() throws HttpException {
 		LOGGER.info("getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate");
 		ZonedDateTime startDate = ZonedDateTime.of(2016, 7, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 		ZonedDateTime endDate = ZonedDateTime.of(2016, 6, 1, 0, 0, 0, 0, ZoneOffset.UTC);
@@ -501,5 +536,24 @@ public class GameSchedulerTest {
 		List<Game> result = spyGameScheduler.getInactiveGames(TEAM);
 
 		assertEquals(Arrays.asList(mockGame1), result);
+	}
+
+	@Test
+	@PrepareForTest(GameDayChannel.class)
+	public void isGameActiveShouldFunctionCorrectly() {
+		LOGGER.info("isGameActiveShouldFunctionCorrectly");
+		Game game1 = mock(Game.class);
+		String channelName1 = "Channel1";
+		Game game2 = mock(Game.class);
+		String channelName2 = "Channel2";
+		mockStatic(GameDayChannel.class);
+		when(GameDayChannel.getChannelName(game1)).thenReturn(channelName1);
+		when(GameDayChannel.getChannelName(game2)).thenReturn(channelName2);
+		Team team = Team.VANCOUVER_CANUCKS;
+		doReturn(Arrays.asList(game1, game2)).when(spyGameScheduler).getActiveGames(team);
+
+		assertTrue(spyGameScheduler.isGameActive(team, channelName1));
+		assertTrue(spyGameScheduler.isGameActive(team, channelName2));
+		assertFalse(spyGameScheduler.isGameActive(team, "Some other channel's name"));
 	}
 }

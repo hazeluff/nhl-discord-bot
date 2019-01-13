@@ -7,14 +7,17 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
+import com.hazeluff.discord.nhlbot.bot.NHLBotException;
+import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
+import sx.blah.discord.handle.obj.ActivityType;
 import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
@@ -30,6 +33,10 @@ public class DiscordManager {
 
 	public DiscordManager(IDiscordClient client) {
 		this.client = client;
+	}
+
+	public IDiscordClient getClient() {
+		return client;
 	}
 
 	/**
@@ -49,7 +56,8 @@ public class DiscordManager {
 			try {
 				return request.perform();
 			} catch (MissingPermissionsException | DiscordException | NullPointerException e) {
-				LOGGER.warn(exceptionLoggerMessage, e);
+				String shortExceptionLoggerMessage = Utils.shorten(exceptionLoggerMessage, 30);
+				LOGGER.trace(shortExceptionLoggerMessage, e);
 				return defaultReturn;
 			}
 		}).get();
@@ -68,7 +76,7 @@ public class DiscordManager {
 			try {
 				request.perform();
 			} catch (MissingPermissionsException | DiscordException | NullPointerException e) {
-				LOGGER.warn(exceptionLoggerMessage, e);
+				LOGGER.trace(exceptionLoggerMessage, e);
 			}
 		});
 	}
@@ -85,13 +93,22 @@ public class DiscordManager {
 	 *            when null, image is displayed by itself
 	 * @return
 	 */
-	public IMessage sendFile(IChannel channel, Resource resource, EmbedObject embed) {
-		InputStream inputStream = resource.getStream();
-		String fileName = resource.getFileName();
-		return performRequest(
-				() -> channel.sendFile(null, false, inputStream, fileName, embed),
-				String.format("Could not send file [%s] to [%s]", fileName, channel),
-				null);
+	public IMessage sendEmbed(IChannel channel, EmbedResource embedResource) {
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return null;
+		}
+
+		if (embedResource == null) {
+			logNullArgumentsStackTrace("`embedResource` was null.");
+			return null;
+		}
+
+		InputStream inputStream = embedResource.getResource().getStream();
+		String fileName = embedResource.getResource().getFileName();
+		EmbedObject embed = embedResource.getEmbed();
+		return performRequest(() -> channel.sendFile(null, false, inputStream, fileName, embed),
+				String.format("Could not send file [%s] to [%s]", fileName, channel), null);
 	}
 
 	/**
@@ -105,11 +122,19 @@ public class DiscordManager {
 	 *         null, if unsuccessful
 	 */
 	public IMessage sendMessage(IChannel channel, String message) {
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return null;
+		}
+
+		if (message == null) {
+			logNullArgumentsStackTrace("`message` was null.");
+			return null;
+		}
+
 		LOGGER.debug("Sending message [" + channel.getName() + "][" + message + "]");
-		return performRequest(
-				() -> getMessageBuilder(channel, message, null).send(),
-				String.format("Could not send message [%s] to [%s]", message, channel),
-				null);
+		return performRequest(() -> getMessageBuilder(channel, message, null).send(),
+				String.format("Could not send message [%s] to [%s]", message, channel), null);
 	}
 	/**
 	 * Sends a message with an embed to the specified channel in Discord
@@ -123,10 +148,23 @@ public class DiscordManager {
 	 * @return
 	 */
 	public IMessage sendMessage(IChannel channel, String message, EmbedObject embed) {
-		return performRequest(
-				() -> getMessageBuilder(channel, message, embed).send(),
-				String.format("Could not send message [%s] with embed [%s] to [%s]", message, embed, channel),
-				null);
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return null;
+		}
+
+		if (message == null) {
+			logNullArgumentsStackTrace("`message` was null.");
+			return null;
+		}
+
+		if (embed == null) {
+			logNullArgumentsStackTrace("`embed` was null.");
+			return null;
+		}
+
+		return performRequest(() -> getMessageBuilder(channel, message, embed).send(),
+				String.format("Could not send message [%s] with embed [%s] to [%s]", message, embed, channel), null);
 	}
 
 	/**
@@ -142,33 +180,13 @@ public class DiscordManager {
 	 */
 	MessageBuilder getMessageBuilder(IChannel channel, String message, EmbedObject embed) {
 		MessageBuilder messageBuilder = new MessageBuilder(client).withChannel(channel);
-		if(message != null) {
+		if (message != null) {
 			messageBuilder.withContent(message);
 		}
-		if(embed != null) {
+		if (embed != null) {
 			messageBuilder.withEmbed(embed);
 		}
 		return messageBuilder;
-	}
-
-	/**
-	 * Sends a message to the specified list of channels in Discord
-	 * 
-	 * @param channels
-	 *            channels to send message in
-	 * @param message
-	 *            message to send
-	 * @return List of sent messages (null/unsuccessful removed)
-	 */
-	public List<IMessage> sendMessage(List<IChannel> channels, String message) {
-		List<IMessage> messages = new ArrayList<>();
-		for (IChannel channel : channels) {
-			IMessage newMessage = sendMessage(channel, message);
-			if (newMessage != null) {
-				messages.add(newMessage);
-			}
-		}
-		return messages;
 	}
 
 	/**
@@ -181,35 +199,25 @@ public class DiscordManager {
 	 * @return
 	 */
 	public IMessage updateMessage(IMessage message, String newMessage) {
-		LOGGER.debug("Updating message [" + message.getContent() + "][" + newMessage + "]");
-		return performRequest(
-				() -> {
-					if (!message.getContent().equals(newMessage)) {
-						return message.edit(newMessage);
-					} else {
-						LOGGER.debug("No change to the message [" + message.getContent() + "]");
-						return message;
-					}
-				}, 
-				"Could not edit message [" + message + "] to [" + newMessage + "]", 
-				message);
-	}
+		if (message == null) {
+			logNullArgumentsStackTrace("`message` was null.");
+			return null;
+		}
 
-	/**
-	 * Updates the specified list of messages in Discord
-	 * 
-	 * @param messages
-	 *            existing messages in Discord
-	 * @param newMessage
-	 *            new message
-	 * @return
-	 */
-	public List<IMessage> updateMessage(List<IMessage> messages, String newMessage) {
-		List<IMessage> updatedMessages = new ArrayList<>();
-		messages.forEach(message -> {
-			updatedMessages.add(updateMessage(message, newMessage));
-		});
-		return updatedMessages;
+		if (newMessage == null) {
+			logNullArgumentsStackTrace("`newMessage` was null.");
+			return null;
+		}
+
+		LOGGER.debug("Updating message [" + message.getContent() + "][" + newMessage + "]");
+		return performRequest(() -> {
+			if (!message.getContent().equals(newMessage)) {
+				return message.edit(newMessage);
+			} else {
+				LOGGER.debug("No change to the message [" + message.getContent() + "]");
+				return message;
+			}
+		}, "Could not edit message [" + message + "] to [" + newMessage + "]", message);
 	}
 
 	/**
@@ -219,19 +227,12 @@ public class DiscordManager {
 	 *            message to delete in Discord
 	 */
 	public void deleteMessage(IMessage message) {
-		performRequest(
-				() -> message.delete(), 
-				"Could not delete message [" + message + "]");
-	}
+		if (message == null) {
+			logNullArgumentsStackTrace("`message` was null.");
+			return;
+		}
 
-	/**
-	 * Deletes the specified list of messages in Discord
-	 * 
-	 * @param messages
-	 *            messages to delete in Discord
-	 */
-	public void deleteMessage(List<IMessage> messages) {
-		messages.forEach(message -> deleteMessage(message));
+		performRequest(() -> message.delete(), "Could not delete message [" + message + "]");
 	}
 
 	/**
@@ -242,11 +243,15 @@ public class DiscordManager {
 	 * @return List<IMessage> of messages in the channel
 	 */
 	public List<IMessage> getPinnedMessages(IChannel channel) {
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return null;
+		}
+
 		LOGGER.debug("Getting pinned messages in channel [" + channel + "]");
-		return performRequest(
-				() -> channel.getPinnedMessages(), 
-				"Could not get pinned messages for channel [" + channel + "]",
-				new ArrayList<>());
+		return performRequest(() -> channel.getPinnedMessages(),
+				"Could not get pinned messages for channel [" + channel + "]", new ArrayList<>());
+
 	}
 
 	/**
@@ -256,10 +261,13 @@ public class DiscordManager {
 	 *            channel to delete
 	 */
 	public void deleteChannel(IChannel channel) {
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return;
+		}
+
 		LOGGER.debug("Deleting channel [" + channel.getName() + "]");
-		performRequest(
-				() -> channel.delete(),
-				"Could not delete channel [" + channel + "]");
+		performRequest(() -> channel.delete(), "Could not delete channel [" + channel + "]");
 	}
 
 	/**
@@ -272,12 +280,20 @@ public class DiscordManager {
 	 * @return IChannel that was created
 	 */
 	public IChannel createChannel(IGuild guild, String channelName) {
+		if (guild == null) {
+			logNullArgumentsStackTrace("`guild` was null.");
+			return null;
+		}
+
+		if (channelName == null) {
+			logNullArgumentsStackTrace("`channelName` was null.");
+			return null;
+		}
+
 		String formattedChannelName = channelName.toLowerCase();
 		LOGGER.debug("Creating channel [" + formattedChannelName + "] in [" + guild.getName() + "]");
-		return performRequest(
-				() -> guild.createChannel(formattedChannelName),
-				"Could not create channel [" + formattedChannelName + "] in [" + guild.getName() + "]",
-				null);
+		return performRequest(() -> guild.createChannel(formattedChannelName),
+				"Could not create channel [" + formattedChannelName + "] in [" + guild.getName() + "]", null);
 	}
 
 	/**
@@ -289,6 +305,16 @@ public class DiscordManager {
 	 *            topic to change to
 	 */
 	public void changeTopic(IChannel channel, String topic) {
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return;
+		}
+
+		if (topic == null) {
+			logNullArgumentsStackTrace("`topic` was null.");
+			return;
+		}
+
 		LOGGER.debug("Changing topic in [" + channel.getName() + "] to [" + topic + "]");
 		performRequest(() -> channel.changeTopic(topic),
 				"Could not change topic of channel [" + channel + "] to [" + topic + "]");
@@ -303,6 +329,16 @@ public class DiscordManager {
 	 *            existing message in Discord
 	 */
 	public void pinMessage(IChannel channel, IMessage message) {
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return;
+		}
+
+		if (message == null) {
+			logNullArgumentsStackTrace("`message` was null.");
+			return;
+		}
+
 		LOGGER.debug("Pinning message [" + message.getContent() + "] to [" + channel.getName() + "]");
 		performRequest(
 				() -> channel.pin(message),
@@ -318,6 +354,11 @@ public class DiscordManager {
 	 *         false, otherwise.
 	 */
 	public boolean isAuthorOfMessage(IMessage message) {
+		if (message == null) {
+			logNullArgumentsStackTrace("`message` was null.");
+			return false;
+		}
+
 		return message.getAuthor().getLongID() == client.getOurUser().getLongID();
 	}
 
@@ -330,6 +371,16 @@ public class DiscordManager {
 	 *            name of the category
 	 */
 	public ICategory createCategory(IGuild guild, String categoryName) {
+		if (guild == null) {
+			logNullArgumentsStackTrace("`guild` was null.");
+			return null;
+		}
+
+		if (categoryName == null) {
+			logNullArgumentsStackTrace("`categoryName` was null.");
+			return null;
+		}
+
 		LOGGER.debug("Creating category in guild. guild={}, categoryName={}", guild.getName(), categoryName);
 		return performRequest(
 				() -> guild.createCategory(categoryName),
@@ -347,10 +398,27 @@ public class DiscordManager {
 	 * 
 	 */
 	public ICategory getCategory(IGuild guild, String categoryName) {
+		if (guild == null) {
+			logNullArgumentsStackTrace("`guild` was null.");
+			return null;
+		}
+
+		if (categoryName == null) {
+			logNullArgumentsStackTrace("`categoryName` was null.");
+			return null;
+		}
+
 		return guild.getCategories().stream()
 				.filter(category -> category.getName().equals(categoryName))
 				.findAny()
 				.orElse(null);
+	}
+	
+	public List<IGuild> getGuilds() {
+		return performRequest(
+				() -> client.getGuilds(),
+				"Could not get Guilds.",
+				new ArrayList<IGuild>());
 	}
 
 	/**
@@ -362,8 +430,40 @@ public class DiscordManager {
 	 *            channel to move
 	 */
 	public void moveChannel(ICategory category, IChannel channel) {
+		if (category == null) {
+			logNullArgumentsStackTrace("`category` was null.");
+			return;
+		}
+
+		if (channel == null) {
+			logNullArgumentsStackTrace("`channel` was null.");
+			return;
+		}
+
 		LOGGER.debug("Moving channel into category. channel={}, category={}", channel.getName(), category.getName());
 		performRequest(() -> channel.changeCategory(category),
 				String.format("Could not move channel [%s] into category [%s]", channel.getName(), category.getName()));
+	}
+
+	public void changePresence(StatusType status, ActivityType activity, String text) {
+		performRequest(() -> client.changePresence(status, activity, text),
+				String.format("Could not set status: status=[%s], activity=[%s], text=[%s]", status, activity, text));
+	}
+
+	public String getApplicationClientId() {
+
+		try {
+			return client.getApplicationClientID();
+		} catch (DiscordException e) {
+			LOGGER.error("Failed to get Application Client ID", e);
+			throw new NHLBotException(e);
+		}
+	}
+
+	private void logNullArgumentsStackTrace(String message) {
+		if(message == null || message.isEmpty()) {
+			message = "One or more argument(s) were null.";
+		}
+		LOGGER.warn(message, new NullPointerException());
 	}
 }

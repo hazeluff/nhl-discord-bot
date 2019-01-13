@@ -6,7 +6,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ExceptionHandler implements UncaughtExceptionHandler {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionHandler.class);
+	private final Logger LOGGER;
+
+	public ExceptionHandler() {
+		this(null);
+	}
+
+	public ExceptionHandler(Class<?> clazz) {
+		if (clazz == null) {
+			clazz = ExceptionHandler.class;
+		}
+		LOGGER = LoggerFactory.getLogger(clazz);
+	}
 
 	@Override
 	public void uncaughtException(Thread t, Throwable e) {

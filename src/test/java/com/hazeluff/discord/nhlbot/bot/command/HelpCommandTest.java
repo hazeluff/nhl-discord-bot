@@ -6,6 +6,8 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,13 +50,13 @@ public class HelpCommandTest {
 	@Test
 	public void isAcceptShouldReturnTrueWhenCommandIsHelp() {
 		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsHelp");
-		assertTrue(helpCommand.isAccept(null, new String[] { "<@NHLBOT>", "help" }));
+		assertTrue(helpCommand.isAccept(null, Arrays.asList("help")));
 	}
 
 	@Test
 	public void isAcceptShouldReturnFalseWhenCommandIsNotHelp() {
 		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotHelp");
-		assertFalse(helpCommand.isAccept(null, new String[] { "<@NHLBOT>", "asdf" }));
+		assertFalse(helpCommand.isAccept(null, Arrays.asList("asdf")));
 	}
 
 	@Test
@@ -67,11 +69,11 @@ public class HelpCommandTest {
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		String message = captorString.getValue();
 		assertTrue(message.contains("`subscribe [team]`"));
-		assertTrue(message.contains("`unsubscribe`"));
-		assertTrue(message.contains("`nextgame`"));
+		assertTrue(message.contains("`unsubscribe [team]`"));
+		assertTrue(message.contains("`schedule`"));
 		assertTrue(message.contains("`score`"));
 		assertTrue(message.contains("`goals`"));
 		assertTrue(message.contains("`about`"));
-		assertTrue(message.contains("`@NHLBot [command] help`"));
+		assertTrue(message.contains("`?nhlbot [command] help`"));
 	}
 }

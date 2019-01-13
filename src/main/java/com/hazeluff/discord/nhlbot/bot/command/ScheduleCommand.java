@@ -1,16 +1,16 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.time.ZoneId;
+import java.util.List;
 import java.util.function.Function;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
+import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
-import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.EmbedBuilder;
@@ -21,37 +21,50 @@ import sx.blah.discord.util.EmbedBuilder;
 public class ScheduleCommand extends Command {
 
 	static final String MUST_BE_ADMIN_TO_SUBSCRIBE_MESSAGE = "You must be an admin to subscribe the guild to a team.";
-	static final String SPECIFY_TEAM_MESSAGE = "You must specify a parameter for what team you want to subscribe to. "
-			+ "`@NHLBot subscribe [team]`";
 
 	public ScheduleCommand(NHLBot nhlBot) {
 		super(nhlBot);
 	}
 
 	@Override
-	public void replyTo(IMessage message, String[] arguments) {
+	public void replyTo(IMessage message, List<String> arguments) {
 		IChannel channel = message.getChannel();
-		Team preferredTeam;
-		if (channel.isPrivate()) {
-			preferredTeam = nhlBot.getPreferencesManager().getTeamByUser(message.getAuthor().getLongID());
+		if (arguments.size() > 1) {
+			if (arguments.get(1).equalsIgnoreCase("help")) {
+				// Send Help Message
+				StringBuilder response = new StringBuilder(
+						"Get the game schedule any of the following teams by typing `@NHLBot schedule [team]`, "
+								+ "where [team] is the one of the three letter codes for your team below: ");
+				response.append(getTeamsListBlock());
+				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
+			} else if (Team.isValid(arguments.get(1))) {
+				// Send schedule for a specific team
+				sendSchedule(channel, Team.parse(arguments.get(1)));
+			} else {
+				sendInvalidCodeMessage(channel, arguments.get(1), "schedule");
+			}
 		} else {
-			preferredTeam = nhlBot.getPreferencesManager().getTeamByGuild(message.getGuild().getLongID());			
-		}
-		
-		if (preferredTeam == null) {
-			nhlBot.getDiscordManager().sendMessage(channel, SUBSCRIBE_FIRST_MESSAGE);
-		} else {
-			EmbedObject embed = getEmbed(preferredTeam);
-			nhlBot.getDiscordManager().sendFile(channel, ResourceLoader.get().getPixel(), embed);
+			List<Team> preferredTeams = getTeams(message);
+			if (preferredTeams.isEmpty()) {
+				sendSubscribeFirstMessage(channel);
+			} else {
+				for (Team team : preferredTeams) {
+					sendSchedule(channel, team);					
+				}
+			}
 		}
 	}
 
-	EmbedObject getEmbed(Team team) {
+	IMessage sendSchedule(IChannel channel, Team team) {
+		String message = "Here is the schedule for the " + team.getFullName();
+		EmbedBuilder embedBuilder = EmbedResource.getEmbedBuilder(team.getColor());
+		appendToEmbed(embedBuilder, team);
+		return nhlBot.getDiscordManager().sendMessage(channel, message, embedBuilder.build());
+	}
+
+	void appendToEmbed(EmbedBuilder embedBuilder, Team team) {
 		GameScheduler gameScheduler = nhlBot.getGameScheduler();
 
-		EmbedBuilder embedBuilder = new EmbedBuilder()
-				.withColor(0xffffff)
-				.withThumbnail("attachment://pixel.png");
 		for (int i = 1; i >= 0; i--) {
 			Game game = gameScheduler.getPastGame(team, i);
 			if (game != null) {
@@ -78,8 +91,6 @@ public class ScheduleCommand extends Command {
 
 			}
 		}
-
-		return embedBuilder.build();
 	}
 
 	enum GameState {
@@ -100,11 +111,13 @@ public class ScheduleCommand extends Command {
 			message = GameDayChannel.getScoreMessage(game);
 			break;
 		case CURRENT:
-			message = String.format("**%s**", GameDayChannel.getScoreMessage(game));
+			date += " (current game)";
+			message = GameDayChannel.getScoreMessage(game);
 			break;
 		case NEXT:
-			message = String.format("**%s**", getAgainstTeamMessage.apply(game));
-				break;
+			date += " (next game)";
+			message = getAgainstTeamMessage.apply(game);
+			break;
 		case FUTURE:
 			message = getAgainstTeamMessage.apply(game);
 			break;
@@ -116,8 +129,8 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, String[] arguments) {
-		return arguments[1].equalsIgnoreCase("schedule") || arguments[1].equalsIgnoreCase("games");
+	public boolean isAccept(IMessage message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("schedule") || arguments.get(0).equalsIgnoreCase("games");
 	}
 
 }

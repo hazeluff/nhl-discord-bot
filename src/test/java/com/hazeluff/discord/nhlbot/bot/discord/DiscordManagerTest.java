@@ -92,7 +92,6 @@ public class DiscordManagerTest {
 	ArgumentCaptor<IVoidRequest> captorVoidRequest;
 
 	private static final String MESSAGE = "Message";
-	private static final String NEW_MESSAGE = "New Message";
 	private static final String CHANNEL_NAME = "Channel";
 	private static final String CATEGORY_NAME = "Category";
 	private static final String TOPIC = "Topic";
@@ -120,7 +119,7 @@ public class DiscordManagerTest {
 		when(RequestBuffer.request(any(IRequest.class))).thenReturn(mockRequestFuture);
 		when(mockRequestFuture.get()).thenReturn(expected);
 
-		Object result = discordManager.performRequest(mockDiscordRequest, null, null);
+		Object result = discordManager.performRequest(mockDiscordRequest, "", null);
 
 		assertSame(expected, result);
 		ArgumentCaptor<IRequest> requestCaptor = ArgumentCaptor.forClass(IRequest.class);
@@ -163,22 +162,22 @@ public class DiscordManagerTest {
 		RequestBuffer.request(captorVoidRequest.capture());
 		IVoidRequest request = captorVoidRequest.getValue();
 
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 
 		reset(mockVoidDiscordRequest);
 		when(mockVoidDiscordRequest.perform()).thenThrow(DiscordException.class);
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 
 		reset(mockVoidDiscordRequest);
 		when(mockVoidDiscordRequest.perform()).thenThrow(MissingPermissionsException.class);
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 
 		reset(mockVoidDiscordRequest);
 		when(mockVoidDiscordRequest.perform()).thenThrow(NullPointerException.class);
-		request.request();
+		request.doRequest();
 		verify(mockVoidDiscordRequest).perform();
 	}
 
@@ -216,15 +215,18 @@ public class DiscordManagerTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	@PrepareForTest(DiscordManager.class)
-	public void sendFileShouldInvokePerformRequest() throws Exception {
-		LOGGER.info("sendFileShouldInvokePerformRequest");
+	public void sendEmbedShouldInvokePerformRequest() throws Exception {
+		LOGGER.info("sendEmbedShouldInvokePerformRequest");
 		doReturn(mockMessage).when(spyDiscordManager).performRequest(any(DiscordRequest.class), anyString(),
 				any(IMessage.class));
 		Resource mockResource = mock(Resource.class);
 		when(mockResource.getStream()).thenReturn(mock(InputStream.class));
 		when(mockResource.getFileName()).thenReturn("FileName");
+		EmbedResource mockEmbedResource = mock(EmbedResource.class);
+		when(mockEmbedResource.getResource()).thenReturn(mockResource);
+		when(mockEmbedResource.getEmbed()).thenReturn(mockEmbedObject);
 
-		IMessage result = spyDiscordManager.sendFile(mockChannel, mockResource, mockEmbedObject);
+		IMessage result = spyDiscordManager.sendEmbed(mockChannel, mockEmbedResource);
 
 		assertSame(mockMessage, result);
 		verify(spyDiscordManager).performRequest(captorDiscordRequest.capture(), anyString(), isNull(IMessage.class));
@@ -283,31 +285,6 @@ public class DiscordManagerTest {
 		verify(spyDiscordManager).getMessageBuilder(mockChannel, MESSAGE, mockEmbedObject);
 	}
 
-	@Test
-	@PrepareForTest(DiscordManager.class)
-	public void sendMessagesShouldReturnListOfIMessage() {
-		LOGGER.info("sendMessagesShouldReturnListOfIMessage");
-		doReturn(mockMessage).when(spyDiscordManager).sendMessage(mockChannel, MESSAGE);
-		doReturn(mockMessage2).when(spyDiscordManager).sendMessage(mockChannel2, MESSAGE);
-
-		List<IMessage> result = spyDiscordManager.sendMessage(Arrays.asList(mockChannel, mockChannel2), MESSAGE);
-		
-		List<IMessage> expected = Arrays.asList(mockMessage, mockMessage2);
-		assertEquals(expected, result);
-	}
-
-	@Test
-	@PrepareForTest(DiscordManager.class)
-	public void sendMessagesShouldReturnNotAddIMessageWhenItIsNull() {
-		LOGGER.info("sendMessagesShouldReturnNotAddIMessageWhenItIsNull");
-		doReturn(null).when(spyDiscordManager).sendMessage(mockChannel, MESSAGE);
-
-		List<IMessage> result = spyDiscordManager.sendMessage(Arrays.asList(mockChannel, mockChannel2), MESSAGE);
-
-		List<IMessage> expected = new ArrayList<>();
-		assertEquals(expected, result);
-	}
-
 	@SuppressWarnings("unchecked")
 	@Test
 	@PrepareForTest(DiscordManager.class)
@@ -338,21 +315,6 @@ public class DiscordManagerTest {
 	}
 
 	@Test
-	public void updateMessageShouldReturnUpdatedMessages() {
-		LOGGER.info("updateMessageShouldUpdateAllMessage");
-		IMessage mockUpdatedMessage = mock(IMessage.class);
-		IMessage mockUpdatedMessage2 = mock(IMessage.class);
-		doReturn(mockUpdatedMessage).when(spyDiscordManager).updateMessage(mockMessage, NEW_MESSAGE);
-		doReturn(mockUpdatedMessage2).when(spyDiscordManager).updateMessage(mockMessage2, NEW_MESSAGE);
-
-		List<IMessage> result = spyDiscordManager.updateMessage(Arrays.asList(mockMessage, mockMessage2), NEW_MESSAGE);
-
-		verify(spyDiscordManager).updateMessage(mockMessage, NEW_MESSAGE);
-		verify(spyDiscordManager).updateMessage(mockMessage2, NEW_MESSAGE);
-		assertEquals(Arrays.asList(mockUpdatedMessage, mockUpdatedMessage2), result);
-	}
-
-	@Test
 	public void deleteMessageShouldInvokePerformRequest() throws Exception {
 		LOGGER.info("deleteMessageShouldInvokePerformRequest");
 
@@ -365,17 +327,6 @@ public class DiscordManagerTest {
 		// Verify DiscordRequest's invocations are correct
 		captorVoidDiscordRequest.getValue().perform();
 		verify(mockMessage).delete();
-	}
-
-	@Test
-	public void deleteMessageShouldDeleteAllMessages() {
-		LOGGER.info("deleteMessageShouldDeleteAllMessages");
-		doNothing().when(spyDiscordManager).deleteMessage(any(IMessage.class));
-
-		spyDiscordManager.deleteMessage(Arrays.asList(mockMessage, mockMessage2));
-
-		verify(spyDiscordManager).deleteMessage(mockMessage);
-		verify(spyDiscordManager).deleteMessage(mockMessage2);
 	}
 
 	@SuppressWarnings("unchecked")

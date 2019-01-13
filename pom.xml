@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.hazeluff.discord</groupId>
   <artifactId>nhlbot</artifactId>
-  <version>1.1.1</version>
+  <version>1.6.1</version>
   <packaging>jar</packaging>
   <name>NHLBot</name>
   <url>http://maven.apache.org</url>
@@ -41,9 +41,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.austinv11</groupId>
-      <artifactId>Discord4j</artifactId>
-      <version>2.9.2</version>
+      <groupId>com.discord4j</groupId>
+      <artifactId>Discord4J</artifactId>
+      <version>2.10.1</version>
     </dependency>
 
     <dependency>

@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.GameDayChannelsManager;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import sx.blah.discord.handle.obj.IChannel;
@@ -161,7 +162,7 @@ public class GameTrackerTest {
 	
 	@Test
 	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void waitForStartShouldSleepUntilGameStarted() {
+	public void waitForStartShouldSleepUntilGameStarted() throws HttpException {
 		LOGGER.info("waitForStartShouldSleepUntilGameStarted");
 		mockStatic(Utils.class);
 		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW, GameStatus.PREVIEW, GameStatus.PREVIEW,
@@ -175,7 +176,7 @@ public class GameTrackerTest {
 	
 	@Test
 	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void updateChannelShouldShouldInvokeClasses() {
+	public void updateChannelShouldShouldInvokeClasses() throws HttpException {
 		LOGGER.info("updateChannelShouldInvokeClasses");
 		mockStatic(Utils.class);
 		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED, GameStatus.STARTED, GameStatus.STARTED,
@@ -190,7 +191,7 @@ public class GameTrackerTest {
 
 	@Test
 	@PrepareForTest({ Utils.class, GameDayChannel.class })
-	public void updateChannelShouldNotInvokeClassesIfGameIsFinal() {
+	public void updateChannelShouldNotInvokeClassesIfGameIsFinal() throws HttpException {
 		LOGGER.info("updateChannelShouldNotInvokeClassesIfGameIsFinal");
 		mockStatic(Utils.class);
 		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);

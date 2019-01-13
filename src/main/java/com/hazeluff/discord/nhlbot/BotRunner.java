@@ -16,13 +16,15 @@ public class BotRunner {
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
-		Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
+		Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(BotRunner.class));
 
 		GameScheduler gameScheduler = new GameScheduler();
 
 		if (Config.Debug.isLoadGames()) {
 			LOGGER.info("Loading the games...");
 			gameScheduler.start();
+		} else {
+			gameScheduler.setInit(true);
 		}
 
 		NHLBot bot = NHLBot.create(args[0], gameScheduler);

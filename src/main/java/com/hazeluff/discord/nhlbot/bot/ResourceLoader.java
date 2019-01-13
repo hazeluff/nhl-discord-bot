@@ -47,8 +47,4 @@ public class ResourceLoader {
 	public Resource getNHLBotAvatar() {
 		return getResource("/nhlbot.png");
 	}
-
-	public Resource getPixel() {
-		return getResource("/pixel.png");
-	}
 }

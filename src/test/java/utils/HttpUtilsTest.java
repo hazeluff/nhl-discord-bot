@@ -29,6 +29,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 
 @RunWith(PowerMockRunner.class)
@@ -66,7 +67,7 @@ public class HttpUtilsTest {
 	}
 
 	@Test
-	public void getShouldReturnString() throws URISyntaxException, ClientProtocolException, IOException {
+	public void getShouldReturnString() throws URISyntaxException, ClientProtocolException, IOException, HttpException {
 		LOGGER.info("getShouldReturnString");
 		when(mockClient.execute(mockRequest)).thenReturn(mockResponse);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
@@ -82,7 +83,8 @@ public class HttpUtilsTest {
 	}
 
 	@Test
-	public void getShouldRetryWhenStatusIsNot200() throws URISyntaxException, ClientProtocolException, IOException {
+	public void getShouldRetryWhenStatusIsNot200()
+			throws URISyntaxException, ClientProtocolException, IOException, HttpException {
 		LOGGER.info("getShouldRetryWhenStatusIsNot200");
 		when(mockClient.execute(mockRequest)).thenReturn(mockResponse);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
@@ -98,7 +100,8 @@ public class HttpUtilsTest {
 	}
 
 	@Test
-	public void getShouldRetryWhenResponseIsNull() throws URISyntaxException, ClientProtocolException, IOException {
+	public void getShouldRetryWhenResponseIsNull()
+			throws URISyntaxException, ClientProtocolException, IOException, HttpException {
 		LOGGER.info("getShouldRetryWhenStatusIsNot200");
 		when(mockClient.execute(mockRequest)).thenReturn(null, null, null, null, mockResponse);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
@@ -116,7 +119,7 @@ public class HttpUtilsTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void getShouldRetryWhenIOExceptionIsThrown()
-			throws URISyntaxException, ClientProtocolException, IOException {
+			throws URISyntaxException, ClientProtocolException, IOException, HttpException {
 		LOGGER.info("getShouldRetryWhenStatusIsNot200");
 		when(mockClient.execute(mockRequest)).thenThrow(IOException.class, IOException.class, IOException.class,
 				IOException.class).thenReturn(mockResponse);
@@ -132,10 +135,10 @@ public class HttpUtilsTest {
 		verify(mockClient, times(5)).execute(mockRequest);
 	}
 
-	@Test(expected = RuntimeException.class)
-	public void getShouldThrowRuntimeExceptionWhenRetriesExceededAndStatusIsNot200()
-			throws URISyntaxException, ClientProtocolException, IOException {
-		LOGGER.info("getShouldThrowRuntimeExceptionWhenRetriesExceeded");
+	@Test(expected = HttpException.class)
+	public void getShouldThrowHttpExceptionWhenRetriesExceededAndStatusIsNot200()
+			throws URISyntaxException, ClientProtocolException, IOException, HttpException {
+		LOGGER.info("getShouldThrowHttpExceptionWhenRetriesExceeded");
 		when(mockClient.execute(mockRequest)).thenReturn(mockResponse);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
 		when(mockStatusLine.getStatusCode()).thenReturn(500);
@@ -144,10 +147,10 @@ public class HttpUtilsTest {
 		HttpUtils.get(mockURI);
 	}
 
-	@Test(expected = RuntimeException.class)
-	public void getShouldThrowRuntimeExceptionWhenRetriesExceededAndResponseIsNull()
-			throws URISyntaxException, ClientProtocolException, IOException {
-		LOGGER.info("getShouldThrowRuntimeExceptionWhenRetriesExceededAndResponseIsNull");
+	@Test(expected = HttpException.class)
+	public void getShouldThrowHttpExceptionWhenRetriesExceededAndResponseIsNull()
+			throws URISyntaxException, ClientProtocolException, IOException, HttpException {
+		LOGGER.info("getShouldThrowHttpExceptionWhenRetriesExceededAndResponseIsNull");
 		when(mockClient.execute(mockRequest)).thenReturn(null);
 		when(mockResponse.getEntity()).thenReturn(mockEntity);
 		when(mockBufferedReader.readLine()).thenReturn("{", "key:value", "}", null);
@@ -156,10 +159,10 @@ public class HttpUtilsTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Test(expected = RuntimeException.class)
-	public void getShouldThrowRuntimeExceptionWhenRetriesExceededAndIOExceptionIsThrown()
-			throws URISyntaxException, ClientProtocolException, IOException {
-		LOGGER.info("getShouldThrowRuntimeExceptionWhenRetriesExceededAndIOExceptionIsThrown");
+	@Test(expected = HttpException.class)
+	public void getShouldThrowHttpExceptionWhenRetriesExceededAndIOExceptionIsThrown()
+			throws URISyntaxException, ClientProtocolException, IOException, HttpException {
+		LOGGER.info("getShouldThrowHttpExceptionWhenRetriesExceededAndIOExceptionIsThrown");
 		when(mockClient.execute(mockRequest)).thenThrow(IOException.class);
 		when(mockBufferedReader.readLine()).thenReturn("{", "key:value", "}", null);
 
@@ -167,10 +170,10 @@ public class HttpUtilsTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Test(expected = RuntimeException.class)
-	public void getShouldThrowRuntimeExceptionWhenReadLineThrowsIOException()
-			throws ClientProtocolException, IOException {
-		LOGGER.info("getShouldThrowRuntimeExceptionWhenReadLineThrowsIOException");
+	@Test(expected = HttpException.class)
+	public void getShouldThrowHttpExceptionWhenReadLineThrowsIOException()
+			throws ClientProtocolException, IOException, HttpException {
+		LOGGER.info("getShouldThrowHttpExceptionWhenReadLineThrowsIOException");
 		when(mockClient.execute(mockRequest)).thenReturn(mockResponse);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
 		when(mockStatusLine.getStatusCode()).thenReturn(200);
@@ -181,10 +184,10 @@ public class HttpUtilsTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Test(expected = RuntimeException.class)
-	public void getShouldThrowRuntimeExceptionWhenGetContentThrowsUnsupportedOperationException()
-			throws ClientProtocolException, IOException {
-		LOGGER.info("getShouldThrowRuntimeExceptionWhenGetContentThrowsUnsupportedOperationException");
+	@Test(expected = HttpException.class)
+	public void getShouldThrowHttpExceptionWhenGetContentThrowsUnsupportedOperationException()
+			throws ClientProtocolException, IOException, HttpException {
+		LOGGER.info("getShouldThrowHttpExceptionWhenGetContentThrowsUnsupportedOperationException");
 		when(mockClient.execute(mockRequest)).thenReturn(mockResponse);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
 		when(mockStatusLine.getStatusCode()).thenReturn(200);
@@ -195,10 +198,10 @@ public class HttpUtilsTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Test(expected = RuntimeException.class)
-	public void getShouldThrowRuntimeExceptionWhenGetContentThrowsIOException()
-			throws ClientProtocolException, IOException {
-		LOGGER.info("getShouldThrowRuntimeExceptionWhenGetContentThrowsIOException");
+	@Test(expected = HttpException.class)
+	public void getShouldThrowHttpExceptionWhenGetContentThrowsIOException()
+			throws ClientProtocolException, IOException, HttpException {
+		LOGGER.info("getShouldThrowHttpExceptionWhenGetContentThrowsIOException");
 		when(mockClient.execute(mockRequest)).thenReturn(mockResponse);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
 		when(mockStatusLine.getStatusCode()).thenReturn(200);

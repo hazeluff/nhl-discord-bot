@@ -7,6 +7,6 @@
 # HOW TO RUN:
 # deploy.sh [versionNumber] [serverName]
 scp target/nhlbot-$1-jar-with-dependencies.jar $2:~
-COMMANDS="cd /opt/nhlbot && sudo /bin/mv ~/nhlbot-$1-jar-with-dependencies.jar /opt/nhlbot/builds/nhlbot-$1.jar && sudo /usr/bin/service nhlbot stop && ln -sfn nhlbot-$1.jar builds/nhlbot && sudo /usr/bin/service nhlbot start"
+COMMANDS="cd /nhlbot && sudo /bin/mv ~/nhlbot-$1-jar-with-dependencies.jar /nhlbot/builds/nhlbot-$1.jar && sudo /bin/systemctl stop nhlbot && sudo ln -sfn nhlbot-$1.jar builds/nhlbot && sudo /bin/systemctl start nhlbot"
 echo "Executing commands on server: $COMMANDS"
 ssh $2 $COMMANDS

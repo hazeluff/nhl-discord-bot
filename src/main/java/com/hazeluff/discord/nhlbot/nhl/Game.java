@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 
 
@@ -48,16 +49,21 @@ public class Game {
 	}
 
 	public static Game parse(JSONObject jsonGame) {
-		ZonedDateTime date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
-		int gamePk = jsonGame.getInt("gamePk");
-		Team awayTeam = Team
-				.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
-		Team homeTeam = Team
-				.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
-		Game game = new Game(date, gamePk, awayTeam, homeTeam);
-		game.updateState(jsonGame);
+		try {
+			ZonedDateTime date = DateUtils.parseNHLDate(jsonGame.getString("gameDate"));
+			int gamePk = jsonGame.getInt("gamePk");
+			Team awayTeam = Team
+					.parse(jsonGame.getJSONObject("teams").getJSONObject("away").getJSONObject("team").getInt("id"));
+			Team homeTeam = Team
+					.parse(jsonGame.getJSONObject("teams").getJSONObject("home").getJSONObject("team").getInt("id"));
+			Game game = new Game(date, gamePk, awayTeam, homeTeam);
+			game.updateState(jsonGame);
 
-		return game;
+			return game;
+		} catch (Exception e) {
+			LOGGER.error("Could not parse game.", e);
+			return null;
+		}
 	}
 
 	/**
@@ -75,8 +81,10 @@ public class Game {
 
 	/**
 	 * Calls the NHL API and gets the current information of the game.
+	 * 
+	 * @throws HttpException
 	 */
-	public void update() {
+	public void update() throws HttpException {
 		LOGGER.trace("Updating. [" + gamePk + "]");
 		URIBuilder uriBuilder = null;
 		String strJSONSchedule = "";
@@ -84,7 +92,10 @@ public class Game {
 			uriBuilder = new URIBuilder("https://statsapi.web.nhl.com/api/v1/schedule");
 			uriBuilder.addParameter("gamePk", Integer.toString(gamePk));
 			uriBuilder.addParameter("expand", "schedule.scoringplays");
-			strJSONSchedule = HttpUtils.get(uriBuilder.build());
+			strJSONSchedule = HttpUtils.getAndRetry(uriBuilder.build(), 
+					5, // 5 retries
+					60000l, // 
+					"Update the game.");
 			JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
 			JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
 					.getJSONObject(0);
@@ -145,10 +156,6 @@ public class Game {
 	 * @return true, if team is a participant<br>
 	 *         false, otherwise
 	 */
-	public boolean isContain(Team team) {
-		return homeTeam == team || awayTeam == team;
-	}
-
 	public boolean containsTeam(Team team) {
 		return awayTeam == team || homeTeam == team;
 	}

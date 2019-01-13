@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.command.AboutCommand;
+import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
 import com.hazeluff.discord.nhlbot.bot.command.StatsCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -25,6 +26,7 @@ public class WelcomeChannel extends Thread {
 	private final IChannel channel;
 	private final AboutCommand aboutCommand;
 	private final StatsCommand statsCommand;
+	private final HelpCommand helpCommand;
 	
 	private IMessage statsMessage = null;
 
@@ -33,14 +35,19 @@ public class WelcomeChannel extends Thread {
 		this.channel = channel;
 		aboutCommand = new AboutCommand(nhlBot);
 		statsCommand = new StatsCommand(nhlBot);
+		helpCommand = new HelpCommand(nhlBot);
 	}
 
 	public static WelcomeChannel get(NHLBot nhlBot, IGuild guild) {
 		List<IChannel> channels = guild.getChannelsByName("welcome");
-		IChannel channel = channels.isEmpty() ? null : guild.getChannelsByName("welcome").get(0);
-		WelcomeChannel welcomeChannel = new WelcomeChannel(nhlBot, channel);
-		welcomeChannel.start();
-		return welcomeChannel;
+		try {
+			IChannel channel = channels.isEmpty() ? null : guild.getChannelsByName("welcome").get(0);
+			WelcomeChannel welcomeChannel = new WelcomeChannel(nhlBot, channel);
+			welcomeChannel.start();
+			return welcomeChannel;
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	@Override
@@ -50,20 +57,37 @@ public class WelcomeChannel extends Thread {
 					.filter(message -> nhlBot.getDiscordManager().isAuthorOfMessage(message))
 					.forEach(message -> nhlBot.getDiscordManager().deleteMessage(message));
 			nhlBot.getDiscordManager().sendMessage(channel, UPDATED_MESSAGE);
-			aboutCommand.sendFile(channel);
+			aboutCommand.sendEmbed(channel);
+			helpCommand.sendMessage(channel);
 			String strStatsMessage = statsCommand.buildMessage();
 			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
-			
-			while (!isInterrupted()) {
+
+			while (!isStop()) {
+				Utils.sleep(5000l);
+			}
+
+			while (!isStop() && !isInterrupted()) {
 				Utils.sleep(UPDATE_RATE);
-				
 				if (!strStatsMessage.equals(statsCommand.buildMessage())) {
 					strStatsMessage = statsCommand.buildMessage();
-					nhlBot.getDiscordManager().updateMessage(statsMessage, strStatsMessage);
+					if (strStatsMessage != null) {
+						nhlBot.getDiscordManager().updateMessage(statsMessage, strStatsMessage);
+					} else {
+						LOGGER.debug("Build message was null. Error must have occurred.");
+					}
 				}
 			}
 		} else {
 			LOGGER.warn("Channel could not found in Discord.");
 		}
+	}
+
+	/**
+	 * For Stubbing in Tests.
+	 * 
+	 * @return
+	 */
+	private boolean isStop() {
+		return false;
 	}
 }

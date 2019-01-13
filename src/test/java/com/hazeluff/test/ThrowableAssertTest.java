@@ -1,4 +1,4 @@
-package com.hazeluff;
+package com.hazeluff.test;
 
 import static org.junit.Assert.assertNotNull;
 

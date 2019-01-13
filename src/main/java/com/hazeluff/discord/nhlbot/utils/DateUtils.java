@@ -31,4 +31,27 @@ public class DateUtils {
 	public static long diffMs(ZonedDateTime date1, ZonedDateTime date2) {
 		return Duration.between(date1, date2).getSeconds() * 1000;
 	}
+
+	/**
+	 * Determines if a date is between a date range
+	 * 
+	 * @param date
+	 * @param start
+	 *            start of the range
+	 * @param end
+	 *            end of the range
+	 * @return true if the date is between the range
+	 */
+	public static boolean isBetweenRange(ZonedDateTime date, ZonedDateTime start, ZonedDateTime end) {
+		return diffMs(start, date) > 0 && diffMs(date, end) > 0;
+	}
+
+	/**
+	 * Gets {@link ZonedDateTime#now()}. Used for stubbing in tests.
+	 * 
+	 * @return
+	 */
+	public static ZonedDateTime now() {
+		return ZonedDateTime.now();
+	}
 }

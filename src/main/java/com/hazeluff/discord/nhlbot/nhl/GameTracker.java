@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
+import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 /**
@@ -79,47 +80,51 @@ public class GameTracker extends Thread {
 
 	@Override
 	public void run() {
-		setName(GameDayChannel.getChannelName(game));
+		try {
+			setName(GameDayChannel.getChannelName(game));
+			if (game.getStatus() != GameStatus.FINAL) {
+				// Wait until close to start of game
+				LOGGER.info("Idling until near game start.");
+				idleUntilNearStart();
 
-		if (game.getStatus() != GameStatus.FINAL) {
-			// Wait until close to start of game
-			LOGGER.info("Idling until near game start.");
-			idleUntilNearStart();
+				// Game is close to starting. Poll at higher rate than previously
+				LOGGER.info("Game is about to start. Polling more actively.");
+				waitForStart();
 
-			// Game is close to starting. Poll at higher rate than previously
-			LOGGER.info("Game is about to start. Polling more actively.");
-			waitForStart();
+				// Game has started
+				LOGGER.info("Game has started.");
 
-			// Game has started
-			LOGGER.info("Game has started.");
+				// The thread terminates when the GameStatus is Final and 10 minutes has elapsed
+				ZonedDateTime lastFinal = null;
+				long timeAfterLast = 0l;
+				while (timeAfterLast < POST_GAME_UPDATE_DURATION) {
+					updateGame();
 
-			// The thread terminates when the GameStatus is Final and 10 minutes has elapsed
-			ZonedDateTime lastFinal = null;
-			long timeAfterLast = 0l;
-			while (timeAfterLast < POST_GAME_UPDATE_DURATION) {
-				updateGame();
-
-				if (game.getStatus() == GameStatus.FINAL) {
-					if (lastFinal == null) {
-						LOGGER.info("Game finished. Continuing polling...");
-						lastFinal = ZonedDateTime.now();
+					if (game.getStatus() == GameStatus.FINAL) {
+						if (lastFinal == null) {
+							LOGGER.info("Game finished. Continuing polling...");
+							lastFinal = ZonedDateTime.now();
+						}
+						timeAfterLast = DateUtils.diffMs(ZonedDateTime.now(), lastFinal);
+						LOGGER.debug("Time till thread finishes (ms): "
+								+ String.valueOf(POST_GAME_UPDATE_DURATION - timeAfterLast));
+					} else {
+						lastFinal = null;
+						LOGGER.info("Game not finished.");
 					}
-					timeAfterLast = DateUtils.diffMs(ZonedDateTime.now(), lastFinal);
-					LOGGER.debug("Time till thread finishes (ms): "
-							+ String.valueOf(POST_GAME_UPDATE_DURATION - timeAfterLast));
-				} else {
-					lastFinal = null;
-					LOGGER.info("Game not finished.");
+					Utils.sleep(ACTIVE_POLL_RATE_MS);
 				}
-				Utils.sleep(ACTIVE_POLL_RATE_MS);
+				LOGGER.info("Game thread finished");
+			} else {
+				LOGGER.info("Game is already finished");
 			}
-			LOGGER.info("Game thread finished");
-		} else {
-			LOGGER.info("Game is already finished");
+		} catch (HttpException e) {
+			LOGGER.error("Error occured when updating the game.", e);
+		} finally {
+			gameTrackers.remove(game);
+			finished.set(true);
+			LOGGER.info("Thread Completed");
 		}
-
-		gameTrackers.remove(game);
-		finished.set(true);
 	}
 
 	/**
@@ -140,8 +145,10 @@ public class GameTracker extends Thread {
 
 	/**
 	 * Polls at higher polling rate before game starts.
+	 * 
+	 * @throws HttpException
 	 */
-	void waitForStart() {
+	void waitForStart() throws HttpException {
 		boolean started = false;
 		do {
 			game.update();
@@ -155,8 +162,10 @@ public class GameTracker extends Thread {
 
 	/**
 	 * Updates the game.
+	 * 
+	 * @throws HttpException
 	 */
-	void updateGame() {
+	void updateGame() throws HttpException {
 		while (game.getStatus() != GameStatus.FINAL) {
 			game.update();
 
