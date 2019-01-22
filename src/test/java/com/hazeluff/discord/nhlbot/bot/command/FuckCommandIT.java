@@ -2,7 +2,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import static org.junit.Assert.assertTrue;
 
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

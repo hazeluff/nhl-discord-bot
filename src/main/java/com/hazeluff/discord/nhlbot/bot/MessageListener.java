@@ -29,11 +29,11 @@ import com.hazeluff.discord.nhlbot.bot.command.SubscribeCommand;
 import com.hazeluff.discord.nhlbot.bot.command.UnsubscribeCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.api.events.EventSubscriber;
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
+import discord4j.core.object.entity.Channel;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.util.Snowflake;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
 
 /**
  * Listens for MessageReceivedEvents and will process the messages for commands.
@@ -82,12 +82,10 @@ public class MessageListener {
 		this.userThrottler = userThrottler;
 	}
 
-	@EventSubscriber
-	public void onReceivedMessageEvent(MessageReceivedEvent event) {
-		IUser user = event.getAuthor();
-		IMessage message = event.getMessage();
+	public void onReceivedMessageEvent(Message message) {
+		Snowflake user = message.getAuthorId().get();
 		if (!userThrottler.isThrottle(user)) {
-			if (message.getChannel().isPrivate()) {
+			if (message.getChannel().block().getType() != Channel.Type.GUILD_TEXT) {
 				return;
 			}
 
@@ -106,6 +104,7 @@ public class MessageListener {
 
 			// Message is a command
 			if (getCommand(message) != null) {
+				userThrottler.add(user);
 				nhlBot.getDiscordManager().sendMessage(message.getChannel(),
 						"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
 				return;

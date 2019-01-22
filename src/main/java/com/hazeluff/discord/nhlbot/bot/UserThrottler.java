@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.IUser;
+import discord4j.core.object.util.Snowflake;
 
 /**
  * Class used to determine if actions from a user should be throttled.
@@ -28,7 +28,7 @@ public class UserThrottler extends Thread {
 	 */
 	private static final int THRESHOLD_NUM = 3;
 
-	private Map<Long, List<ZonedDateTime>> userTimeStamps = new ConcurrentHashMap<>();
+	private Map<Snowflake, List<ZonedDateTime>> userTimeStamps = new ConcurrentHashMap<>();
 	
 	UserThrottler() {
 
@@ -47,7 +47,7 @@ public class UserThrottler extends Thread {
 	 * @param user
 	 *            user who sent the message
 	 */
-	public void add(IUser user) {
+	public void add(Snowflake user) {
 		put(user, DateUtils.now());
 	}
 
@@ -57,12 +57,12 @@ public class UserThrottler extends Thread {
 	 * @param user
 	 * @param time
 	 */
-	void put(IUser user, ZonedDateTime time) {
-		if (!userTimeStamps.containsKey(user.getLongID())) {
-			userTimeStamps.put(user.getLongID(), new CopyOnWriteArrayList<>());
+	void put(Snowflake user, ZonedDateTime time) {
+		if (!userTimeStamps.containsKey(user)) {
+			userTimeStamps.put(user, new CopyOnWriteArrayList<>());
 		}
 		
-		userTimeStamps.get(user.getLongID()).add(time);
+		userTimeStamps.get(user).add(time);
 	}
 
 	void cleanUp() {
@@ -73,13 +73,13 @@ public class UserThrottler extends Thread {
 		});
 	}
 
-	public boolean isThrottle(IUser user) {
-		if(!userTimeStamps.containsKey(user.getLongID())) {
+	public boolean isThrottle(Snowflake user) {
+		if (!userTimeStamps.containsKey(user)) {
 			return false;
 		}
 		
 		int count = 0;
-		for(ZonedDateTime timeStamp : userTimeStamps.get(user.getLongID())) {
+		for (ZonedDateTime timeStamp : userTimeStamps.get(user)) {
 			if (DateUtils.diffMs(timeStamp, DateUtils.now()) < THRESHOLD_MS) {
 				count++;
 			}
@@ -112,7 +112,7 @@ public class UserThrottler extends Thread {
 	 * 
 	 * @return
 	 */
-	Map<Long, List<ZonedDateTime>> getTimeStamps() {
+	Map<Snowflake, List<ZonedDateTime>> getTimeStamps() {
 		return new HashMap<>(userTimeStamps);
 	}
 

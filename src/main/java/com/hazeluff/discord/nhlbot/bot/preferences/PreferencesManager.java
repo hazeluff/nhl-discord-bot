@@ -17,7 +17,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.UpdateOptions;
 
-import sx.blah.discord.handle.obj.IGuild;
+import discord4j.core.object.entity.Guild;
 
 /**
  * This class is used to manage preferences of Guilds and Users. Preferences are stored in MongoDB.
@@ -158,13 +158,13 @@ public class PreferencesManager {
 	 *            team that the guilds are subscribed to
 	 * @return list of IGuilds
 	 */
-	public List<IGuild> getSubscribedGuilds(Team team) {
+	public List<Guild> getSubscribedGuilds(Team team) {
 		return nhlBot.getDiscordManager().getGuilds().stream()
 				.filter(guild -> {
-					if (!guildPreferences.containsKey(guild.getLongID())) {
+					if (!guildPreferences.containsKey(guild.getId().asLong())) {
 						return false;
 					}
-					return guildPreferences.get(guild.getLongID()).getTeams().contains(team);
+					return guildPreferences.get(guild.getId().asLong()).getTeams().contains(team);
 				})
 				.collect(Collectors.toList());
 	}

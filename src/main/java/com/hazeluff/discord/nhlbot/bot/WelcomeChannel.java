@@ -1,8 +1,6 @@
 package com.hazeluff.discord.nhlbot.bot;
 
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,9 +9,8 @@ import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
 import com.hazeluff.discord.nhlbot.bot.command.StatsCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Channel;
+import discord4j.core.object.entity.Message;
 
 public class WelcomeChannel extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeChannel.class);
@@ -23,14 +20,14 @@ public class WelcomeChannel extends Thread {
 	private static final String UPDATED_MESSAGE = "I was just deployed/restarted.";
 
 	private final NHLBot nhlBot;
-	private final IChannel channel;
+	private final Channel channel;
 	private final AboutCommand aboutCommand;
 	private final StatsCommand statsCommand;
 	private final HelpCommand helpCommand;
 	
-	private IMessage statsMessage = null;
+	private Message statsMessage = null;
 
-	public WelcomeChannel(NHLBot nhlBot, IChannel channel) {
+	WelcomeChannel(NHLBot nhlBot, Channel channel) {
 		this.nhlBot = nhlBot;
 		this.channel = channel;
 		aboutCommand = new AboutCommand(nhlBot);
@@ -38,10 +35,8 @@ public class WelcomeChannel extends Thread {
 		helpCommand = new HelpCommand(nhlBot);
 	}
 
-	public static WelcomeChannel get(NHLBot nhlBot, IGuild guild) {
-		List<IChannel> channels = guild.getChannelsByName("welcome");
+	public static WelcomeChannel create(NHLBot nhlBot, Channel channel) {
 		try {
-			IChannel channel = channels.isEmpty() ? null : guild.getChannelsByName("welcome").get(0);
 			WelcomeChannel welcomeChannel = new WelcomeChannel(nhlBot, channel);
 			welcomeChannel.start();
 			return welcomeChannel;
@@ -62,9 +57,6 @@ public class WelcomeChannel extends Thread {
 			String strStatsMessage = statsCommand.buildMessage();
 			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
 
-			while (!isStop()) {
-				Utils.sleep(5000l);
-			}
 
 			while (!isStop() && !isInterrupted()) {
 				Utils.sleep(UPDATE_RATE);
