@@ -1,6 +1,5 @@
 package com.hazeluff.discord.nhlbot.bot.discord;
 
-import java.io.InputStream;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -13,6 +12,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.CategoryCreateSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.TextChannelCreateSpec;
 import discord4j.core.spec.TextChannelEditSpec;
@@ -46,36 +46,6 @@ public class DiscordManager {
 	}
 
 	/**
-	 * Sends a file to the server, that can be displayed in an Embed.
-	 * 
-	 * @param channel
-	 *            channel to send file to
-	 * @param resource
-	 *            resource to send
-	 * @param embed
-	 *            embed to use file in.<br>
-	 *            when null, image is displayed by itself
-	 * @return
-	 */
-	public Message sendEmbed(TextChannel channel, EmbedResource embedResource) {
-		if (channel == null) {
-			logNullArgumentsStackTrace("`channel` was null.");
-			return null;
-		}
-
-		if (embedResource == null) {
-			logNullArgumentsStackTrace("`embedResource` was null.");
-			return null;
-		}
-
-		InputStream inputStream = embedResource.getResource().getStream();
-		String fileName = embedResource.getResource().getFileName();
-		EmbedObject embed = embedResource.getEmbed();
-		return performRequest(() -> channel.sendFile(null, false, inputStream, fileName, embed),
-				String.format("Could not send file [%s] to [%s]", fileName, channel), null);
-	}
-
-	/**
 	 * Sends a message to the specified channel in Discord
 	 * 
 	 * @param channel
@@ -99,6 +69,11 @@ public class DiscordManager {
 
 		return channel.createMessage(message).block();
 	}
+
+	public Message sendMessage(TextChannel channel, MessageCreateSpec message) {
+		return channel.createMessage(message).block();
+	}
+
 	/**
 	 * Sends a message with an embed to the specified channel in Discord
 	 * 

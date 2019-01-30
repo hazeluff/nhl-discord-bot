@@ -64,7 +64,7 @@ public class HelpCommandTest {
 		LOGGER.info("replyToShouldSendMessage");
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 
-		helpCommand.replyTo(mockMessage, null);
+		helpCommand.getReply(mockMessage, null);
 
 		verify(mockDiscordManager).sendMessage(eq(mockChannel), captorString.capture());
 		String message = captorString.getValue();

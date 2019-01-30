@@ -6,7 +6,8 @@ import java.util.regex.Pattern;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Message;
+import discord4j.core.spec.MessageCreateSpec;
 
 public class LovelyTopic extends Topic {
 
@@ -15,7 +16,7 @@ public class LovelyTopic extends Topic {
 	}
 
 	@Override
-	public void replyTo(IMessage message) {
+	public MessageCreateSpec getReply(Message message) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Love you too.",
 				"<3",
@@ -24,14 +25,14 @@ public class LovelyTopic extends Topic {
 				"I think it's better we stay friends...",
 				":heart_eyes:", "愛してる。",
 				"https://www.youtube.com/watch?v=25QyCxVkXwQ"));
-		nhlBot.getDiscordManager().sendMessage(message.getChannel(), reply);
+		return new MessageCreateSpec().setContent(reply);
 	}
 
 	@Override
-	public boolean isReplyTo(IMessage message) {
+	public boolean isReplyTo(Message message) {
 		return isStringMatch(
 				Pattern.compile("(\\bi\\s*(love|like)\\s*(u|you)\\b)|\\bilu\\b|:kiss:|:kissing:|:heart:|<3"),
-				message.getContent().toLowerCase());
+				message.getContent().orElse("").toLowerCase());
 	}
 
 }

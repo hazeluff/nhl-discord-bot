@@ -1,14 +1,18 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import java.awt.Color;
 import java.util.List;
 
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
-import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
+import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateSpec;
 
 /**
  * Displays information about NHLBot and the author
@@ -20,31 +24,30 @@ public class AboutCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, List<String> arguments) {
-		IChannel channel = message.getChannel();
-		sendEmbed(channel);
+	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+		return getReply();
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
+	public boolean isAccept(Message message, List<String> arguments) {
 		return arguments.get(0).equalsIgnoreCase("about");
 	}
 
-	public void sendEmbed(IChannel channel) {
-		EmbedResource embedResource = EmbedResource.get(ResourceLoader.get().getHazeluffAvatar(), 0xba9ddf);
-		embedResource.getEmbedBuilder()
-				.withAuthorName("Hazeluff")
-				.withAuthorUrl(Config.HAZELUFF_SITE)
-				.withTitle("NHLBot")
-				.withUrl(Config.GIT_URL)
-				.withDescription(
+	public MessageCreateSpec getReply() {
+		Resource resource = ResourceLoader.get().getHazeluffAvatar();
+		EmbedCreateSpec embedCreateSpec = new EmbedCreateSpec()
+				.setColor(new Color(0xba9ddf))
+				.setTitle("About NHLBot")
+				.setAuthor("Hazeluff", Config.HAZELUFF_SITE, "attachment://" + resource.getFileName())
+				.setUrl(Config.GIT_URL)
+				.setDescription(
 						"A bot that provides information about NHL games, "
 								+ "and creates channels that provides game information in real time.")
-				.appendField("Contact", Config.HAZELUFF_MENTION, true)
-				.appendField("Email", Config.HAZELUFF_EMAIL, true)
-				.appendField("Version", Config.VERSION, true)
-				.appendField("GitHub", Config.GIT_URL, true)
-				.appendField(
+				.addField("Contact", Config.HAZELUFF_MENTION, true)
+				.addField("Email", Config.HAZELUFF_EMAIL, true)
+				.addField("Version", Config.VERSION, true)
+				.addField("GitHub", Config.GIT_URL, true)
+				.addField(
 						"Donations",
 						"I support this bot personally. "
 								+ "Donations will help offset my costs of running the server."
@@ -52,7 +55,8 @@ public class AboutCommand extends Command {
 								+ "\nBTC: " + Config.DONATION_BTC
 								+ "\nETH: " + Config.DONATION_ETH,
 						false);
-		nhlBot.getDiscordManager().sendEmbed(channel, embedResource);
+		return new MessageCreateSpec()
+				.setFile(resource.getFileName(), resource.getStream())
+				.setEmbed(embedCreateSpec);
 	}
-
 }

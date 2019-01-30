@@ -5,7 +5,8 @@ import java.util.regex.Pattern;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Message;
+import discord4j.core.spec.MessageCreateSpec;
 
 /**
  * Interface for topics that the NHLBot replies to and the replies to them.
@@ -24,8 +25,10 @@ public abstract class Topic {
 	 *            message to reply to.
 	 * @param arguments
 	 *            command arguments
+	 * 
+	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	public abstract void replyTo(IMessage message);
+	public abstract MessageCreateSpec getReply(Message message);
 
 	/**
 	 * Determines if the message is a topic we can reply to
@@ -35,7 +38,7 @@ public abstract class Topic {
 	 * @return true, if accepted<br>
 	 *         false, otherwise
 	 */
-	public abstract boolean isReplyTo(IMessage message);
+	public abstract boolean isReplyTo(Message message);
 
 	/**
 	 * Determines if the string matches the regex pattern.

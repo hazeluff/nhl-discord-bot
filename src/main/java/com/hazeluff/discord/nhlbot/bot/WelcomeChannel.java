@@ -9,8 +9,9 @@ import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
 import com.hazeluff.discord.nhlbot.bot.command.StatsCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import discord4j.core.object.entity.Channel;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.util.Snowflake;
 
 public class WelcomeChannel extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeChannel.class);
@@ -20,14 +21,14 @@ public class WelcomeChannel extends Thread {
 	private static final String UPDATED_MESSAGE = "I was just deployed/restarted.";
 
 	private final NHLBot nhlBot;
-	private final Channel channel;
+	private final TextChannel channel;
 	private final AboutCommand aboutCommand;
 	private final StatsCommand statsCommand;
 	private final HelpCommand helpCommand;
 	
 	private Message statsMessage = null;
 
-	WelcomeChannel(NHLBot nhlBot, Channel channel) {
+	WelcomeChannel(NHLBot nhlBot, TextChannel channel) {
 		this.nhlBot = nhlBot;
 		this.channel = channel;
 		aboutCommand = new AboutCommand(nhlBot);
@@ -35,7 +36,7 @@ public class WelcomeChannel extends Thread {
 		helpCommand = new HelpCommand(nhlBot);
 	}
 
-	public static WelcomeChannel create(NHLBot nhlBot, Channel channel) {
+	public static WelcomeChannel create(NHLBot nhlBot, TextChannel channel) {
 		try {
 			WelcomeChannel welcomeChannel = new WelcomeChannel(nhlBot, channel);
 			welcomeChannel.start();
@@ -47,31 +48,36 @@ public class WelcomeChannel extends Thread {
 
 	@Override
 	public void run() {
-		if (channel != null) {
-			channel.getFullMessageHistory().stream()
+		if (channel == null) {
+			LOGGER.warn("Channel could not found in Discord.");
+			return;
+		}
+
+		Snowflake lastMessageId = channel.getLastMessageId().orElse(null);
+		if (lastMessageId != null) {
+			channel.getMessagesBefore(lastMessageId).collectList().block().stream()
 					.filter(message -> nhlBot.getDiscordManager().isAuthorOfMessage(message))
 					.forEach(message -> nhlBot.getDiscordManager().deleteMessage(message));
-			nhlBot.getDiscordManager().sendMessage(channel, UPDATED_MESSAGE);
-			aboutCommand.sendEmbed(channel);
-			helpCommand.sendMessage(channel);
-			String strStatsMessage = statsCommand.buildMessage();
-			statsMessage = nhlBot.getDiscordManager().sendMessage(channel, strStatsMessage);
+			nhlBot.getDiscordManager().deleteMessage(channel.getLastMessage().block());
+		}
+		nhlBot.getDiscordManager().sendMessage(channel, UPDATED_MESSAGE);
+		nhlBot.getDiscordManager().sendMessage(channel, aboutCommand.getReply());
+		nhlBot.getDiscordManager().sendMessage(channel, helpCommand.getReply());
+		statsMessage = nhlBot.getDiscordManager().sendMessage(channel, statsCommand.getMessageCreateSpec());
 
-
-			while (!isStop() && !isInterrupted()) {
-				Utils.sleep(UPDATE_RATE);
-				if (!strStatsMessage.equals(statsCommand.buildMessage())) {
-					strStatsMessage = statsCommand.buildMessage();
-					if (strStatsMessage != null) {
-						nhlBot.getDiscordManager().updateMessage(statsMessage, strStatsMessage);
-					} else {
-						LOGGER.debug("Build message was null. Error must have occurred.");
-					}
+		String strStatsMessage = statsCommand.getReplyString();
+		while (!isStop() && !isInterrupted()) {
+			Utils.sleep(UPDATE_RATE);
+			if (!strStatsMessage.equals(statsCommand.getReplyString())) {
+				strStatsMessage = statsCommand.getReplyString();
+				if (strStatsMessage != null) {
+					nhlBot.getDiscordManager().updateMessage(statsMessage, strStatsMessage);
+				} else {
+					LOGGER.debug("Build message was null. Error must have occurred.");
 				}
 			}
-		} else {
-			LOGGER.warn("Channel could not found in Discord.");
 		}
+
 	}
 
 	/**

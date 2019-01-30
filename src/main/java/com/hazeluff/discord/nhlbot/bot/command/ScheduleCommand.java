@@ -11,6 +11,9 @@ import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.EmbedBuilder;
@@ -27,7 +30,7 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, List<String> arguments) {
+	public void getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		if (arguments.size() > 1) {
 			if (arguments.get(1).equalsIgnoreCase("help")) {

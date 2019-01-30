@@ -104,7 +104,7 @@ public class ScoreCommandTest {
 		when(mockMessage.getChannel()).thenReturn(mockChannel);
 		doReturn(null).when(spyScoreCommand).sendSubscribeFirstMessage(any(IChannel.class));
 
-		spyScoreCommand.replyTo(mockMessage, null);
+		spyScoreCommand.getReply(mockMessage, null);
 
 		verifyNoMoreInteractions(mockDiscordManager);
 		verify(spyScoreCommand).sendSubscribeFirstMessage(mockChannel);
@@ -117,7 +117,7 @@ public class ScoreCommandTest {
 		String message = "Message";		
 		doReturn(message).when(spyScoreCommand).getRunInGameDayChannelsMessage(mockGuild, Arrays.asList(TEAM, TEAM2));
 		
-		spyScoreCommand.replyTo(mockMessage, null);
+		spyScoreCommand.getReply(mockMessage, null);
 		
 		verify(mockDiscordManager).sendMessage(mockChannel, message);
 	}
@@ -129,7 +129,7 @@ public class ScoreCommandTest {
 		when(mockGameScheduler.getGameByChannelName(CHANNEL_NAME)).thenReturn(mockGame);
 		when(mockGame.getStatus()).thenReturn(GameStatus.PREVIEW);
 
-		spyScoreCommand.replyTo(mockMessage, null);
+		spyScoreCommand.getReply(mockMessage, null);
 
 		verify(mockDiscordManager).sendMessage(mockChannel, Command.GAME_NOT_STARTED_MESSAGE);
 	}
@@ -142,7 +142,7 @@ public class ScoreCommandTest {
 		when(mockGameScheduler.getGameByChannelName(CHANNEL_NAME)).thenReturn(mockGame);
 		when(mockGame.getStatus()).thenReturn(GameStatus.LIVE);
 
-		spyScoreCommand.replyTo(mockMessage, null);
+		spyScoreCommand.getReply(mockMessage, null);
 
 		verify(mockDiscordManager).sendMessage(mockChannel, SCORE_MESSAGE);
 	}

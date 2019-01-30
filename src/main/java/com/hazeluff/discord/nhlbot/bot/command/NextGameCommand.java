@@ -14,6 +14,9 @@ import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 
@@ -31,7 +34,7 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, List<String> arguments) {
+	public void getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		GuildPreferences preferences = nhlBot.getPreferencesManager()
 				.getGuildPreferences(message.getGuild().getLongID());

@@ -104,7 +104,7 @@ public class NextGameCommandTest {
 		// Not subscribed
 		spyNextGameCommand = getSpyNextGameCommand();
 		when(preferences.getTeams()).thenReturn(Collections.emptyList());
-		spyNextGameCommand.replyTo(message, null);
+		spyNextGameCommand.getReply(message, null);
 		verify(spyNextGameCommand).sendSubscribeFirstMessage(any(IChannel.class));
 		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
 		
@@ -112,7 +112,7 @@ public class NextGameCommandTest {
 		reset(mockNHLBot.getDiscordManager());
 		spyNextGameCommand = getSpyNextGameCommand();
 		when(preferences.getTeams()).thenReturn(Arrays.asList(team3));
-		spyNextGameCommand.replyTo(message, null);
+		spyNextGameCommand.getReply(message, null);
 		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
 		assertTrue(captorString.getValue().contains(NextGameCommand.NO_NEXT_GAME_MESSAGE));
@@ -122,7 +122,7 @@ public class NextGameCommandTest {
 		reset(mockNHLBot.getDiscordManager());
 		spyNextGameCommand = getSpyNextGameCommand();
 		when(preferences.getTeams()).thenReturn(Arrays.asList(team));
-		spyNextGameCommand.replyTo(message, null);
+		spyNextGameCommand.getReply(message, null);
 		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
 		assertTrue(captorString.getValue().contains(detailsMessage));
@@ -132,7 +132,7 @@ public class NextGameCommandTest {
 		reset(mockNHLBot.getDiscordManager());
 		spyNextGameCommand = getSpyNextGameCommand();
 		when(preferences.getTeams()).thenReturn(Arrays.asList(team3, team4));
-		spyNextGameCommand.replyTo(message, null);
+		spyNextGameCommand.getReply(message, null);
 		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
 		assertTrue(captorString.getValue().contains(NextGameCommand.NO_NEXT_GAMES_MESSAGE));
@@ -142,7 +142,7 @@ public class NextGameCommandTest {
 		reset(mockNHLBot.getDiscordManager());
 		spyNextGameCommand = getSpyNextGameCommand();
 		when(preferences.getTeams()).thenReturn(Arrays.asList(team, team2, team3));
-		spyNextGameCommand.replyTo(message, null);
+		spyNextGameCommand.getReply(message, null);
 		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
 		String sentMessage = captorString.getValue();

@@ -93,7 +93,7 @@ public class ScheduleCommandTest {
 		// No team argument; Is subscribed
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		when(spyScheduleCommand.getTeams(message)).thenReturn(Arrays.asList(team, team2));
-		spyScheduleCommand.replyTo(message, Arrays.asList("schedule"));
+		spyScheduleCommand.getReply(message, Arrays.asList("schedule"));
 		verify(spyScheduleCommand).sendSchedule(message.getChannel(), team);
 		verify(spyScheduleCommand).sendSchedule(message.getChannel(), team2);
 		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
@@ -103,7 +103,7 @@ public class ScheduleCommandTest {
 		// No team argument; Not subscribed
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		when(spyScheduleCommand.getTeams(message)).thenReturn(Collections.emptyList());
-		spyScheduleCommand.replyTo(message, Arrays.asList("schedule"));
+		spyScheduleCommand.getReply(message, Arrays.asList("schedule"));
 		verify(spyScheduleCommand).sendSubscribeFirstMessage(message.getChannel());
 		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));
 		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
@@ -111,7 +111,7 @@ public class ScheduleCommandTest {
 
 		// Help
 		spyScheduleCommand = getScheduleCommandSpy.get();
-		spyScheduleCommand.replyTo(message, Arrays.asList("schedule", "help"));
+		spyScheduleCommand.getReply(message, Arrays.asList("schedule", "help"));
 		verify(nhlBot.getDiscordManager()).sendMessage(eq(message.getChannel()), strCaptor.capture());
 		String sentMessage = strCaptor.getValue();
 		assertTrue(sentMessage.contains(teamListBlock));
@@ -124,7 +124,7 @@ public class ScheduleCommandTest {
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		Team differentTeam = Team.COLORADO_AVALANCH;
 		assertNotEquals("Both teams need to be different.", team, differentTeam);
-		spyScheduleCommand.replyTo(message, Arrays.asList("schedule", differentTeam.getCode()));
+		spyScheduleCommand.getReply(message, Arrays.asList("schedule", differentTeam.getCode()));
 		verify(spyScheduleCommand).sendSchedule(message.getChannel(), differentTeam);
 		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyScheduleCommand, never()).sendInvalidCodeMessage(any(IChannel.class), anyString(), anyString());
@@ -133,7 +133,7 @@ public class ScheduleCommandTest {
 		// Invalid Team
 		spyScheduleCommand = getScheduleCommandSpy.get();
 		List<String> args = Arrays.asList("schedule", "asdf");
-		spyScheduleCommand.replyTo(message, args);
+		spyScheduleCommand.getReply(message, args);
 		verify(spyScheduleCommand).sendInvalidCodeMessage(message.getChannel(), args.get(1), "schedule");
 		verify(spyScheduleCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
 		verify(spyScheduleCommand, never()).sendSchedule(any(IChannel.class), any(Team.class));

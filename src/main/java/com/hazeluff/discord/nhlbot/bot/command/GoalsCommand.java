@@ -1,5 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import static com.hazeluff.discord.nhlbot.bot.command.Command.GAME_NOT_STARTED_MESSAGE;
+
 import java.util.List;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
@@ -8,6 +10,10 @@ import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.spec.MessageCreateSpec;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -22,7 +28,7 @@ public class GoalsCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, List<String> arguments) {
+	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
 		IChannel channel = message.getChannel();
 		IGuild guild = message.getGuild();
 		List<Team> preferredTeams = nhlBot.getPreferencesManager().getTeams(guild.getLongID());

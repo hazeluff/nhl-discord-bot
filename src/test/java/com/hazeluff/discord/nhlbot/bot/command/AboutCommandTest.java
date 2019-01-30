@@ -97,7 +97,7 @@ public class AboutCommandTest {
 		mockStatic(EmbedResource.class);
 		when(EmbedResource.get(mockResource, 0xba9ddf)).thenReturn(mockEmbedResource);
 
-		aboutCommand.replyTo(mockMessage, null);
+		aboutCommand.getReply(mockMessage, null);
 
 		verify(mockDiscordManager).sendEmbed(mockChannel, mockEmbedResource);
 	}

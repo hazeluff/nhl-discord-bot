@@ -56,7 +56,7 @@ public class CommandTest {
 		}
 
 		@Override
-		public void replyTo(IMessage message, List<String> arguments) {
+		public void getReply(IMessage message, List<String> arguments) {
 			throw new NotImplementedException("Test Class. Not Implemented.");
 		}
 

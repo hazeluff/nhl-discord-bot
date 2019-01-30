@@ -14,6 +14,8 @@ import com.hazeluff.discord.nhlbot.nhl.GameTracker;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.GuildChannel;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 
@@ -199,10 +201,10 @@ public class GameDayChannelsManager extends Thread {
 	 * channels written in the format that represents a game channel will be
 	 * removed.
 	 */
-	public void deleteInactiveGuildChannels(IGuild guild) {
+	public void deleteInactiveGuildChannels(Guild guild) {
 		LOGGER.info("Cleaning up old channels: guild={}", guild.getName());
 		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID());
-		for (IChannel channel : guild.getChannels()) {
+		for (GuildChannel channel : guild.getChannels().collectList().block()) {
 			deleteInactiveGuildChannel(channel, preferences);
 		}
 	}

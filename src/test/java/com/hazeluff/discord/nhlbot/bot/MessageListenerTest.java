@@ -208,7 +208,7 @@ public class MessageListenerTest {
 		boolean result = spyMessageListener.replyToCommand(mockMessage);
 		assertFalse(result);
 		verify(spyMessageListener).getCommand(any(IMessage.class));
-		verify(command, never()).replyTo(any(IMessage.class), anyListOf(String.class));
+		verify(command, never()).getReply(any(IMessage.class), anyListOf(String.class));
 
 		// non-null command object
 		reset(spyMessageListener);
@@ -217,7 +217,7 @@ public class MessageListenerTest {
 		result = spyMessageListener.replyToCommand(mockMessage);
 		assertTrue(result);
 		verify(spyMessageListener).getCommand(any(IMessage.class));
-		verify(command).replyTo(mockMessage, commandArgs);
+		verify(command).getReply(mockMessage, commandArgs);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -237,9 +237,9 @@ public class MessageListenerTest {
 		boolean result = spyMessageListener.replyToCommand(mockMessage);
 
 		assertFalse(result);
-		verify(commands.get(0), never()).replyTo(any(IMessage.class), any(List.class));
-		verify(commands.get(1), never()).replyTo(any(IMessage.class), any(List.class));
-		verify(commands.get(2), never()).replyTo(any(IMessage.class), any(List.class));
+		verify(commands.get(0), never()).getReply(any(IMessage.class), any(List.class));
+		verify(commands.get(1), never()).getReply(any(IMessage.class), any(List.class));
+		verify(commands.get(2), never()).getReply(any(IMessage.class), any(List.class));
 	}
 
 	// replyToMention
@@ -267,9 +267,9 @@ public class MessageListenerTest {
 		boolean result = spyMessageListener.replyToMention(mockMessage);
 
 		assertTrue(result);
-		verify(topics.get(0), never()).replyTo(any(IMessage.class));
-		verify(topics.get(1)).replyTo(mockMessage);
-		verify(topics.get(2), never()).replyTo(any(IMessage.class));
+		verify(topics.get(0), never()).getReply(any(IMessage.class));
+		verify(topics.get(1)).getReply(mockMessage);
+		verify(topics.get(2), never()).getReply(any(IMessage.class));
 	}
 
 	@Test
@@ -286,9 +286,9 @@ public class MessageListenerTest {
 		boolean result = spyMessageListener.replyToMention(mockMessage);
 
 		assertFalse(result);
-		verify(topics.get(0), never()).replyTo(any(IMessage.class));
-		verify(topics.get(1), never()).replyTo(any(IMessage.class));
-		verify(topics.get(2), never()).replyTo(any(IMessage.class));
+		verify(topics.get(0), never()).getReply(any(IMessage.class));
+		verify(topics.get(1), never()).getReply(any(IMessage.class));
+		verify(topics.get(2), never()).getReply(any(IMessage.class));
 	}
 
 	// getBotCommandArguments

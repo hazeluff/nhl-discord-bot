@@ -53,42 +53,42 @@ public class FuckCommandTest {
 	public void replyToShouldSendMessage() {
 		LOGGER.info("replyToShouldSendMessage");
 
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.NOT_ENOUGH_PARAMETERS_REPLY);
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "you"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck", "you"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.NO_YOU_REPLY);
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "u"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck", "u"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.NO_YOU_REPLY);
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "hazeluff"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck", "hazeluff"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "hazel"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck", "hazel"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "haze"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck", "haze"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "haz"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck", "haz"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "<@32598237599>"));
+		fuckCommand.getReply(mockMessage, Arrays.asList("fuck", "<@32598237599>"));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.buildDontAtReply(mockMessage));
 		verifyNoMoreInteractions(mockDiscordManager);
 
@@ -96,19 +96,19 @@ public class FuckCommandTest {
 		FuckCommand spyFuckCommand = spy(fuckCommand);
 		IUser author = mockMessage.getAuthor();
 		doReturn(true).when(spyFuckCommand).isDev(author);
-		spyFuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "add", "sub", "This", "is", "the", "response."));
+		spyFuckCommand.getReply(mockMessage, Arrays.asList("fuck", "add", "sub", "This", "is", "the", "response."));
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(),
 				FuckCommand.buildAddReply("sub", "This is the response."));
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
 		doReturn(false).when(spyFuckCommand).isDev(author);
-		spyFuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "add", "sub", "resp"));
+		spyFuckCommand.getReply(mockMessage, Arrays.asList("fuck", "add", "sub", "resp"));
 		verifyNoMoreInteractions(mockDiscordManager);
 
 		reset(mockDiscordManager);
 		List<String> arguments = Arrays.asList("fuck", "mark", "messier");
-		fuckCommand.replyTo(mockMessage, arguments);
+		fuckCommand.getReply(mockMessage, arguments);
 		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.buildFuckReply(arguments));
 		verifyNoMoreInteractions(mockDiscordManager);
 	}

@@ -94,7 +94,7 @@ public class UnsubscribeCommandTest {
 		when(mockChannel.isPrivate()).thenReturn(false);
 		doReturn(false).when(spyUnsubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spyUnsubscribeCommand.replyTo(mockMessage, null);
+		spyUnsubscribeCommand.getReply(mockMessage, null);
 		
 		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel,
 				UnsubscribeCommand.MUST_HAVE_PERMISSIONS_MESSAGE);
@@ -108,7 +108,7 @@ public class UnsubscribeCommandTest {
 				.thenReturn(teams);
 		doReturn(true).when(spyUnsubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spyUnsubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe", "help"));
+		spyUnsubscribeCommand.getReply(mockMessage, Arrays.asList("subscribe", "help"));
 
 		verify(mockNHLBot.getGameDayChannelsManager(), never()).deleteInactiveGuildChannels(any(IGuild.class));
 		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
@@ -128,7 +128,7 @@ public class UnsubscribeCommandTest {
 		LOGGER.info("replyToShouldSendMessageWhenUserUnsubscribesFromAllTeams");
 		doReturn(true).when(spyUnsubscribeCommand).hasSubscribePermissions(mockMessage);
 
-		spyUnsubscribeCommand.replyTo(mockMessage, Arrays.asList("unsubscribe", "all"));
+		spyUnsubscribeCommand.getReply(mockMessage, Arrays.asList("unsubscribe", "all"));
 
 		verify(mockNHLBot.getPreferencesManager()).unsubscribeGuild(GUILD_ID, null);
 		verify(mockNHLBot.getGameDayChannelsManager()).updateChannels(mockGuild);
@@ -143,7 +143,7 @@ public class UnsubscribeCommandTest {
 		doReturn(true).when(spyUnsubscribeCommand).hasSubscribePermissions(mockMessage);
 		Team team = Team.VANCOUVER_CANUCKS;
 
-		spyUnsubscribeCommand.replyTo(mockMessage, Arrays.asList("unsubscribe", team.getCode()));
+		spyUnsubscribeCommand.getReply(mockMessage, Arrays.asList("unsubscribe", team.getCode()));
 
 		verify(mockNHLBot.getPreferencesManager()).unsubscribeGuild(GUILD_ID, team);
 		verify(mockNHLBot.getGameDayChannelsManager()).updateChannels(mockGuild);

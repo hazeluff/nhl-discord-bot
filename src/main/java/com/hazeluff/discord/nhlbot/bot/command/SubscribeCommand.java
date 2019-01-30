@@ -3,13 +3,15 @@ package com.hazeluff.discord.nhlbot.bot.command;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.spec.MessageCreateSpec;
 import sx.blah.discord.handle.obj.IMessage;
 
 /**
@@ -17,27 +19,24 @@ import sx.blah.discord.handle.obj.IMessage;
  */
 public class SubscribeCommand extends Command {
 
-	static final String MUST_HAVE_PERMISSIONS_MESSAGE = "You must have _Admin_ or _Manage Channels_ roles"
-			+ "to subscribe the guild to a team.";
-	static final String SPECIFY_TEAM_MESSAGE = "You must specify a parameter for what team you want to subscribe to. "
-			+ "`?subscribe [team]`";
+	private static final MessageCreateSpec MUST_HAVE_PERMISSIONS_MESSAGE = new MessageCreateSpec()
+			.setContent("You must have _Admin_ or _Manage Channels_ roles to subscribe the guild to a team.");
+	private static final MessageCreateSpec SPECIFY_TEAM_MESSAGE = new MessageCreateSpec().setContent(
+			"You must specify a parameter for what team you want to subscribe to. `?subscribe [team]`");
 
 	public SubscribeCommand(NHLBot nhlBot) {
 		super(nhlBot);
 	}
 
 	@Override
-	public void replyTo(IMessage message, List<String> arguments) {
-		IChannel channel = message.getChannel();
+	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
 
-		if (!hasSubscribePermissions(message)) {
-			nhlBot.getDiscordManager().sendMessage(channel, MUST_HAVE_PERMISSIONS_MESSAGE);
-			return;
+		if (!hasSubscribePermissions(guild, message)) {
+			return MUST_HAVE_PERMISSIONS_MESSAGE;
 		}
 
 		if (arguments.size() < 2) {
-			nhlBot.getDiscordManager().sendMessage(channel, SPECIFY_TEAM_MESSAGE);
-			return;
+			return SPECIFY_TEAM_MESSAGE;
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
@@ -51,17 +50,14 @@ public class SubscribeCommand extends Command {
 			response.append("```\n");
 			response.append("You can unsubscribe using:\n");
 			response.append("`?unsubscribe`");
-			nhlBot.getDiscordManager().sendMessage(channel, response.toString());
-			return;
+			return new MessageCreateSpec().setContent(response.toString());
 		}
 
 		if (!Team.isValid(arguments.get(1))) {
-			sendInvalidCodeMessage(channel, arguments.get(1), "subscribe");
-			return;
+			return getInvalidCodeMessage(arguments.get(1), "subscribe");
 		}
 
 		Team team = Team.parse(arguments.get(1));
-		IGuild guild = message.getGuild();
 		// Subscribe guild
 		nhlBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
 		nhlBot.getPreferencesManager().subscribeGuild(guild.getLongID(), team);

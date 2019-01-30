@@ -17,7 +17,13 @@ import com.mongodb.client.MongoDatabase;
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.TextChannel;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple3;
 
 public class NHLBot extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBot.class);
@@ -66,16 +72,12 @@ public class NHLBot extends Thread {
 		nhlBot.discordClient.getEventDispatcher().on(ReadyEvent.class)
 				.subscribe(event -> nhlBot.ready = true);
 				
-		
-		// TODO Uncomment
-		/*
 		MessageListener messageListener = new MessageListener(nhlBot);
 		nhlBot.discordClient.getEventDispatcher().on(MessageCreateEvent.class)
-				.map(MessageCreateEvent::getMessage)
-				.subscribe(messageListener::onReceivedMessageEvent);
-		*/
-		
-		
+				.flatMap(NHLBot::zipEvent)
+				.flatMap(t -> t.getT2().createMessage(messageListener.getReply(t.getT1(), t.getT2(), t.getT3())))
+				.subscribe();
+
 		// Login
 		LOGGER.info("Logging into Discord.");
 		nhlBot.discordClient.login().block();
@@ -100,7 +102,10 @@ public class NHLBot extends Thread {
 		nhlBot.discordClient.getGuilds()
 				.filter(guild -> supportGuilds.contains(guild.getId().asLong()))
 				.map(Guild::getChannels)
-				.flatMap(channels -> channels.filter(channel -> channel.getName().equals("welcome")).take(1))
+				.flatMap(channels -> channels.filter(channel -> 
+						channel.getName().equals("welcome")).take(1))
+				.filter(TextChannel.class::isInstance)
+				.cast(TextChannel.class)
 				.subscribe(channel -> WelcomeChannel.create(nhlBot, channel));
 
 		while (!nhlBot.getGameScheduler().isInit()) {
@@ -113,6 +118,23 @@ public class NHLBot extends Thread {
 		nhlBot.start();
 
 		return nhlBot;
+	}
+
+	/**
+	 * Takes a event and returns a Mono that zips up the following properties of the
+	 * event (in order):
+	 * <ol>
+	 * <li>guild</li>
+	 * <li>channel</li>
+	 * <li>message</li>
+	 * </ol>
+	 * 
+	 * @param event
+	 *            the event to zip
+	 * @return {@link Tuple3} containing (in order): guild, channel, message
+	 */
+	private static Mono<Tuple3<Guild, MessageChannel, Message>> zipEvent(MessageCreateEvent event) {
+		return Mono.zip(event.getGuild(), event.getMessage().getChannel(), Mono.just(event.getMessage()));
 	}
 
 	@Override
