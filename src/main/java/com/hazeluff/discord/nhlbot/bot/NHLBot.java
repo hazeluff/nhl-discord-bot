@@ -22,6 +22,7 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.TextChannel;
+import discord4j.core.spec.MessageCreateSpec;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 
@@ -75,8 +76,12 @@ public class NHLBot extends Thread {
 		MessageListener messageListener = new MessageListener(nhlBot);
 		nhlBot.discordClient.getEventDispatcher().on(MessageCreateEvent.class)
 				.flatMap(NHLBot::zipEvent)
-				.flatMap(t -> t.getT2().createMessage(messageListener.getReply(t.getT1(), t.getT2(), t.getT3())))
-				.subscribe();
+				.subscribe(t -> {
+					MessageCreateSpec reply = messageListener.getReply(t.getT1(), t.getT2(), t.getT3());
+					if (reply != null) {
+						t.getT2().createMessage(reply);
+					}
+				});
 
 		// Login
 		LOGGER.info("Logging into Discord.");

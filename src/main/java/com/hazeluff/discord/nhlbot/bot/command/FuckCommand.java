@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +20,6 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
 
 /**
  * Because fuck Mark Messier
@@ -28,9 +27,12 @@ import sx.blah.discord.handle.obj.IMessage;
 public class FuckCommand extends Command {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FuckCommand.class);
 
-	static final String NOT_ENOUGH_PARAMETERS_REPLY = "You're gonna have to tell me who/what to fuck. `?fuck [thing]`";
-	static final String NO_YOU_REPLY = "No U.";
-	static final String HAZELUFF_REPLY = "Hazeluff doesn't give a fuck.";
+	static final MessageCreateSpec NOT_ENOUGH_PARAMETERS_REPLY = new MessageCreateSpec()
+			.setContent("You're gonna have to tell me who/what to fuck. `?fuck [thing]`");
+	static final MessageCreateSpec NO_YOU_REPLY = new MessageCreateSpec()
+			.setContent("No U.");
+	static final MessageCreateSpec HAZELUFF_REPLY = new MessageCreateSpec()
+			.setContent("Hazeluff doesn't give a fuck.");
 
 	// Map<name, strResponses>
 	private Map<String, List<String>> responses = new HashMap<>();
@@ -42,74 +44,65 @@ public class FuckCommand extends Command {
 
 	@Override
 	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
-		IChannel channel = message.getChannel();
 		
 		if(arguments.size() < 2) {
-			nhlBot.getDiscordManager().sendMessage(channel, NOT_ENOUGH_PARAMETERS_REPLY);
-			return;
+			return NOT_ENOUGH_PARAMETERS_REPLY;
 		}
 		
 		if (arguments.get(1).toLowerCase().equals("you") 
 				|| arguments.get(1).toLowerCase().equals("u")) {
-			nhlBot.getDiscordManager().sendMessage(channel, NO_YOU_REPLY);
-			return;
+			return NO_YOU_REPLY;
 		}
 		
 		if (arguments.get(1).toLowerCase().equals("hazeluff") 
 				|| arguments.get(1).toLowerCase().equals("hazel")
 				|| arguments.get(1).toLowerCase().equals("haze")
 				|| arguments.get(1).toLowerCase().equals("haz")) {
-			nhlBot.getDiscordManager().sendMessage(channel, 
-					"Hazeluff doesn't give a fuck.");
-			return;
+			return HAZELUFF_REPLY;
 		}
 
 		if (arguments.get(1).startsWith("<@") && arguments.get(1).endsWith(">")) {
 			nhlBot.getDiscordManager().deleteMessage(message);
-			nhlBot.getDiscordManager().sendMessage(channel, 
-					buildDontAtReply(message));
-			return;
+			return buildDontAtReply(message);
 		}
 
 		if (arguments.get(1).toLowerCase().equals("add")) {
-			if (isDev(message.getAuthor())) {
+			if (isDev(message.getAuthorId().get())) {
 				String subject = arguments.get(2);
 				List<String> response = new ArrayList<>(arguments);
-				String strResponse = StringUtils.join(response.subList(3, response.size()), " ");
-				
+				String strResponse = StringUtils.join(response.subList(3, response.size()), " ");				
 				add(subject, strResponse);
-				nhlBot.getDiscordManager().sendMessage(channel, buildAddReply(subject, strResponse));
+				return buildAddReply(subject, strResponse);
 			}
-			return;
+			return null;
 		}
 
 		if (hasResponses(arguments.get(1))) {
-			nhlBot.getDiscordManager().sendMessage(channel, 
-					Utils.getRandom(getResponses(arguments.get(1))));
-			return;
+			return new MessageCreateSpec().setContent(Utils.getRandom(getResponses(arguments.get(1))));
 		}
 
 		// Default
-		nhlBot.getDiscordManager().sendMessage(channel, buildFuckReply(arguments));
+		return buildFuckReply(arguments);
 	}
 
-	static String buildDontAtReply(IMessage message) {
-		String authorMention = String.format("<@%s>", message.getAuthor().getLongID());
-		return authorMention + ". Don't @ people, you dingus.";
+	static MessageCreateSpec buildDontAtReply(Message message) {
+		String authorMention = String.format("<@%s>", message.getAuthorId().get());
+		return new MessageCreateSpec().setContent(authorMention + ". Don't @ people, you dingus.");
 	}
 
-	static String buildAddReply(String subject, String response) {
-		return String.format("Added new response.\nSubject: `%s`\nResponse: `%s`", subject.toLowerCase(), response);
+	static MessageCreateSpec buildAddReply(String subject, String response) {
+		return new MessageCreateSpec().setContent(
+				String.format("Added new response.\nSubject: `%s`\nResponse: `%s`", subject.toLowerCase(), response));
 	}
 
-	static String buildFuckReply(List<String> arguments) {
+	static MessageCreateSpec buildFuckReply(List<String> arguments) {
 		List<String> subject = new ArrayList<>(arguments);
 		subject.remove(0);
-		return "FUCK " + StringUtils.join(subject, " ").toUpperCase();
+		return new MessageCreateSpec().setContent("FUCK " + StringUtils.join(subject, " ").toUpperCase());
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
+	public boolean isAccept(Message message, List<String> arguments) {
 		return arguments.get(0).equalsIgnoreCase("fuck");
 	}
 

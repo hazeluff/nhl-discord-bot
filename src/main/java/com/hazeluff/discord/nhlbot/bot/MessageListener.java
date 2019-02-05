@@ -37,8 +37,6 @@ import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.MessageCreateSpec;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
 
 /**
  * Listens for MessageReceivedEvents and will process the messages for commands.
@@ -48,6 +46,10 @@ import sx.blah.discord.handle.obj.IMessage;
 public class MessageListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
 
+	static final MessageCreateSpec UNKNOWN_COMMAND_REPLY = new MessageCreateSpec()
+			.setContent("Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
+	static final MessageCreateSpec FUCK_MESSIER_REPLY = new MessageCreateSpec()
+			.setContent("FUCK MESSIER");
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
 	private Map<TextChannel, List<Long>> messierCounter = new HashMap<>();
@@ -96,13 +98,11 @@ public class MessageListener {
 	 */
 	public MessageCreateSpec getReply(Guild guild, MessageChannel channel, Message message) {
 		Snowflake user = message.getAuthorId().get();
-		Channel channel = message.getChannel().block();
 
 		if (channel.getType() != Channel.Type.GUILD_TEXT) {
 			return null;
 		}
 
-		Guild guild = message.getGuild().block();
 		TextChannel textChannel = (TextChannel) channel;
 		User author = message.getAuthor().block();
 
@@ -119,7 +119,7 @@ public class MessageListener {
 				message.getContent()));
 
 		MessageCreateSpec commandReply = null;
-		if ((commandReply = replyToCommand(message)) != null) {
+		if ((commandReply = replyToCommand(guild, textChannel, message)) != null) {
 			return commandReply;
 		}
 
@@ -131,35 +131,36 @@ public class MessageListener {
 		// Message is a command
 		if (getCommand(message) != null) {
 			userThrottler.add(user);
-			nhlBot.getDiscordManager().sendMessage(message.getChannel(),
-					"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
-			return;
+			return UNKNOWN_COMMAND_REPLY;
 		}
 
-		if (shouldFuckMessier(message)) {
-			nhlBot.getDiscordManager().sendMessage(message.getChannel(), "FUCK MESSIER");
+		if (shouldFuckMessier(textChannel, message)) {
+			return FUCK_MESSIER_REPLY;
 		}
+
+		return null;
 	}
 
 	/**
 	 * Gets the specification for the reply message that are in the form of a
 	 * command (Starts with "@NHLBot")
 	 * 
+	 * @param guild
+	 *            guild the message was in
 	 * @param channel
-	 *            channel to send the message to
+	 *            channel the message was in
 	 * @param message
 	 *            message received
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	MessageCreateSpec replyToCommand(Message message) {
+	MessageCreateSpec replyToCommand(Guild guild, TextChannel channel, Message message) {
 		Command command = getCommand(message);
 		if (command != null) {
 			List<String> commandArgs = parseToCommandArguments(message);
-			command.getReply(message, commandArgs);
-			return true;
+			return command.getReply(guild, channel, message, commandArgs);
 		}
 
-		return false;
+		return null;
 	}
 
 	/**
@@ -252,9 +253,12 @@ public class MessageListener {
 	 * @return true, if we should display "Fuck Messier" message<br>
 	 *         false, otherwise (but should be never).
 	 */
-	public boolean shouldFuckMessier(IMessage message) {
-		IChannel channel = message.getChannel();
-		String messageLowerCase = message.getContent().toLowerCase();
+	public boolean shouldFuckMessier(TextChannel channel, Message message) {
+		String messageLowerCase = message.getContent().orElse(null);
+		if (messageLowerCase == null) {
+			return false;
+		}
+
 		if (!messierCounter.containsKey(channel)) {
 			messierCounter.put(channel, new ArrayList<Long>());
 		}

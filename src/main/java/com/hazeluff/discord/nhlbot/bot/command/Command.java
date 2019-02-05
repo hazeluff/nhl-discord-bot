@@ -19,6 +19,7 @@ import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.util.Permission;
 import discord4j.core.object.util.PermissionSet;
+import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.MessageCreateSpec;
 
 /**
@@ -135,8 +136,8 @@ public abstract class Command {
 		return guild.getOwner().block().getId().equals(user.getId());
 	}
 
-	boolean isDev(User user) {
-		return user.getId().asLong() == Config.HAZELUFF_ID;
+	boolean isDev(Snowflake userId) {
+		return userId.asLong() == Config.HAZELUFF_ID;
 	}
 
 	/**

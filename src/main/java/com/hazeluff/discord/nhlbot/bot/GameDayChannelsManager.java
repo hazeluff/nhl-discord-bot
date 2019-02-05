@@ -136,8 +136,8 @@ public class GameDayChannelsManager extends Thread {
 		LOGGER.info("Creating channels for latest games.");
 		for (Team team : Team.values()) {
 			List<Game> activeGames = nhlBot.getGameScheduler().getActiveGames(team);
-			List<IGuild> guilds = nhlBot.getPreferencesManager().getSubscribedGuilds(team);
-			for (IGuild guild : guilds) {
+			List<Guild> guilds = nhlBot.getPreferencesManager().getSubscribedGuilds(team);
+			for (Guild guild : guilds) {
 				for (Game game : activeGames) {
 					createChannel(game, guild);
 				}
@@ -163,7 +163,7 @@ public class GameDayChannelsManager extends Thread {
 	 * @param game
 	 * @param guild
 	 */
-	public GameDayChannel createChannel(Game game, IGuild guild) {
+	public GameDayChannel createChannel(Game game, Guild guild) {
 		LOGGER.info("Creating channel. channelName={}, guild={}", GameDayChannel.getChannelName(game), guild.getName());
 		int gamePk = game.getGamePk();
 		long guildId = guild.getLongID();
@@ -190,7 +190,7 @@ public class GameDayChannelsManager extends Thread {
 	 */
 	void deleteInactiveChannels() {
 		LOGGER.info("Cleaning up old channels in guilds.");
-		for(IGuild guild : nhlBot.getDiscordManager().getGuilds()) {
+		for (Guild guild : nhlBot.getDiscordManager().getGuilds()) {
 			deleteInactiveGuildChannels(guild);
 		}
 	}
