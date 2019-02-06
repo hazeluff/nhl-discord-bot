@@ -26,14 +26,14 @@ import discord4j.core.spec.MessageCreateSpec;
  * Interface for commands that the NHLBot can accept and the replies to those commands.
  */
 public abstract class Command {
-	private static final MessageCreateSpec SUBSCRIBE_FIRST_MESSAGE = new MessageCreateSpec()
+	static final MessageCreateSpec SUBSCRIBE_FIRST_MESSAGE = new MessageCreateSpec()
 			.setContent("Please have your admin first subscribe your guild "
 					+ "to a team by using the command `@NHLBot subscribe [team]`, "
 					+ "where [team] is the 3 letter code for your team.\n"
 					+ "To see a list of [team] codes use command `?subscribe help`");
-	private static final MessageCreateSpec GAME_NOT_STARTED_MESSAGE = new MessageCreateSpec()
+	static final MessageCreateSpec GAME_NOT_STARTED_MESSAGE = new MessageCreateSpec()
 			.setContent("The game hasn't started yet.");
-	private static final MessageCreateSpec RUN_IN_SERVER_CHANNEL_MESSAGE = new MessageCreateSpec()
+	static final MessageCreateSpec RUN_IN_SERVER_CHANNEL_MESSAGE = new MessageCreateSpec()
 			.setContent("This can only be run on a server's 'Game Day Channel'.");
 	
 	final NHLBot nhlBot;
@@ -104,12 +104,12 @@ public abstract class Command {
 	 * @param team
 	 * @return
 	 */
-	String getRunInGameDayChannelsMessage(Guild guild, List<Team> teams) {
+	MessageCreateSpec getRunInGameDayChannelsMessage(Guild guild, List<Team> teams) {
 		String channelMentions = StringUtils.join(
 				teams.stream().map(team -> getLatestGameChannelMention(guild, team)).collect(Collectors.toList()),
 				", ");
-		return String.format("Please run this command in a 'Game Day Channel'.\nLatest game channel(s): %s",
-				channelMentions);
+		return new MessageCreateSpec().setContent(String.format(
+				"Please run this command in a 'Game Day Channel'.\nLatest game channel(s): %s", channelMentions));
 	}
 
 	/**

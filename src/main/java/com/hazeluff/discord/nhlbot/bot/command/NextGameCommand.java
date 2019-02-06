@@ -17,8 +17,7 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.spec.MessageCreateSpec;
 
 /**
  * Displays information about the next game.
@@ -26,52 +25,53 @@ import sx.blah.discord.handle.obj.IMessage;
 public class NextGameCommand extends Command {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NextGameCommand.class);
 
-	static final String NO_NEXT_GAME_MESSAGE = "There may not be a next game.";
-	static final String NO_NEXT_GAMES_MESSAGE = "There may not be any games for any of your subscribed teams.";
+	static final MessageCreateSpec NO_NEXT_GAME_MESSAGE = new MessageCreateSpec()
+			.setContent("There may not be a next game.");
+	static final MessageCreateSpec NO_NEXT_GAMES_MESSAGE = new MessageCreateSpec()
+			.setContent("There may not be any games for any of your subscribed teams.");
 
 	public NextGameCommand(NHLBot nhlBot) {
 		super(nhlBot);
 	}
 
 	@Override
-	public void getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
-		IChannel channel = message.getChannel();
+	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
 		GuildPreferences preferences = nhlBot.getPreferencesManager()
-				.getGuildPreferences(message.getGuild().getLongID());
+				.getGuildPreferences(guild.getId().asLong());
 		List<Team> preferredTeams = preferences.getTeams();
 		
 		if (preferredTeams.isEmpty()) {
-			sendSubscribeFirstMessage(channel);
-		} else if (preferredTeams.size() == 1) {
+			return SUBSCRIBE_FIRST_MESSAGE;
+		}
+
+		if (preferredTeams.size() == 1) {
 			Game nextGame = nhlBot.getGameScheduler().getNextGame(preferredTeams.get(0));
 			if(nextGame == null) {
 				LOGGER.warn("Did not find next game for: " + preferredTeams.get(0));
-				nhlBot.getDiscordManager().sendMessage(channel, NO_NEXT_GAME_MESSAGE);				
+				return NO_NEXT_GAME_MESSAGE;
 			} else {
-				nhlBot.getDiscordManager().sendMessage(channel, "The next game is:\n"
+				return new MessageCreateSpec().setContent(
+						"The next game is:\n"
 						+ GameDayChannel.getDetailsMessage(nextGame, preferences.getTimeZone()));
 			}
+		}
+
+		Set<Game> games = preferredTeams.stream().map(team -> nhlBot.getGameScheduler().getNextGame(team))
+				.filter(Objects::nonNull).collect(Collectors.toSet());
+		if (games.isEmpty()) {
+			LOGGER.warn("Did not find next game for any subscribed team.");
+			return NO_NEXT_GAMES_MESSAGE;
 		} else {
-			Set<Game> games = preferredTeams.stream()
-					.map(team -> nhlBot.getGameScheduler().getNextGame(team))
-					.filter(Objects::nonNull)
-					.collect(Collectors.toSet());
-				
-			if (games.isEmpty()) {
-				LOGGER.warn("Did not find next game for any subscribed team.");
-				nhlBot.getDiscordManager().sendMessage(channel, NO_NEXT_GAMES_MESSAGE);
-			} else {
-				String replyMessage = "The following game(s) are upcomming:";
-				for(Game game : games) {
-					replyMessage += "\n" + GameDayChannel.getDetailsMessage(game, preferences.getTimeZone());
-				}
-				nhlBot.getDiscordManager().sendMessage(channel, replyMessage);
+			String replyMessage = "The following game(s) are upcomming:";
+			for (Game game : games) {
+				replyMessage += "\n" + GameDayChannel.getDetailsMessage(game, preferences.getTimeZone());
 			}
+			return new MessageCreateSpec().setContent(replyMessage);
 		}
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
+	public boolean isAccept(Message message, List<String> arguments) {
 		return arguments.get(0).equalsIgnoreCase("nextgame");
 	}
 

@@ -1,7 +1,5 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
-import static com.hazeluff.discord.nhlbot.bot.command.Command.GAME_NOT_STARTED_MESSAGE;
-
 import java.util.List;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
@@ -14,9 +12,6 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IMessage;
 
 /**
  * Displays the score of a game in a Game Day Channel.
@@ -29,25 +24,24 @@ public class ScoreCommand extends Command {
 
 	@Override
 	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
-		IChannel channel = message.getChannel();
-		IGuild guild = message.getGuild();
-		List<Team> preferredTeam = nhlBot.getPreferencesManager().getTeams(guild.getLongID());
+		List<Team> preferredTeam = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong())
+				.getTeams();
 		if (preferredTeam.isEmpty()) {
-			sendSubscribeFirstMessage(channel);
+			return SUBSCRIBE_FIRST_MESSAGE;
 		} else {
 			Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
 			if (game == null) {
-				nhlBot.getDiscordManager().sendMessage(channel, getRunInGameDayChannelsMessage(guild, preferredTeam));
+				return getRunInGameDayChannelsMessage(guild, preferredTeam);
 			} else if (game.getStatus() == GameStatus.PREVIEW) {
-				nhlBot.getDiscordManager().sendMessage(channel, GAME_NOT_STARTED_MESSAGE);
+				return GAME_NOT_STARTED_MESSAGE;
 			} else {
-				nhlBot.getDiscordManager().sendMessage(channel, GameDayChannel.getScoreMessage(game));
+				return new MessageCreateSpec().setContent(GameDayChannel.getScoreMessage(game));
 			}
 		}
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
+	public boolean isAccept(Message message, List<String> arguments) {
 		return arguments.get(0).equalsIgnoreCase("score");
 	}
 

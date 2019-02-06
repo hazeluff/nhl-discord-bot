@@ -12,7 +12,6 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
-import sx.blah.discord.handle.obj.IMessage;
 
 /**
  * Subscribes guilds to a team.
@@ -59,24 +58,24 @@ public class SubscribeCommand extends Command {
 
 		Team team = Team.parse(arguments.get(1));
 		// Subscribe guild
+		long guildId = guild.getId().asLong();
 		nhlBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
-		nhlBot.getPreferencesManager().subscribeGuild(guild.getLongID(), team);
+		nhlBot.getPreferencesManager().subscribeGuild(guildId, team);
 		nhlBot.getGameDayChannelsManager().initChannels(guild);
-		List<Team> subscribedTeams = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID()).getTeams();
+		List<Team> subscribedTeams = nhlBot.getPreferencesManager().getGuildPreferences(guildId)
+				.getTeams();
 		if (subscribedTeams.size() > 1) {
 			String teamsStr = StringUtils.join(subscribedTeams.stream().map(subbedTeam -> subbedTeam.getFullName())
 					.sorted().collect(Collectors.toList()), "\n");
-			nhlBot.getDiscordManager().sendMessage(channel,
-					"This server is now subscribed to:\n```" + teamsStr + "```");
-
+			return new MessageCreateSpec().setContent("This server is now subscribed to:\n```" + teamsStr + "```");
 		} else {
-			nhlBot.getDiscordManager().sendMessage(channel,
-					"This server is now subscribed to games of the **" + team.getFullName() + "**!");
+			return new MessageCreateSpec()
+					.setContent("This server is now subscribed to games of the **" + team.getFullName() + "**!");
 		}
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
+	public boolean isAccept(Message message, List<String> arguments) {
 		return arguments.get(0).equalsIgnoreCase("subscribe");
 	}
 

@@ -1,12 +1,12 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.discord.EmbedResource;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
@@ -14,7 +14,8 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
-import sx.blah.discord.handle.obj.IChannel;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.EmbedBuilder;
 
@@ -30,8 +31,7 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public void getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
-		IChannel channel = message.getChannel();
+	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
 		if (arguments.size() > 1) {
 			if (arguments.get(1).equalsIgnoreCase("help")) {
 				// Send Help Message
@@ -39,12 +39,12 @@ public class ScheduleCommand extends Command {
 						"Get the game schedule any of the following teams by typing `@NHLBot schedule [team]`, "
 								+ "where [team] is the one of the three letter codes for your team below: ");
 				response.append(getTeamsListBlock());
-				nhlBot.getDiscordManager().sendMessage(channel, response.toString());
+				return new MessageCreateSpec().setContent(response.toString());
 			} else if (Team.isValid(arguments.get(1))) {
 				// Send schedule for a specific team
-				sendSchedule(channel, Team.parse(arguments.get(1)));
+				return getScheduleMessage(Arrays.asList(Team.parse(arguments.get(1))));
 			} else {
-				sendInvalidCodeMessage(channel, arguments.get(1), "schedule");
+				return getInvalidCodeMessage(arguments.get(1), "schedule");
 			}
 		} else {
 			List<Team> preferredTeams = getTeams(message);
@@ -58,9 +58,10 @@ public class ScheduleCommand extends Command {
 		}
 	}
 
-	IMessage sendSchedule(IChannel channel, Team team) {
+	MessageCreateSpec getScheduleMessage(List<Team> team) {
 		String message = "Here is the schedule for the " + team.getFullName();
-		EmbedBuilder embedBuilder = EmbedResource.getEmbedBuilder(team.getColor());
+		EmbedCreateSpec embedSpec = new EmbedCreateSpec();
+		// EmbedBuilder embedBuilder = EmbedResource.getEmbedBuilder(team.getColor());
 		appendToEmbed(embedBuilder, team);
 		return nhlBot.getDiscordManager().sendMessage(channel, message, embedBuilder.build());
 	}
