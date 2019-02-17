@@ -22,12 +22,17 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.presence.Activity;
+import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.MessageCreateSpec;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 
 public class NHLBot extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBot.class);
+
+	private static final Presence STARTING_UP_PRESENCE = Presence.doNotDisturb(Activity.watching("itself start up"));
+	private static final Presence ONLINE_PRESENCE = Presence.online(Activity.playing(Config.STATUS_MESSAGE));
 
 	private static long UPDATE_PLAY_STATUS_INTERVAL = 3600000l;
 
@@ -92,7 +97,7 @@ public class NHLBot extends Thread {
 			Utils.sleep(2000);
 		}
 
-		nhlBot.setStartingUpStatus();
+		nhlBot.discordManager.changePresence(STARTING_UP_PRESENCE);
 		LOGGER.info("NHLBot. id [" + nhlBot.discordManager.getId() + "]");
 
 		// Init MongoClient/GuildPreferences
@@ -118,7 +123,7 @@ public class NHLBot extends Thread {
 			Utils.sleep(2000);
 		}
 
-		nhlBot.setPlayingStatus();
+		nhlBot.discordManager.changePresence(ONLINE_PRESENCE);
 
 		nhlBot.start();
 
@@ -145,17 +150,9 @@ public class NHLBot extends Thread {
 	@Override
 	public void run() {
 		while (!isInterrupted()) {
-			setPlayingStatus();
+			discordManager.changePresence(ONLINE_PRESENCE);
 			Utils.sleep(UPDATE_PLAY_STATUS_INTERVAL);
 		}
-	}
-
-	void setStartingUpStatus() {
-		// discordManager.changePresence(StatusType.DND, ActivityType.WATCHING, "itself start up.");
-	}
-
-	void setPlayingStatus() {
-		// discordManager.changePresence(StatusType.ONLINE, ActivityType.PLAYING, Config.STATUS_MESSAGE);
 	}
 
 	void initPreferences() {

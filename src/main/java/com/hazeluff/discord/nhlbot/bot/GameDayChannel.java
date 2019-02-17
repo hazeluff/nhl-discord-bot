@@ -62,8 +62,6 @@ public class GameDayChannel extends Thread {
 		}
 	};
 
-	static final String GAME_DAY_CHANNEL_CATEGORY_NAME = "Game Day Channels";
-
 	private final NHLBot nhlBot;
 	private final GameTracker gameTracker;
 	private final Game game;
@@ -209,7 +207,7 @@ public class GameDayChannel extends Thread {
 		// TODO This can be done at creation. We don't need to move the channel after
 		// creation.
 		if (channel != null) {
-			Category category = getCategory(guild, GAME_DAY_CHANNEL_CATEGORY_NAME);
+			Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
 			if (category != null) {
 				nhlBot.getDiscordManager().moveChannel(category, channel);
 			}

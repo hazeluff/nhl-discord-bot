@@ -10,16 +10,13 @@ import discord4j.core.object.entity.Category;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.presence.Presence;
 import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.CategoryCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.TextChannelCreateSpec;
 import discord4j.core.spec.TextChannelEditSpec;
-import sx.blah.discord.api.internal.json.objects.EmbedObject;
-import sx.blah.discord.handle.obj.ActivityType;
-import sx.blah.discord.handle.obj.StatusType;
-import sx.blah.discord.util.MessageBuilder;
 
 /**
  * Provides methods that interface with Discord. The methods provide error handling.
@@ -46,8 +43,9 @@ public class DiscordManager {
 	}
 
 	/**
-	 * Sends a message to the specified channel in Discord
+	 * Sends a message to the specified channel in Discord '
 	 * 
+	 * @deprecated use {@link #sendMessage(TextChannel, MessageCreateSpec)}
 	 * @param channel
 	 *            channel to send message in
 	 * @param message
@@ -55,6 +53,7 @@ public class DiscordManager {
 	 * @return Message of sent message;<br>
 	 *         null, if unsuccessful
 	 */
+	@Deprecated
 	public Message sendMessage(TextChannel channel, String message) {
 		if (channel == null) {
 			logNullArgumentsStackTrace("`channel` was null.");
@@ -72,59 +71,6 @@ public class DiscordManager {
 
 	public Message sendMessage(TextChannel channel, MessageCreateSpec message) {
 		return channel.createMessage(message).block();
-	}
-
-	/**
-	 * Sends a message with an embed to the specified channel in Discord
-	 * 
-	 * @param channel
-	 *            channel to send message in
-	 * @param message
-	 *            message to send
-	 * @param embed
-	 *            embed to include in the message
-	 * @return
-	 */
-	public Message sendMessage(TextChannel channel, String message, EmbedObject embed) {
-		if (channel == null) {
-			logNullArgumentsStackTrace("`channel` was null.");
-			return null;
-		}
-
-		if (message == null) {
-			logNullArgumentsStackTrace("`message` was null.");
-			return null;
-		}
-
-		if (embed == null) {
-			logNullArgumentsStackTrace("`embed` was null.");
-			return null;
-		}
-
-		return performRequest(() -> getMessageBuilder(channel, message, embed).send(),
-				String.format("Could not send message [%s] with embed [%s] to [%s]", message, embed, channel), null);
-	}
-
-	/**
-	 * Gets a message builder that contains a message and embed.
-	 * 
-	 * @param channel
-	 *            channel to send message to
-	 * @param message
-	 *            message to send
-	 * @param embed
-	 *            embed to send
-	 * @return {@link MessageBuilder}
-	 */
-	MessageBuilder getMessageBuilder(TextChannel channel, String message, EmbedObject embed) {
-		MessageBuilder messageBuilder = new MessageBuilder(client).withChannel(channel);
-		if (message != null) {
-			messageBuilder.withContent(message);
-		}
-		if (embed != null) {
-			messageBuilder.withEmbed(embed);
-		}
-		return messageBuilder;
 	}
 
 	/**
@@ -350,9 +296,8 @@ public class DiscordManager {
 		channel.edit(new TextChannelEditSpec().setParentId(category.getId())).block();
 	}
 
-	public void changePresence(StatusType status, ActivityType activity, String text) {
-		performRequest(() -> client.changePresence(status, activity, text),
-				String.format("Could not set status: status=[%s], activity=[%s], text=[%s]", status, activity, text));
+	public void changePresence(Presence presence) {
+		client.updatePresence(presence).block();
 	}
 
 	private void logNullArgumentsStackTrace(String message) {
@@ -360,5 +305,17 @@ public class DiscordManager {
 			message = "One or more argument(s) were null.";
 		}
 		LOGGER.warn(message, new NullPointerException());
+	}
+
+	public static Category getCategory(TextChannel channel) {
+		return channel.getCategory().block();
+	}
+
+	public static List<TextChannel> getTextChannels(Guild guild) {
+		return guild.getChannels()				
+				.filter(channel -> (channel instanceof TextChannel))
+				.cast(TextChannel.class)
+				.collectList()
+				.block();
 	}
 }

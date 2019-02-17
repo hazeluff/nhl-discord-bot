@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameTracker;
@@ -15,7 +16,6 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.GuildChannel;
 import discord4j.core.object.entity.TextChannel;
 
 /**
@@ -23,6 +23,8 @@ import discord4j.core.object.entity.TextChannel;
  */
 public class GameDayChannelsManager extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameDayChannelsManager.class);
+
+	static final String GAME_DAY_CHANNEL_CATEGORY_NAME = "Game Day Channels";
 
 	// Poll for every 5 seconds, (On initialization)
 	static final long INIT_UPDATE_RATE = 5000L;
@@ -202,9 +204,9 @@ public class GameDayChannelsManager extends Thread {
 	 */
 	public void deleteInactiveGuildChannels(Guild guild) {
 		LOGGER.info("Cleaning up old channels: guild={}", guild.getName());
-		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID());
-		for (GuildChannel channel : guild.getChannels().collectList().block()) {
-			deleteInactiveGuildChannel(channel, preferences);
+		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+		for (TextChannel channel : DiscordManager.getTextChannels(guild)) {
+			deleteInactiveTextChannel(channel, preferences);
 		}
 	}
 
@@ -223,8 +225,8 @@ public class GameDayChannelsManager extends Thread {
 	 * GuildPreferences is passed in so as to not fetch it each channel in a loop in
 	 * #deleteInactiveGuildChannels(IGuild).
 	 */
-	void deleteInactiveGuildChannel(TextChannel channel, GuildPreferences preferences) {
-		if (!GameDayChannel.isInCategory(channel)) {
+	void deleteInactiveTextChannel(TextChannel channel, GuildPreferences preferences) {
+		if (!isInGameDayCategory(channel)) {
 			return;
 		}
 
@@ -237,11 +239,10 @@ public class GameDayChannelsManager extends Thread {
 			return;
 		}
 
-		Guild guild = channel.getGuild();
 		Game game = nhlBot.getGameScheduler().getGameByChannelName(channelName);
 		boolean removedChannel = false;
 		if (game != null) {
-			removedChannel = removeGameDayChannel(guild.getId().asLong(), game.getGamePk());
+			removedChannel = removeGameDayChannel(channel.getGuildId().asLong(), game.getGamePk());
 		}
 
 		if (!removedChannel) {
@@ -254,7 +255,8 @@ public class GameDayChannelsManager extends Thread {
 	}
 
 	boolean isGameDayChannelActive(GameDayChannel gameDayChannel) {
-		List<Team> teams = nhlBot.getPreferencesManager().getGuildPreferences(gameDayChannel.getGuild().getLongID())
+		List<Team> teams = nhlBot.getPreferencesManager()
+				.getGuildPreferences(gameDayChannel.getGuild().getId().asLong())
 				.getTeams();
 		String channelName = gameDayChannel.getChannelName();
 		return isGameActive(teams, channelName);
@@ -275,7 +277,8 @@ public class GameDayChannelsManager extends Thread {
 	}
 
 	void initGuildChannels(Guild guild) {
-		List<Team> subscribedTeams = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID()).getTeams();
+		List<Team> subscribedTeams = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong())
+				.getTeams();
 		List<Game> activeGames = nhlBot.getGameScheduler().getActiveGames(subscribedTeams);
 		for (Game game : activeGames) {
 			createChannel(game, guild);
@@ -319,6 +322,10 @@ public class GameDayChannelsManager extends Thread {
 		
 		// Add games for added (all) subscribed teams
 		initChannels(guild);
+	}
+
+	public static boolean isInGameDayCategory(TextChannel channel) {
+		return DiscordManager.getCategory(channel).getName().equalsIgnoreCase(GAME_DAY_CHANNEL_CATEGORY_NAME);
 	}
 
 	/**
