@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -189,7 +190,7 @@ public class GameDayChannel extends Thread {
 		Predicate<TextChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
 		if (!nhlBot.getDiscordManager().getChannels(guild).stream().anyMatch(channelMatcher)) {
-			TextChannelCreateSpec channelSpec = new TextChannelCreateSpec()
+			Consumer<TextChannelCreateSpec> channelSpec = spec -> spec
 					.setName(channelName)
 					.setTopic(preferences.getCheer());
 			channel = nhlBot.getDiscordManager().createChannel(guild, channelSpec);

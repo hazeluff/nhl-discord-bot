@@ -25,15 +25,6 @@ public class AboutCommand extends Command {
 
 	@Override
 	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
-		return getReply();
-	}
-
-	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("about");
-	}
-
-	public MessageCreateSpec getReply() {
 		Resource resource = ResourceLoader.get().getHazeluffAvatar();
 		EmbedCreateSpec embedCreateSpec = new EmbedCreateSpec()
 				.setColor(new Color(0xba9ddf))
@@ -58,5 +49,10 @@ public class AboutCommand extends Command {
 		return new MessageCreateSpec()
 				.setFile(resource.getFileName(), resource.getStream())
 				.setEmbed(embedCreateSpec);
+	}
+
+	@Override
+	public boolean isAccept(Message message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("about");
 	}
 }

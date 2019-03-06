@@ -13,11 +13,9 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,11 +37,17 @@ import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.util.Permission;
+import discord4j.core.object.util.PermissionSet;
+import discord4j.core.spec.MessageCreateSpec;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.Permissions;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GameDayChannel.class)
@@ -56,13 +60,14 @@ public class CommandTest {
 		}
 
 		@Override
-		public void getReply(IMessage message, List<String> arguments) {
-			throw new NotImplementedException("Test Class. Not Implemented.");
+		public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message,
+				List<String> arguments) {
+			throw new UnsupportedOperationException("Test Class. Not Implemented.");
 		}
 
 		@Override
-		public boolean isAccept(IMessage message, List<String> arguments) {
-			throw new NotImplementedException("Test Class. Not Implemented.");
+		public boolean isAccept(Message message, List<String> arguments) {
+			throw new UnsupportedOperationException("Test Class. Not Implemented.");
 		}
 		
 	}
@@ -187,54 +192,57 @@ public class CommandTest {
 	@Test
 	public void hasSubscribePermissionsShouldFunctionCorrectly() {
 		LOGGER.info("hasSubscribePermissionsShouldFunctionCorrectly");
-		IMessage message = mock(IMessage.class, Mockito.RETURNS_DEEP_STUBS);
-		IUser user = message.getAuthor();
-		IGuild guild = message.getGuild();
+		Message message = mock(Message.class, Mockito.RETURNS_DEEP_STUBS);
+		Guild guild = mock(Guild.class, Mockito.RETURNS_DEEP_STUBS);
+		Member user = mock(Member.class);
+		PermissionSet permissions = mock(PermissionSet.class);
+		doReturn(user).when(spyCommand).getMessageAuthor(message);
+		doReturn(permissions).when(spyCommand).getPermissions(user);
 
 		// None
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.noneOf(Permissions.class));
-		doReturn(false).when(spyCommand).isOwner(user, guild);
-		assertFalse(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(false);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(false);
+		doReturn(false).when(spyCommand).isOwner(guild, user);
+		assertFalse(spyCommand.hasSubscribePermissions(guild, message));
 
 		// Has Admin Role
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
-		doReturn(false).when(spyCommand).isOwner(user, guild);
-		assertTrue(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(true);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(false);
+		doReturn(false).when(spyCommand).isOwner(guild, user);
+		assertTrue(spyCommand.hasSubscribePermissions(guild, message));
 
 		// Has Manage Channels Roles
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.of(Permissions.MANAGE_CHANNELS));
-		doReturn(false).when(spyCommand).isOwner(user, guild);
-		assertTrue(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(false);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(true);
+		doReturn(false).when(spyCommand).isOwner(guild, user);
+		assertTrue(spyCommand.hasSubscribePermissions(guild, message));
 
 		// Is Owner
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.noneOf(Permissions.class));
-		doReturn(true).when(spyCommand).isOwner(user, guild);
-		assertTrue(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(false);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(false);
+		doReturn(true).when(spyCommand).isOwner(guild, user);
+		assertTrue(spyCommand.hasSubscribePermissions(guild, message));
 
 		// Mixed
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR, Permissions.MANAGE_CHANNELS));
-		doReturn(false).when(spyCommand).isOwner(user, guild);
-		assertTrue(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(true);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(true);
+		doReturn(false).when(spyCommand).isOwner(guild, user);
+		assertTrue(spyCommand.hasSubscribePermissions(guild, message));
 
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR));
-		doReturn(true).when(spyCommand).isOwner(user, guild);
-		assertTrue(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(false);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(true);
+		doReturn(true).when(spyCommand).isOwner(guild, user);
+		assertTrue(spyCommand.hasSubscribePermissions(guild, message));
 
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.of(Permissions.MANAGE_CHANNELS));
-		doReturn(true).when(spyCommand).isOwner(user, guild);
-		assertTrue(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(true);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(false);
+		doReturn(true).when(spyCommand).isOwner(guild, user);
+		assertTrue(spyCommand.hasSubscribePermissions(guild, message));
 
-		when(message.getAuthor().getPermissionsForGuild(message.getGuild()))
-				.thenReturn(EnumSet.of(Permissions.ADMINISTRATOR, Permissions.MANAGE_CHANNELS));
-		doReturn(true).when(spyCommand).isOwner(user, guild);
-		assertTrue(spyCommand.hasSubscribePermissions(message));
+		when(permissions.contains(Permission.ADMINISTRATOR)).thenReturn(true);
+		when(permissions.contains(Permission.MANAGE_CHANNELS)).thenReturn(true);
+		doReturn(true).when(spyCommand).isOwner(guild, user);
+		assertTrue(spyCommand.hasSubscribePermissions(guild, message));
 	}
 
 }

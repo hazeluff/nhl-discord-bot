@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
+import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
@@ -124,12 +125,26 @@ public abstract class Command {
 	 *         false, otherwise
 	 */
 	boolean hasSubscribePermissions(Guild guild, Message message) {
-		Member user = message.getAuthorAsMember().block();
-		PermissionSet permissions = user.getBasePermissions().block();
+		Member user = getMessageAuthor(message);
+		if (user == null) {
+			return false;
+		}
+		PermissionSet permissions = getPermissions(user);
+		if (permissions == null) {
+			return false;
+		}
 		boolean hasAdminRole = permissions.contains(Permission.ADMINISTRATOR);
 		boolean hasManageChannelsRole = permissions.contains(Permission.MANAGE_CHANNELS);
 		boolean owner = isOwner(guild, user);
 		return hasAdminRole || hasManageChannelsRole || owner;
+	}
+
+	Member getMessageAuthor(Message message) {
+		return DiscordManager.request(() -> message.getAuthorAsMember());
+	}
+
+	PermissionSet getPermissions(Member user) {
+		return DiscordManager.request(() -> user.getBasePermissions());
 	}
 
 	boolean isOwner(Guild guild, User user) {
