@@ -220,18 +220,6 @@ public class DiscordManager {
 		request(() -> message.pin());
 	}
 
-	public List<TextChannel> getChannels(Guild guild) {
-		if (guild == null) {
-			logNullArgumentsStackTrace("`guild` was null.");
-			return null;
-		}
-
-		return request(() -> guild.getChannels()
-				.filter(channel -> channel instanceof TextChannel)
-				.cast(TextChannel.class)
-				.collectList());
-	}
-
 	/**
 	 * Creates a category with the given name.
 	 * 

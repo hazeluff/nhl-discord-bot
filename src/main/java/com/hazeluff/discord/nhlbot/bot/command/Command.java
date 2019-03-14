@@ -82,20 +82,29 @@ public abstract class Command {
 	 * @return channel of the latest game
 	 */
 	String getLatestGameChannelMention(Guild guild, Team team) {
+		Game game = getLatestGame(team);
+		String channelName = GameDayChannel.getChannelName(game).toLowerCase();
+
+		List<TextChannel> channels = DiscordManager.getTextChannels(guild);
+		if(channels != null && !channels.isEmpty()) {
+			TextChannel channel = channels.stream()
+					.filter(chnl -> chnl.getName().equalsIgnoreCase(channelName))
+					.findAny()
+					.orElse(null);
+			if (channel != null) {
+				return channel.getMention();
+			}
+		}
+
+		return "#" + channelName;
+	}
+
+	Game getLatestGame(Team team) {
 		Game game = nhlBot.getGameScheduler().getCurrentGame(team);
 		if (game == null) {
 			game = nhlBot.getGameScheduler().getLastGame(team);
 		}
-		String channelName = GameDayChannel.getChannelName(game).toLowerCase();
-		List<TextChannel> channels = guild.getChannels()
-				.filter(channel -> channel instanceof TextChannel)
-				.cast(TextChannel.class)
-				.filter(channel -> channel.getName().equals(channelName))
-				.collectList().block();
-
-		return !channels.isEmpty() 
-				? channels.get(0).getMention() 
-				: "#" + channelName;
+		return game;
 	}
 
 	/**
@@ -106,11 +115,15 @@ public abstract class Command {
 	 * @return
 	 */
 	MessageCreateSpec getRunInGameDayChannelsMessage(Guild guild, List<Team> teams) {
-		String channelMentions = StringUtils.join(
-				teams.stream().map(team -> getLatestGameChannelMention(guild, team)).collect(Collectors.toList()),
-				", ");
+		String channelMentions = getLatestGamesListString(guild, teams);
 		return new MessageCreateSpec().setContent(String.format(
 				"Please run this command in a 'Game Day Channel'.\nLatest game channel(s): %s", channelMentions));
+	}
+
+	String getLatestGamesListString(Guild guild, List<Team> teams) {
+		return StringUtils.join(
+				teams.stream().map(team -> getLatestGameChannelMention(guild, team)).collect(Collectors.toList()),
+				", ");
 	}
 
 	/**

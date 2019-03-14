@@ -4,9 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -19,6 +17,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -33,7 +32,6 @@ import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
-import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
@@ -44,13 +42,8 @@ import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.util.Permission;
 import discord4j.core.object.util.PermissionSet;
 import discord4j.core.spec.MessageCreateSpec;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(GameDayChannel.class)
 @PowerMockIgnore({ "org.apache.xerces.*", "javax.xml.parsers.*", "org.xml.sax.*" })
 public class CommandTest {
 
@@ -82,26 +75,8 @@ public class CommandTest {
 	private static final long USER_ID_AUTHOR = Utils.getRandomLong();
 	private static final long USER_ID_OWNER = Utils.getRandomLong();
 
-	@Mock
-	private NHLBot mockNHLBot;
-	@Mock
-	private DiscordManager mockDiscordManager;
-	@Mock
-	private GameScheduler mockGameScheduler;
-	@Mock
-	private IMessage mockMessage;
-	@Mock
-	private IChannel mockChannel;
-	@Mock
-	private IGuild mockGuild;
-	@Mock
-	private Game mockCurrentGame;
-	@Mock
-	private Game mockLastGame;
-	@Mock
-	private IUser mockAuthorUser;
-	@Mock
-	private IUser mockOwnerUser;
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
+	private NHLBot nhlBot;
 	@Captor
 	private ArgumentCaptor<String> captorString;
 
@@ -110,83 +85,58 @@ public class CommandTest {
 
 	@Before
 	public void setup() {
-		command = new TestCommand(mockNHLBot);
+		command = new TestCommand(nhlBot);
 		spyCommand = spy(command);
-		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockNHLBot.getGameScheduler()).thenReturn(mockGameScheduler);
-		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
-		when(mockMessage.getChannel()).thenReturn(mockChannel);
-		when(mockMessage.getGuild()).thenReturn(mockGuild);
-		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
-		when(mockGuild.getOwner()).thenReturn(mockOwnerUser);
-		when(mockAuthorUser.getLongID()).thenReturn(USER_ID_AUTHOR);
-		when(mockOwnerUser.getLongID()).thenReturn(USER_ID_OWNER);
-		
-		mockStatic(GameDayChannel.class);
-
-		when(GameDayChannel.getChannelName(mockCurrentGame)).thenReturn(CHANNEL_NAME_CURRENT);
-		when(GameDayChannel.getChannelName(mockLastGame)).thenReturn(CHANNEL_NAME_LAST);
 	}
 
 	@Test
-	public void getRunInGameDayChannelMessageShouldReturnMessage() {
-		LOGGER.info("getRunInGameDayChannelMessageShouldReturnMessage");
+	public void getRunInGameDayChannelsMessageShouldReturnCorrectString() {
+		LOGGER.info("getRunInGameDayChannelsMessageShouldReturnCorrectString");
+		Guild guild = mock(Guild.class);
 		String channelMention = "ChannelMention";
-		doReturn(channelMention).when(spyCommand).getLatestGameChannelMention(mockGuild, TEAM);
+		doReturn(channelMention).when(spyCommand).getLatestGameChannelMention(guild, TEAM);
 		String channelMention2 = "ChannelMention2";
-		doReturn(channelMention2).when(spyCommand).getLatestGameChannelMention(mockGuild, TEAM2);
+		doReturn(channelMention2).when(spyCommand).getLatestGameChannelMention(guild, TEAM2);
 		
-		String result = spyCommand.getRunInGameDayChannelsMessage(mockGuild, Arrays.asList(TEAM, TEAM2));
+		String result = spyCommand.getLatestGamesListString(guild, Arrays.asList(TEAM, TEAM2));
 		
 		assertTrue(result.contains(channelMention));
 		assertTrue(result.contains(channelMention));
 	}
 
 	@Test
-	public void getLatestGameChannelMentionShouldReturnMentionForCurrentGame() {
-		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionForCurrentGame");
-		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
-		
-		command.getLatestGameChannelMention(mockGuild, TEAM);
-		
-		verify(mockGameScheduler, never()).getLastGame(TEAM);
-		verify(mockGuild).getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase());
-	}
+	@PrepareForTest({ GameDayChannel.class, DiscordManager.class })
+	public void getLatestGameChannelMentionShouldReturnCorrectValue() {
+		LOGGER.info("getLatestGameChannelMentionShouldReturnCorrectValue");
+		Guild guild = mock(Guild.class);
+		Team team = Utils.getRandom(Team.class);
+		Game game = mock(Game.class);
+		String gameChannelName = "ChannelName";
+		TextChannel matchingChannel = mock(TextChannel.class);
+		TextChannel nonMatchingChannel = mock(TextChannel.class);
 
-	@Test
-	public void getLatestGameChannelMentionShouldReturnMentionForLastGame() {
-		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionForLastGame");
-		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockLastGame);
+		when(matchingChannel.getName()).thenReturn(gameChannelName);
+		when(nonMatchingChannel.getName()).thenReturn(RandomStringUtils.randomAlphanumeric(6));
+		when(nhlBot.getGameScheduler().getCurrentGame(team)).thenReturn(game);
 
-		command.getLatestGameChannelMention(mockGuild, TEAM);
+		mockStatic(GameDayChannel.class, DiscordManager.class);
+		when(GameDayChannel.getChannelName(game)).thenReturn(gameChannelName);
 
-		verify(mockGuild).getChannelsByName(CHANNEL_NAME_LAST.toLowerCase());
-	}
+		// Failed channel fetch
+		when(DiscordManager.getTextChannels(guild)).thenReturn(null);
+		assertEquals("#" + gameChannelName.toLowerCase(), command.getLatestGameChannelMention(guild, team));
 
-	@Test
-	public void getLatestGameChannelMentionShouldReturnMentionIfChannelExists() {
-		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionIfChannelExists");
-		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
-		when(mockGuild.getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase()))
-				.thenReturn(Arrays.asList(mockChannel));
-		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
-		
-		String result = command.getLatestGameChannelMention(mockGuild, TEAM);
+		// Empty channels
+		when(DiscordManager.getTextChannels(guild)).thenReturn(Collections.emptyList());
+		assertEquals("#" + gameChannelName.toLowerCase(), command.getLatestGameChannelMention(guild, team));
 
-		assertEquals("<#" + CHANNEL_ID + ">", result);
-	}
+		// No channel matches game name
+		when(DiscordManager.getTextChannels(guild)).thenReturn(Arrays.asList(nonMatchingChannel));
+		assertEquals("#" + gameChannelName.toLowerCase(), command.getLatestGameChannelMention(guild, team));
 
-	@Test
-	public void getLatestGameChannelMentionShouldReturnMentionIfChannelDoesNotExist() {
-		LOGGER.info("getLatestGameChannelMentionShouldReturnMentionIfChannelDoesNotExist");
-		when(mockGameScheduler.getCurrentGame(TEAM)).thenReturn(mockCurrentGame);
-		when(mockGuild.getChannelsByName(CHANNEL_NAME_CURRENT.toLowerCase()))
-				.thenReturn(Collections.emptyList());
-		when(mockChannel.getStringID()).thenReturn(CHANNEL_ID);
-
-		String result = command.getLatestGameChannelMention(mockGuild, TEAM);
-
-		assertEquals("#" + CHANNEL_NAME_CURRENT.toLowerCase(), result);
+		// Channel matches game name
+		when(DiscordManager.getTextChannels(guild)).thenReturn(Arrays.asList(nonMatchingChannel, matchingChannel));
+		assertEquals(matchingChannel.getMention(), command.getLatestGameChannelMention(guild, team));
 	}
 
 	@Test
