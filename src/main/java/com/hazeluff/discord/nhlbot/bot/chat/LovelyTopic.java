@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.chat;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -16,7 +17,7 @@ public class LovelyTopic extends Topic {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Message message) {
+	public Consumer<MessageCreateSpec> getReply(Message message) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Love you too.",
 				"<3",
@@ -25,7 +26,7 @@ public class LovelyTopic extends Topic {
 				"I think it's better we stay friends...",
 				":heart_eyes:", "愛してる。",
 				"https://www.youtube.com/watch?v=25QyCxVkXwQ"));
-		return new MessageCreateSpec().setContent(reply);
+		return spec -> spec.setContent(reply);
 	}
 
 	@Override

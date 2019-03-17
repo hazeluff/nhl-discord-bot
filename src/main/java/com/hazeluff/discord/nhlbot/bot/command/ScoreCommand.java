@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -23,7 +24,8 @@ public class ScoreCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
 		List<Team> preferredTeam = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong())
 				.getTeams();
 		if (preferredTeam.isEmpty()) {
@@ -35,7 +37,7 @@ public class ScoreCommand extends Command {
 			} else if (game.getStatus() == GameStatus.PREVIEW) {
 				return GAME_NOT_STARTED_MESSAGE;
 			} else {
-				return new MessageCreateSpec().setContent(GameDayChannel.getScoreMessage(game));
+				return spec -> spec.setContent(GameDayChannel.getScoreMessage(game));
 			}
 		}
 	}

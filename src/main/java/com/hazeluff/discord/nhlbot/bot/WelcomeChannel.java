@@ -1,24 +1,29 @@
 package com.hazeluff.discord.nhlbot.bot;
 
 
+import java.util.function.Consumer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.command.AboutCommand;
 import com.hazeluff.discord.nhlbot.bot.command.HelpCommand;
 import com.hazeluff.discord.nhlbot.bot.command.StatsCommand;
+import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.util.Snowflake;
+import discord4j.core.spec.MessageCreateSpec;
 
 public class WelcomeChannel extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeChannel.class);
 
 	// Update every hour
 	private static final long UPDATE_RATE = 3600000l;
-	private static final String UPDATED_MESSAGE = "I was just deployed/restarted.";
+	private static final Consumer<MessageCreateSpec> UPDATED_MESSAGE = spec -> spec
+			.setContent("I was just deployed/restarted.");
 
 	private final NHLBot nhlBot;
 	private final TextChannel channel;
@@ -57,13 +62,13 @@ public class WelcomeChannel extends Thread {
 		if (lastMessageId != null) {
 			channel.getMessagesBefore(lastMessageId).collectList().block().stream()
 					.filter(message -> nhlBot.getDiscordManager().isAuthorOfMessage(message))
-					.forEach(message -> nhlBot.getDiscordManager().deleteMessage(message));
-			nhlBot.getDiscordManager().deleteMessage(channel.getLastMessage().block());
+					.forEach(message -> DiscordManager.deleteMessage(message));
+			DiscordManager.deleteMessage(channel.getLastMessage().block());
 		}
-		nhlBot.getDiscordManager().sendMessage(channel, UPDATED_MESSAGE);
-		nhlBot.getDiscordManager().sendMessage(channel, aboutCommand.getReply());
-		nhlBot.getDiscordManager().sendMessage(channel, helpCommand.getReply());
-		statsMessage = nhlBot.getDiscordManager().sendMessage(channel, statsCommand.getMessageCreateSpec());
+		DiscordManager.sendMessage(channel, UPDATED_MESSAGE);
+		DiscordManager.sendMessage(channel, aboutCommand.getReply());
+		DiscordManager.sendMessage(channel, helpCommand.getReply());
+		statsMessage = DiscordManager.sendMessage(channel, statsCommand.getReply());
 
 		String strStatsMessage = statsCommand.getReplyString();
 		while (!isStop() && !isInterrupted()) {
@@ -71,7 +76,7 @@ public class WelcomeChannel extends Thread {
 			if (!strStatsMessage.equals(statsCommand.getReplyString())) {
 				strStatsMessage = statsCommand.getReplyString();
 				if (strStatsMessage != null) {
-					nhlBot.getDiscordManager().updateMessage(statsMessage, strStatsMessage);
+					DiscordManager.updateMessage(statsMessage, strStatsMessage);
 				} else {
 					LOGGER.debug("Build message was null. Error must have occurred.");
 				}

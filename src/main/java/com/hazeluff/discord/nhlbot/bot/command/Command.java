@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
@@ -27,14 +28,14 @@ import discord4j.core.spec.MessageCreateSpec;
  * Interface for commands that the NHLBot can accept and the replies to those commands.
  */
 public abstract class Command {
-	static final MessageCreateSpec SUBSCRIBE_FIRST_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> SUBSCRIBE_FIRST_MESSAGE = spec -> spec
 			.setContent("Please have your admin first subscribe your guild "
 					+ "to a team by using the command `@NHLBot subscribe [team]`, "
 					+ "where [team] is the 3 letter code for your team.\n"
 					+ "To see a list of [team] codes use command `?subscribe help`");
-	static final MessageCreateSpec GAME_NOT_STARTED_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> GAME_NOT_STARTED_MESSAGE = spec -> spec
 			.setContent("The game hasn't started yet.");
-	static final MessageCreateSpec RUN_IN_SERVER_CHANNEL_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> RUN_IN_SERVER_CHANNEL_MESSAGE = spec -> spec
 			.setContent("This can only be run on a server's 'Game Day Channel'.");
 	
 	final NHLBot nhlBot;
@@ -55,7 +56,7 @@ public abstract class Command {
 	 *            command arguments
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	public abstract MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message,
+	public abstract Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
 			List<String> arguments);
 
 	/**
@@ -114,9 +115,9 @@ public abstract class Command {
 	 * @param team
 	 * @return
 	 */
-	MessageCreateSpec getRunInGameDayChannelsMessage(Guild guild, List<Team> teams) {
+	Consumer<MessageCreateSpec> getRunInGameDayChannelsMessage(Guild guild, List<Team> teams) {
 		String channelMentions = getLatestGamesListString(guild, teams);
-		return new MessageCreateSpec().setContent(String.format(
+		return spec -> spec.setContent(String.format(
 				"Please run this command in a 'Game Day Channel'.\nLatest game channel(s): %s", channelMentions));
 	}
 
@@ -180,8 +181,8 @@ public abstract class Command {
 	 *            command to tell user to invoke help of
 	 * @return
 	 */
-	MessageCreateSpec getInvalidCodeMessage(String incorrectCode, String command) {
-		return new MessageCreateSpec().setContent(String.format(
+	Consumer<MessageCreateSpec> getInvalidCodeMessage(String incorrectCode, String command) {
+		return spec -> spec.setContent(String.format(
 				"`%s` is not a valid team code.\nUse `?%s help` to get a full list of team",
 				incorrectCode, command));
 	}

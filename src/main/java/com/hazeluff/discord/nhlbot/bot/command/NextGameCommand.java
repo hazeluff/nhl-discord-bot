@@ -3,6 +3,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -25,9 +26,9 @@ import discord4j.core.spec.MessageCreateSpec;
 public class NextGameCommand extends Command {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NextGameCommand.class);
 
-	static final MessageCreateSpec NO_NEXT_GAME_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> NO_NEXT_GAME_MESSAGE = spec -> spec
 			.setContent("There may not be a next game.");
-	static final MessageCreateSpec NO_NEXT_GAMES_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> NO_NEXT_GAMES_MESSAGE = spec -> spec
 			.setContent("There may not be any games for any of your subscribed teams.");
 
 	public NextGameCommand(NHLBot nhlBot) {
@@ -35,7 +36,8 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
 		GuildPreferences preferences = nhlBot.getPreferencesManager()
 				.getGuildPreferences(guild.getId().asLong());
 		List<Team> preferredTeams = preferences.getTeams();
@@ -50,7 +52,7 @@ public class NextGameCommand extends Command {
 				LOGGER.warn("Did not find next game for: " + preferredTeams.get(0));
 				return NO_NEXT_GAME_MESSAGE;
 			} else {
-				return new MessageCreateSpec().setContent(
+				return spec -> spec.setContent(
 						"The next game is:\n"
 						+ GameDayChannel.getDetailsMessage(nextGame, preferences.getTimeZone()));
 			}
@@ -62,11 +64,11 @@ public class NextGameCommand extends Command {
 			LOGGER.warn("Did not find next game for any subscribed team.");
 			return NO_NEXT_GAMES_MESSAGE;
 		} else {
-			String replyMessage = "The following game(s) are upcomming:";
+			StringBuilder replyMessage = new StringBuilder("The following game(s) are upcomming:");
 			for (Game game : games) {
-				replyMessage += "\n" + GameDayChannel.getDetailsMessage(game, preferences.getTimeZone());
+				replyMessage.append("\n" + GameDayChannel.getDetailsMessage(game, preferences.getTimeZone()));
 			}
-			return new MessageCreateSpec().setContent(replyMessage);
+			return spec -> spec.setContent(replyMessage.toString());
 		}
 	}
 

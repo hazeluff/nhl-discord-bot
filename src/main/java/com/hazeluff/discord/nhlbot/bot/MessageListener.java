@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -46,9 +47,9 @@ import discord4j.core.spec.MessageCreateSpec;
 public class MessageListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
 
-	static final MessageCreateSpec UNKNOWN_COMMAND_REPLY = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> UNKNOWN_COMMAND_REPLY = spec -> spec
 			.setContent("Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
-	static final MessageCreateSpec FUCK_MESSIER_REPLY = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> FUCK_MESSIER_REPLY = spec -> spec
 			.setContent("FUCK MESSIER");
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
@@ -96,19 +97,23 @@ public class MessageListener {
 	 *            the message to reply to
 	 * @return MessageCreateSpec of the reply; null if no reply.
 	 */
-	public MessageCreateSpec getReply(Guild guild, MessageChannel channel, Message message) {
-		Snowflake user = message.getAuthorId().get();
+	public Consumer<MessageCreateSpec> getReply(Guild guild, MessageChannel channel, Message message) {
+		User author = message.getAuthor().orElse(null);
+		if (author == null) {
+			return null;
+		}
+
+		Snowflake authorId = author.getId();
 
 		if (channel.getType() != Channel.Type.GUILD_TEXT) {
 			return null;
 		}
 
 		TextChannel textChannel = (TextChannel) channel;
-		User author = message.getAuthor().block();
 
-		userThrottler.add(user);
+		userThrottler.add(authorId);
 
-		if (userThrottler.isThrottle(user)) {
+		if (userThrottler.isThrottle(authorId)) {
 			return null;
 		}
 		
@@ -118,19 +123,19 @@ public class MessageListener {
 				author.getUsername(), 
 				message.getContent()));
 
-		MessageCreateSpec commandReply = null;
+		Consumer<MessageCreateSpec> commandReply = null;
 		if ((commandReply = replyToCommand(guild, textChannel, message)) != null) {
 			return commandReply;
 		}
 
-		MessageCreateSpec mentionReply = null;
+		Consumer<MessageCreateSpec> mentionReply = null;
 		if ((mentionReply = replyToMention(message)) != null) {
 			return mentionReply;
 		}
 
 		// Message is a command
 		if (getCommand(message) != null) {
-			userThrottler.add(user);
+			userThrottler.add(authorId);
 			return UNKNOWN_COMMAND_REPLY;
 		}
 
@@ -153,7 +158,7 @@ public class MessageListener {
 	 *            message received
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	MessageCreateSpec replyToCommand(Guild guild, TextChannel channel, Message message) {
+	Consumer<MessageCreateSpec> replyToCommand(Guild guild, TextChannel channel, Message message) {
 		Command command = getCommand(message);
 		if (command != null) {
 			List<String> commandArgs = parseToCommandArguments(message);
@@ -171,7 +176,7 @@ public class MessageListener {
 	 *            message received
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	MessageCreateSpec replyToMention(Message message) {
+	Consumer<MessageCreateSpec> replyToMention(Message message) {
 		if (isBotMentioned(message)) {
 			Optional<Topic> matchedCommand = topics.stream().filter(topic -> topic.isReplyTo(message)).findFirst();
 			if (matchedCommand.isPresent()) {
@@ -238,7 +243,6 @@ public class MessageListener {
 	 *         false, otherwise.
 	 */
 	boolean isBotMentioned(Message message) {
-		String messageContent = message.getContent().get();
 		return message.getUserMentionIds().contains(nhlBot.getDiscordManager().getId());
 	}
 

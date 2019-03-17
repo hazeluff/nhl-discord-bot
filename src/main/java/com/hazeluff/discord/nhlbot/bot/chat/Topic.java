@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.chat;
 
 
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -26,9 +27,9 @@ public abstract class Topic {
 	 * @param arguments
 	 *            command arguments
 	 * 
-	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
+	 * @return Spec for the reply; null if no reply.
 	 */
-	public abstract MessageCreateSpec getReply(Message message);
+	public abstract Consumer<MessageCreateSpec> getReply(Message message);
 
 	/**
 	 * Determines if the message is a topic we can reply to

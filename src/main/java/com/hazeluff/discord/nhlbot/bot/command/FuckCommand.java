@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
+import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -19,6 +21,7 @@ import com.mongodb.client.model.UpdateOptions;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
 import discord4j.core.spec.MessageCreateSpec;
 
 /**
@@ -27,11 +30,11 @@ import discord4j.core.spec.MessageCreateSpec;
 public class FuckCommand extends Command {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FuckCommand.class);
 
-	static final MessageCreateSpec NOT_ENOUGH_PARAMETERS_REPLY = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> NOT_ENOUGH_PARAMETERS_REPLY = spec -> spec
 			.setContent("You're gonna have to tell me who/what to fuck. `?fuck [thing]`");
-	static final MessageCreateSpec NO_YOU_REPLY = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> NO_YOU_REPLY = spec -> spec
 			.setContent("No U.");
-	static final MessageCreateSpec HAZELUFF_REPLY = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> HAZELUFF_REPLY = spec -> spec
 			.setContent("Hazeluff doesn't give a fuck.");
 
 	// Map<name, strResponses>
@@ -43,7 +46,8 @@ public class FuckCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
 		
 		if(arguments.size() < 2) {
 			return NOT_ENOUGH_PARAMETERS_REPLY;
@@ -62,12 +66,13 @@ public class FuckCommand extends Command {
 		}
 
 		if (arguments.get(1).startsWith("<@") && arguments.get(1).endsWith(">")) {
-			nhlBot.getDiscordManager().deleteMessage(message);
+			DiscordManager.deleteMessage(message);
 			return buildDontAtReply(message);
 		}
 
 		if (arguments.get(1).toLowerCase().equals("add")) {
-			if (isDev(message.getAuthorId().get())) {
+			User author = message.getAuthor().orElse(null);
+			if (author != null && isDev(author.getId())) {
 				String subject = arguments.get(2);
 				List<String> response = new ArrayList<>(arguments);
 				String strResponse = StringUtils.join(response.subList(3, response.size()), " ");				
@@ -78,27 +83,21 @@ public class FuckCommand extends Command {
 		}
 
 		if (hasResponses(arguments.get(1))) {
-			return new MessageCreateSpec().setContent(Utils.getRandom(getResponses(arguments.get(1))));
+			return getRandomResponse(arguments.get(1));
 		}
 
 		// Default
-		return buildFuckReply(arguments);
+		return null;
 	}
 
-	static MessageCreateSpec buildDontAtReply(Message message) {
-		String authorMention = String.format("<@%s>", message.getAuthorId().get());
-		return new MessageCreateSpec().setContent(authorMention + ". Don't @ people, you dingus.");
+	static Consumer<MessageCreateSpec> buildDontAtReply(Message message) {
+		String authorMention = String.format("<@%s>", message.getAuthor().get());
+		return spec -> spec.setContent(authorMention + ". Don't @ people, you dingus.");
 	}
 
-	static MessageCreateSpec buildAddReply(String subject, String response) {
-		return new MessageCreateSpec().setContent(
+	static Consumer<MessageCreateSpec> buildAddReply(String subject, String response) {
+		return spec -> spec.setContent(
 				String.format("Added new response.\nSubject: `%s`\nResponse: `%s`", subject.toLowerCase(), response));
-	}
-
-	static MessageCreateSpec buildFuckReply(List<String> arguments) {
-		List<String> subject = new ArrayList<>(arguments);
-		subject.remove(0);
-		return new MessageCreateSpec().setContent("FUCK " + StringUtils.join(subject, " ").toUpperCase());
 	}
 
 	@Override
@@ -144,6 +143,10 @@ public class FuckCommand extends Command {
 		getFuckCollection().updateOne(new Document("subject", subject),
 				new Document("$set", new Document("responses", subjectResponses)), 
 				new UpdateOptions().upsert(true));
+	}
+
+	Consumer<MessageCreateSpec> getRandomResponse(String subject) {
+		return spec -> spec.setContent(Utils.getRandom(getResponses(subject)));
 	}
 
 	List<String> getResponses(String subject) {

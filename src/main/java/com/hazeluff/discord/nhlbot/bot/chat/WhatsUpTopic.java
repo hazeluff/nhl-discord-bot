@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.chat;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -16,14 +17,14 @@ public class WhatsUpTopic extends Topic {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Message message) {
+	public Consumer<MessageCreateSpec> getReply(Message message) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Nothing Much. You?",
 				"Bot stuff. You?",
 				"Chillin. Want to join?",
 				"Listening to some music.\nhttps://www.youtube.com/watch?v=cU8HrO7XuiE",
 				"nm, u?"));
-		return new MessageCreateSpec().setContent(reply);
+		return spec -> spec.setContent(reply);
 	}
 
 	@Override

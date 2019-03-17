@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
@@ -18,9 +19,9 @@ import discord4j.core.spec.MessageCreateSpec;
  */
 public class SubscribeCommand extends Command {
 
-	private static final MessageCreateSpec MUST_HAVE_PERMISSIONS_MESSAGE = new MessageCreateSpec()
+	private static final Consumer<MessageCreateSpec> MUST_HAVE_PERMISSIONS_MESSAGE = spec -> spec
 			.setContent("You must have _Admin_ or _Manage Channels_ roles to subscribe the guild to a team.");
-	private static final MessageCreateSpec SPECIFY_TEAM_MESSAGE = new MessageCreateSpec().setContent(
+	private static final Consumer<MessageCreateSpec> SPECIFY_TEAM_MESSAGE = spec -> spec.setContent(
 			"You must specify a parameter for what team you want to subscribe to. `?subscribe [team]`");
 
 	public SubscribeCommand(NHLBot nhlBot) {
@@ -28,7 +29,8 @@ public class SubscribeCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
 
 		if (!hasSubscribePermissions(guild, message)) {
 			return MUST_HAVE_PERMISSIONS_MESSAGE;
@@ -49,7 +51,7 @@ public class SubscribeCommand extends Command {
 			response.append("```\n");
 			response.append("You can unsubscribe using:\n");
 			response.append("`?unsubscribe`");
-			return new MessageCreateSpec().setContent(response.toString());
+			return spec -> spec.setContent(response.toString());
 		}
 
 		if (!Team.isValid(arguments.get(1))) {
@@ -67,9 +69,9 @@ public class SubscribeCommand extends Command {
 		if (subscribedTeams.size() > 1) {
 			String teamsStr = StringUtils.join(subscribedTeams.stream().map(subbedTeam -> subbedTeam.getFullName())
 					.sorted().collect(Collectors.toList()), "\n");
-			return new MessageCreateSpec().setContent("This server is now subscribed to:\n```" + teamsStr + "```");
+			return spec -> spec.setContent("This server is now subscribed to:\n```" + teamsStr + "```");
 		} else {
-			return new MessageCreateSpec()
+			return spec -> spec
 					.setContent("This server is now subscribed to games of the **" + team.getFullName() + "**!");
 		}
 	}

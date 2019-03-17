@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.awt.Color;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -24,9 +25,14 @@ public class AboutCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
+		return getReply();
+	}
+
+	public Consumer<MessageCreateSpec> getReply() {
 		Resource resource = ResourceLoader.get().getHazeluffAvatar();
-		EmbedCreateSpec embedCreateSpec = new EmbedCreateSpec()
+		Consumer<EmbedCreateSpec> embedCreateSpec = spec -> spec
 				.setColor(new Color(0xba9ddf))
 				.setTitle("About NHLBot")
 				.setAuthor("Hazeluff", Config.HAZELUFF_SITE, "attachment://" + resource.getFileName())
@@ -46,8 +52,8 @@ public class AboutCommand extends Command {
 								+ "\nBTC: " + Config.DONATION_BTC
 								+ "\nETH: " + Config.DONATION_ETH,
 						false);
-		return new MessageCreateSpec()
-				.setFile(resource.getFileName(), resource.getStream())
+		return spec -> spec
+				.addFile(resource.getFileName(), resource.getStream())
 				.setEmbed(embedCreateSpec);
 	}
 

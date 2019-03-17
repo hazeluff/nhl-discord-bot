@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 
@@ -19,17 +20,13 @@ public class HelpCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
 		return getReply();
 	}
 
-	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("help");
-	}
-
-	public MessageCreateSpec getReply() {
-		return new MessageCreateSpec().setContent("Here are a list of commands:\n\n"
+	public Consumer<MessageCreateSpec> getReply() {
+		return spec -> spec.setContent("Here are a list of commands:\n\n"
 
 						+ "You can use the commands by doing `?nhlbot [command]` or `?[command]`.\n\n"
 
@@ -51,6 +48,11 @@ public class HelpCommand extends Command {
 
 						+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
 						+ "`?nhlbot [command] help`");
+	}
+
+	@Override
+	public boolean isAccept(Message message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("help");
 	}
 
 }

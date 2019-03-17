@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.chat;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -17,7 +18,7 @@ public class FriendlyTopic extends Topic {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Message message) {
+	public Consumer<MessageCreateSpec> getReply(Message message) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Hi There. :kissing_heart:",
 				"Hey, How you doin'? :wink:",
@@ -25,7 +26,7 @@ public class FriendlyTopic extends Topic {
 				"Hi, How's your day?",
 				"I'm glad you noticed me. :D", 
 				"Hi there!"));
-		return new MessageCreateSpec().setContent(reply);
+		return spec -> spec.setContent(reply);
 	}
 
 	@Override

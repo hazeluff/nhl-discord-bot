@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Team;
@@ -15,11 +16,11 @@ import discord4j.core.spec.MessageCreateSpec;
  */
 public class UnsubscribeCommand extends Command {
 
-	static final MessageCreateSpec UNSUBSCRIBED_FROM_ALL_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> UNSUBSCRIBED_FROM_ALL_MESSAGE = spec -> spec
 			.setContent("This server is now unsubscribed from games of all teams.");
-	static final MessageCreateSpec MUST_HAVE_PERMISSIONS_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> MUST_HAVE_PERMISSIONS_MESSAGE = spec -> spec
 			.setContent("You must have _Admin_ or _Manage Channels_ roles to unsubscribe the guild from a team.");
-	static final MessageCreateSpec SPECIFY_TEAM_MESSAGE = new MessageCreateSpec()
+	static final Consumer<MessageCreateSpec> SPECIFY_TEAM_MESSAGE = spec -> spec
 			.setContent("You must specify a parameter for what team you want to unsubscribe from. "
 					+ "`?subscribe [team]`\n"
 					+ "You may also use `?unsubscrube all` to unsubscribe from **all** teams.");
@@ -29,7 +30,8 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
 		if (!hasSubscribePermissions(guild, message)) {
 			return MUST_HAVE_PERMISSIONS_MESSAGE;
 		}
@@ -49,7 +51,7 @@ public class UnsubscribeCommand extends Command {
 			}
 			response.append("all - all teams");
 			response.append("```\n");
-			return new MessageCreateSpec().setContent(response.toString());
+			return spec -> spec.setContent(response.toString());
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("all")) {
@@ -67,7 +69,7 @@ public class UnsubscribeCommand extends Command {
 		Team team = Team.parse(arguments.get(1));
 		nhlBot.getPreferencesManager().unsubscribeGuild(guild.getId().asLong(), team);
 		nhlBot.getGameDayChannelsManager().updateChannels(guild);
-		return new MessageCreateSpec()
+		return spec -> spec
 				.setContent("This server is now unsubscribed from games of the **" + team.getFullName() + "**.");
 	}
 

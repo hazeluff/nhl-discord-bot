@@ -1,6 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot.chat;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
@@ -16,7 +17,7 @@ public class RudeTopic extends Topic {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Message message) {
+	public Consumer<MessageCreateSpec> getReply(Message message) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Nah, you should fuck off.", 
 				"Go kill yourself.", 
@@ -32,7 +33,7 @@ public class RudeTopic extends Topic {
 				"I'm just doing my job. :cry:", 
 				"That's not nice.",
 				String.format("Hazeluff worked really hard on me.")));
-		return new MessageCreateSpec().setContent(reply);
+		return spec -> spec.setContent(reply);
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,9 +83,9 @@ public class NHLBot extends Thread {
 		nhlBot.discordClient.getEventDispatcher().on(MessageCreateEvent.class)
 				.flatMap(NHLBot::zipEvent)
 				.subscribe(t -> {
-					MessageCreateSpec reply = messageListener.getReply(t.getT1(), t.getT2(), t.getT3());
-					if (reply != null) {
-						t.getT2().createMessage(reply);
+					Consumer<MessageCreateSpec> replySpec = messageListener.getReply(t.getT1(), t.getT2(), t.getT3());
+					if (replySpec != null) {
+						t.getT2().createMessage(replySpec);
 					}
 				});
 

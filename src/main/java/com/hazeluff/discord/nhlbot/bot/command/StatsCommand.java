@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +13,6 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
-import discord4j.core.spec.MessageEditSpec;
 
 /**
  * Displays information about NHLBot and the author
@@ -30,8 +30,9 @@ public class StatsCommand extends Command {
 	}
 
 	@Override
-	public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message, List<String> arguments) {
-		return getMessageCreateSpec();
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
+		return getReply();
 	}
 
 	@Override
@@ -39,12 +40,8 @@ public class StatsCommand extends Command {
 		return arguments.get(0).equalsIgnoreCase("stats");
 	}
 
-	public MessageCreateSpec getMessageCreateSpec() {
-		return new MessageCreateSpec().setContent(getReplyString());
-	}
-
-	public MessageEditSpec getMessageEditSpec() {
-		return new MessageEditSpec().setContent(getReplyString());
+	public Consumer<MessageCreateSpec> getReply() {
+		return spec -> spec.setContent(getReplyString());
 	}
 
 	public String getReplyString() {

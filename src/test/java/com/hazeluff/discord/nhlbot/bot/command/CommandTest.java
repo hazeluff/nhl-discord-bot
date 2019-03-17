@@ -12,6 +12,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
@@ -53,7 +54,7 @@ public class CommandTest {
 		}
 
 		@Override
-		public MessageCreateSpec getReply(Guild guild, TextChannel channel, Message message,
+		public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
 				List<String> arguments) {
 			throw new UnsupportedOperationException("Test Class. Not Implemented.");
 		}
