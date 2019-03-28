@@ -29,19 +29,26 @@ public class GoalsCommand extends Command {
 		List<Team> preferredTeams = nhlBot.getPreferencesManager()
 				.getGuildPreferences(guild.getId().asLong())
 				.getTeams();
+
 		if (preferredTeams.isEmpty()) {
 			return SUBSCRIBE_FIRST_MESSAGE;
-		} else {
-			Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
-			if (game == null) {
-				return getRunInGameDayChannelsMessage(guild, preferredTeams);
-			} else if (game.getStatus() == GameStatus.PREVIEW) {
-				return GAME_NOT_STARTED_MESSAGE;
-			} else {
-				return spec -> spec.setContent(String.format("%s\n%s", GameDayChannel.getScoreMessage(game),
-						GameDayChannel.getGoalsMessage(game)));
-			}
 		}
+
+		Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
+		if (game == null) {
+			return getRunInGameDayChannelsMessage(guild, preferredTeams);
+		}
+
+		if (game.getStatus() == GameStatus.PREVIEW) {
+			return GAME_NOT_STARTED_MESSAGE;
+		}
+
+		return getGoalsMessage(game);
+	}
+
+	public Consumer<MessageCreateSpec> getGoalsMessage(Game game) {
+		return spec -> spec.setContent(
+				String.format("%s\n%s", GameDayChannel.getScoreMessage(game), GameDayChannel.getGoalsMessage(game)));
 	}
 
 	@Override
