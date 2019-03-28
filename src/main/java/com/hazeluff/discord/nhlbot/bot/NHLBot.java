@@ -65,37 +65,18 @@ public class NHLBot extends Thread {
 		this.gameDayChannelsManager = gameDayChannelsManager;
 	}
 
-	public static NHLBot create(String botToken, GameScheduler gameScheduler) {
+	public static NHLBot create(GameScheduler gameScheduler, String botToken) {
 		LOGGER.info("Running NHLBot v" + Config.VERSION);
 		Thread.currentThread().setName("NHLBot");
 
 		NHLBot nhlBot = new NHLBot();
 		nhlBot.gameScheduler = gameScheduler;
 
-		// Init DiscordClient and DiscordManager
-		nhlBot.discordClient = new DiscordClientBuilder(botToken).build();
-		nhlBot.discordManager = new DiscordManager(nhlBot.discordClient);
-		
-		nhlBot.discordClient.getEventDispatcher().on(ReadyEvent.class)
-				.subscribe(event -> nhlBot.ready = true);
-				
-		MessageListener messageListener = new MessageListener(nhlBot);
-		nhlBot.discordClient.getEventDispatcher().on(MessageCreateEvent.class)
-				.flatMap(NHLBot::zipEvent)
-				.subscribe(t -> {
-					Consumer<MessageCreateSpec> replySpec = messageListener.getReply(t.getT1(), t.getT2(), t.getT3());
-					if (replySpec != null) {
-						t.getT2().createMessage(replySpec);
-					}
-				});
-
-		// Login
-		LOGGER.info("Logging into Discord.");
-		nhlBot.discordClient.login().block();
+		nhlBot.initDiscord(botToken);
 
 		while (!nhlBot.ready) {
 			LOGGER.info("Waiting for Discord client to be ready.");
-			Utils.sleep(2000);
+			Utils.sleep(5000);
 		}
 
 		nhlBot.discordManager.changePresence(STARTING_UP_PRESENCE);
@@ -129,6 +110,30 @@ public class NHLBot extends Thread {
 		nhlBot.start();
 
 		return nhlBot;
+	}
+	
+	public void initDiscord(String botToken) {
+		// Init DiscordClient and DiscordManager
+		discordClient = new DiscordClientBuilder(botToken).build();
+		discordManager = new DiscordManager(discordClient);
+		
+		discordClient.getEventDispatcher().on(ReadyEvent.class)
+				.subscribe(event -> ready = true);
+				
+		MessageListener messageListener = new MessageListener(this);
+		discordClient.getEventDispatcher()
+				.on(MessageCreateEvent.class)
+				.flatMap(NHLBot::zipEvent)
+				.subscribe(t -> {
+					Consumer<MessageCreateSpec> replySpec = messageListener.getReply(t.getT1(), t.getT2(), t.getT3());
+					if (replySpec != null) {
+						t.getT2().createMessage(replySpec);
+					}
+				});
+
+		// Login
+		LOGGER.info("Logging into Discord.");
+		discordClient.login().block();
 	}
 
 	/**
