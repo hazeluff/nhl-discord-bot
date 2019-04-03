@@ -30,16 +30,22 @@ public class ScoreCommand extends Command {
 				.getTeams();
 		if (preferredTeam.isEmpty()) {
 			return SUBSCRIBE_FIRST_MESSAGE;
-		} else {
-			Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
-			if (game == null) {
-				return getRunInGameDayChannelsMessage(guild, preferredTeam);
-			} else if (game.getStatus() == GameStatus.PREVIEW) {
-				return GAME_NOT_STARTED_MESSAGE;
-			} else {
-				return spec -> spec.setContent(GameDayChannel.getScoreMessage(game));
-			}
 		}
+
+		Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
+		if (game == null) {
+			return getRunInGameDayChannelsMessage(guild, preferredTeam);
+		}
+
+		if (game.getStatus() == GameStatus.PREVIEW) {
+			return GAME_NOT_STARTED_MESSAGE;
+		}
+
+		return getScoreMessage(game);
+	}
+
+	Consumer<MessageCreateSpec> getScoreMessage(Game game) {
+		return spec -> spec.setContent(GameDayChannel.getScoreMessage(game));
 	}
 
 	@Override
