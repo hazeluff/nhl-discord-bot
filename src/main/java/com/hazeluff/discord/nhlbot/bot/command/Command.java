@@ -204,7 +204,7 @@ public abstract class Command {
 	 * 
 	 * @return
 	 */
-	String getTeamsListBlock() {
+	static String getTeamsListBlock() {
 		StringBuilder strBuilder = new StringBuilder("```");
 		for (Team team : Team.values()) {
 			strBuilder.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());

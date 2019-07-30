@@ -23,6 +23,10 @@ import discord4j.core.spec.MessageCreateSpec;
  */
 public class ScheduleCommand extends Command {
 
+	static final Consumer<MessageCreateSpec> HELP_MESSAGE = spec -> spec
+			.setContent("Get the game schedule any of the following teams by typing `@NHLBot schedule [team]`, "
+					+ "where [team] is the one of the three letter codes for your team below: "
+					+ getTeamsListBlock());
 
 	public ScheduleCommand(NHLBot nhlBot) {
 		super(nhlBot);
@@ -31,29 +35,28 @@ public class ScheduleCommand extends Command {
 	@Override
 	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
 			List<String> arguments) {
-		if (arguments.size() > 1) {
-			if (arguments.get(1).equalsIgnoreCase("help")) {
-				// Send Help Message
-				StringBuilder response = new StringBuilder(
-						"Get the game schedule any of the following teams by typing `@NHLBot schedule [team]`, "
-								+ "where [team] is the one of the three letter codes for your team below: ");
-				response.append(getTeamsListBlock());
-				return spec -> spec.setContent(response.toString());
-			} else if (Team.isValid(arguments.get(1))) {
-				// Send schedule for a specific team
-				return getScheduleMessage(Team.parse(arguments.get(1)));
-			} else {
-				return getInvalidCodeMessage(arguments.get(1), "schedule");
-			}
-		} else {
+		if (arguments.size() <= 1) {
 			List<Team> preferredTeams = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong())
 					.getTeams();
+
 			if (preferredTeams.isEmpty()) {
 				return SUBSCRIBE_FIRST_MESSAGE;
-			} else {
-				return getScheduleMessage(preferredTeams);
 			}
+
+			return getScheduleMessage(preferredTeams);
 		}
+
+		if (arguments.get(1).equalsIgnoreCase("help")) {
+			// Send Help Message
+			return HELP_MESSAGE;
+		}
+
+		if (Team.isValid(arguments.get(1))) {
+			// Send schedule for a specific team
+			return getScheduleMessage(Team.parse(arguments.get(1)));
+		}
+
+		return getInvalidCodeMessage(arguments.get(1), "schedule");
 	}
 
 	Consumer<MessageCreateSpec> getScheduleMessage(Team team) {
