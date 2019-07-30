@@ -102,9 +102,13 @@ public class UserThrottler extends Thread {
 				lastUpdate = currentTime;
 				cleanUp();
 			} else {
-				Utils.sleep(CLEANUP_INTERVAL / 4);
+				sleep();
 			}
 		}
+	}
+
+	void sleep() {
+		Utils.sleep(CLEANUP_INTERVAL / 4);
 	}
 
 	/**
