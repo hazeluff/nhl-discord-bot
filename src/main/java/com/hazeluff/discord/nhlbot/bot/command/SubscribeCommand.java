@@ -19,10 +19,24 @@ import discord4j.core.spec.MessageCreateSpec;
  */
 public class SubscribeCommand extends Command {
 
-	private static final Consumer<MessageCreateSpec> MUST_HAVE_PERMISSIONS_MESSAGE = spec -> spec
+	static final Consumer<MessageCreateSpec> MUST_HAVE_PERMISSIONS_MESSAGE = spec -> spec
 			.setContent("You must have _Admin_ or _Manage Channels_ roles to subscribe the guild to a team.");
-	private static final Consumer<MessageCreateSpec> SPECIFY_TEAM_MESSAGE = spec -> spec.setContent(
+	static final Consumer<MessageCreateSpec> SPECIFY_TEAM_MESSAGE = spec -> spec
+			.setContent(
 			"You must specify a parameter for what team you want to subscribe to. `?subscribe [team]`");
+	static final Consumer<MessageCreateSpec> HELP_MESSAGE = spec -> {
+		StringBuilder response = new StringBuilder(
+				"Subscribed to any of the following teams by typing `?subscribe [team]`, "
+						+ "where [team] is the one of the three letter codes for your team below: ").append("```");
+		List<Team> teams = Team.getSortedLValues();
+		for (Team team : teams) {
+			response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
+		}
+		response.append("```\n");
+		response.append("You can unsubscribe using:\n");
+		response.append("`?unsubscribe`");
+		spec.setContent(response.toString());
+	};
 
 	public SubscribeCommand(NHLBot nhlBot) {
 		super(nhlBot);
@@ -41,17 +55,7 @@ public class SubscribeCommand extends Command {
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
-			StringBuilder response = new StringBuilder(
-					"Subscribed to any of the following teams by typing `?subscribe [team]`, "
-							+ "where [team] is the one of the three letter codes for your team below: ").append("```");
-			List<Team> teams = Team.getSortedLValues();
-			for (Team team : teams) {
-				response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
-			}
-			response.append("```\n");
-			response.append("You can unsubscribe using:\n");
-			response.append("`?unsubscribe`");
-			return spec -> spec.setContent(response.toString());
+			return HELP_MESSAGE;
 		}
 
 		if (!Team.isValid(arguments.get(1))) {
@@ -64,6 +68,10 @@ public class SubscribeCommand extends Command {
 		nhlBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
 		nhlBot.getPreferencesManager().subscribeGuild(guildId, team);
 		nhlBot.getGameDayChannelsManager().initChannels(guild);
+		return getSubscribedMessage(team, guildId);
+	}
+
+	Consumer<MessageCreateSpec> getSubscribedMessage(Team team, long guildId) {
 		List<Team> subscribedTeams = nhlBot.getPreferencesManager().getGuildPreferences(guildId)
 				.getTeams();
 		if (subscribedTeams.size() > 1) {
@@ -75,6 +83,7 @@ public class SubscribeCommand extends Command {
 					.setContent("This server is now subscribed to games of the **" + team.getFullName() + "**!");
 		}
 	}
+
 
 	@Override
 	public boolean isAccept(Message message, List<String> arguments) {
