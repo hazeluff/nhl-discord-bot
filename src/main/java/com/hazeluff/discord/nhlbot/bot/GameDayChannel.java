@@ -748,7 +748,7 @@ public class GameDayChannel extends Thread {
 		return channelName.matches(regex);
 	}
 
-	private Message sendMessage(String message) {
+	protected Message sendMessage(String message) {
 		return channel == null ? null : DiscordManager.sendMessage(channel, spec -> spec.setContent(message));
 	}
 
