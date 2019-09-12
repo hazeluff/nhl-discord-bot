@@ -3,7 +3,7 @@ package com.hazeluff.discord.nhlbot.bot.preferences;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -29,15 +29,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
-import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 
-import sx.blah.discord.handle.obj.IGuild;
+import discord4j.core.object.entity.Guild;
 
 @RunWith(PowerMockRunner.class)
 public class PreferencesManagerTest {
@@ -198,10 +196,12 @@ public class PreferencesManagerTest {
 	public void getSubscribedGuildsShouldReturnListOfGuilds() {
 		LOGGER.info("getSubscribedGuildsShouldReturnListOfGuilds");
 		when(nhlBot.getDiscordManager().getGuilds()).thenReturn(
-				Arrays.asList(mock(IGuild.class), mock(IGuild.class), mock(IGuild.class), mock(IGuild.class)));
-		when(nhlBot.getDiscordManager().getGuilds().get(0).getLongID()).thenReturn(GUILD_ID);
-		when(nhlBot.getDiscordManager().getGuilds().get(1).getLongID()).thenReturn(GUILD_ID2);
-		when(nhlBot.getDiscordManager().getGuilds().get(2).getLongID()).thenReturn(GUILD_ID3);
+				Arrays.asList(mock(Guild.class, Answers.RETURNS_DEEP_STUBS),
+						mock(Guild.class, Answers.RETURNS_DEEP_STUBS), mock(Guild.class, Answers.RETURNS_DEEP_STUBS),
+						mock(Guild.class, Answers.RETURNS_DEEP_STUBS)));
+		when(nhlBot.getDiscordManager().getGuilds().get(0).getId().asLong()).thenReturn(GUILD_ID);
+		when(nhlBot.getDiscordManager().getGuilds().get(1).getId().asLong()).thenReturn(GUILD_ID2);
+		when(nhlBot.getDiscordManager().getGuilds().get(2).getId().asLong()).thenReturn(GUILD_ID3);
 
 		preferencesManager = new PreferencesManager(
 				nhlBot, 
