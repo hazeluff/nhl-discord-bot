@@ -19,8 +19,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
@@ -32,8 +30,6 @@ import discord4j.core.spec.MessageCreateSpec;
 
 @RunWith(PowerMockRunner.class)
 public class ScheduleCommandTest {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleCommandTest.class);
-
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot nhlBot;
 

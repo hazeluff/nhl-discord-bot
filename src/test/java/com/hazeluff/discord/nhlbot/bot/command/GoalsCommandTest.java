@@ -28,7 +28,6 @@ import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameStatus;
 import com.hazeluff.discord.nhlbot.nhl.Team;
-import com.hazeluff.discord.nhlbot.utils.Utils;
 
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.TextChannel;
@@ -38,13 +37,6 @@ import discord4j.core.spec.MessageCreateSpec;
 @PrepareForTest(GameDayChannel.class)
 public class GoalsCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GoalsCommandTest.class);
-
-	private static final long GUILD_ID = Utils.getRandomLong();
-	private static final String CHANNEL_NAME = "ChannelName";
-	private static final Team TEAM = Team.COLORADO_AVALANCH;
-	private static final Team TEAM2 = Team.VEGAS_GOLDEN_KNIGHTS;
-	private static final String GOALS_MESSAGE = "GoalsMessage";
-	private static final String SCORE_MESSAGE = "ScoreMesage";
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot nhlBot;

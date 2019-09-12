@@ -6,9 +6,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
@@ -24,8 +21,6 @@ import discord4j.core.spec.MessageCreateSpec;
  * Displays information about the next game.
  */
 public class NextGameCommand extends Command {
-	private static final Logger LOGGER = LoggerFactory.getLogger(NextGameCommand.class);
-
 	static final Consumer<MessageCreateSpec> NO_NEXT_GAME_MESSAGE = spec -> spec
 			.setContent("There may not be a next game.");
 	static final Consumer<MessageCreateSpec> NO_NEXT_GAMES_MESSAGE = spec -> spec

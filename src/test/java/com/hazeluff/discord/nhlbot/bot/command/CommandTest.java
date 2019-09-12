@@ -70,11 +70,6 @@ public class CommandTest {
 
 	private static final Team TEAM = Team.COLORADO_AVALANCH;
 	private static final Team TEAM2 = Team.NEW_JERSEY_DEVILS;
-	private static final String CHANNEL_ID = RandomStringUtils.randomAlphanumeric(10);
-	private static final String CHANNEL_NAME_CURRENT = "CurrentGameChannelName";
-	private static final String CHANNEL_NAME_LAST = "LastGameChannelName";
-	private static final long USER_ID_AUTHOR = Utils.getRandomLong();
-	private static final long USER_ID_OWNER = Utils.getRandomLong();
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot nhlBot;

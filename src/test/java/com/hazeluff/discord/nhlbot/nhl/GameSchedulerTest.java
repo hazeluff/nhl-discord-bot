@@ -4,11 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -18,7 +18,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.net.URI;
@@ -59,8 +58,8 @@ import com.hazeluff.discord.nhlbot.utils.HttpException;
 import com.hazeluff.discord.nhlbot.utils.HttpUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.TextChannel;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GameDayChannel.class)
@@ -79,9 +78,9 @@ public class GameSchedulerTest {
 	@Mock
 	GameTracker mockGameTracker1, mockGameTracker2, mockGameTracker3, mockGameTracker4;
 	@Mock
-	IGuild mockGuild1, mockGuild2, mockGuild3;
+	Guild mockGuild1, mockGuild2, mockGuild3;
 	@Mock
-	IChannel mockChannel1, mockChannel2, mockChannel3, mockChannel4;
+	TextChannel mockChannel1, mockChannel2, mockChannel3, mockChannel4;
 
 	private GameScheduler gameScheduler;
 	private GameScheduler spyGameScheduler;
@@ -127,9 +126,11 @@ public class GameSchedulerTest {
 		when(mockChannel2.getName()).thenReturn(GAME_CHANNEL_NAME2);
 		when(mockChannel3.getName()).thenReturn(GAME_CHANNEL_NAME3);
 		when(mockChannel4.getName()).thenReturn(GAME_CHANNEL_NAME4);
-		when(mockGuild1.getLongID()).thenReturn(GUILD_ID1);
-		when(mockPreferencesManager.getTeams(GUILD_ID1)).thenReturn(Arrays.asList(TEAM, TEAM2));
-		when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1, mockChannel2, mockChannel3));
+		// when(mockGuild1.getLongID()).thenReturn(GUILD_ID1);
+		// when(mockPreferencesManager.getTeams(GUILD_ID1)).thenReturn(Arrays.asList(TEAM,
+		// TEAM2));
+		// when(mockGuild1.getChannels()).thenReturn(Arrays.asList(mockChannel1,
+		// mockChannel2, mockChannel3));
 		GAMES = Utils.asSet(mockGame1, mockGame2, mockGame3);
 		GAME_TRACKERS = new HashMap<>();
 		GAME_TRACKERS.put(mockGame1, mockGameTracker1);
@@ -138,9 +139,9 @@ public class GameSchedulerTest {
 		gameScheduler = new GameScheduler(GAMES, GAME_TRACKERS);
 		spyGameScheduler = spy(gameScheduler);
 
-		doReturn(mockGameTracker1).when(spyGameScheduler).getGameTracker(mockGame1);
-		doReturn(mockGameTracker2).when(spyGameScheduler).getGameTracker(mockGame2);
-		doReturn(mockGameTracker3).when(spyGameScheduler).getGameTracker(mockGame3);
+		doReturn(mockGameTracker1).when(spyGameScheduler).toGameTracker(mockGame1);
+		doReturn(mockGameTracker2).when(spyGameScheduler).toGameTracker(mockGame2);
+		doReturn(mockGameTracker3).when(spyGameScheduler).toGameTracker(mockGame3);
 	}
 
 	@Test
@@ -230,9 +231,6 @@ public class GameSchedulerTest {
 
 		verify(spyGameScheduler, times(1)).updateGameSchedule();
 		verify(spyGameScheduler, times(1)).updateTrackers();
-
-		verifyStatic(times(4));
-		Utils.sleep(GameScheduler.UPDATE_RATE);
 	}
 
 	@Test
@@ -503,9 +501,8 @@ public class GameSchedulerTest {
 	}
 
 	@Test
-	@PrepareForTest({ GameTracker.class, GameDayChannel.class })
-	public void createGameTrackerShouldReturnExistingGameTracker() {
-		LOGGER.info("createGameTrackerShouldReturnExistingGameTracker");
+	public void getGameTrackerShouldReturnExistingGameTracker() {
+		LOGGER.info("getGameTrackerShouldReturnExistingGameTracker");
 		when(mockGame1.getGamePk()).thenReturn(1);
 		when(mockGame2.getGamePk()).thenReturn(2);
 		when(mockGame3.getGamePk()).thenReturn(3);
@@ -513,15 +510,15 @@ public class GameSchedulerTest {
 		gameTrackers.put(mockGame1, mockGameTracker1);
 		gameTrackers.put(mockGame2, mockGameTracker2);
 		gameTrackers.put(mockGame3, mockGameTracker3);
-		mockStatic(GameTracker.class);
 
-		GameScheduler gameScheduler = new GameScheduler(null, gameTrackers);
+		GameScheduler spyGameScheduler = spy(new GameScheduler(null, gameTrackers));
+		doReturn(null).when(spyGameScheduler).toGameTracker(any(Game.class));
 
-		assertEquals(mockGameTracker1, gameScheduler.getGameTracker(mockGame1));
-		assertEquals(mockGameTracker2, gameScheduler.getGameTracker(mockGame2));
-		assertEquals(mockGameTracker3, gameScheduler.getGameTracker(mockGame3));
-		verifyStatic(never());
-		GameTracker.get(any(Game.class));
+		assertEquals(mockGameTracker1, spyGameScheduler.getGameTracker(mockGame1));
+		assertEquals(mockGameTracker2, spyGameScheduler.getGameTracker(mockGame2));
+		assertEquals(mockGameTracker3, spyGameScheduler.getGameTracker(mockGame3));
+
+		verify(spyGameScheduler, never()).toGameTracker(any(Game.class));
 	}
 
 	@Test

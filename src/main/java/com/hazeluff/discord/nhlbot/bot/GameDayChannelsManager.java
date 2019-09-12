@@ -246,7 +246,7 @@ public class GameDayChannelsManager extends Thread {
 		}
 
 		if (!removedChannel) {
-			nhlBot.getDiscordManager().deleteChannel(channel);
+			DiscordManager.deleteChannel(channel);
 		}
 	}
 
