@@ -68,10 +68,10 @@ public class SubscribeCommand extends Command {
 		nhlBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
 		nhlBot.getPreferencesManager().subscribeGuild(guildId, team);
 		nhlBot.getGameDayChannelsManager().initChannels(guild);
-		return getSubscribedMessage(team, guildId);
+		return buildSubscribedMessage(team, guildId);
 	}
 
-	Consumer<MessageCreateSpec> getSubscribedMessage(Team team, long guildId) {
+	Consumer<MessageCreateSpec> buildSubscribedMessage(Team team, long guildId) {
 		List<Team> subscribedTeams = nhlBot.getPreferencesManager().getGuildPreferences(guildId)
 				.getTeams();
 		if (subscribedTeams.size() > 1) {

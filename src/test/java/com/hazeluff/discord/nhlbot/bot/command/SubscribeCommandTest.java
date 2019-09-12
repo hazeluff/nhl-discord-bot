@@ -65,6 +65,8 @@ public class SubscribeCommandTest {
 				Collections.emptyList());
 		
 		assertEquals(SubscribeCommand.MUST_HAVE_PERMISSIONS_MESSAGE, result);
+		verifyNoMoreInteractions(mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getPreferencesManager(),
+				mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getDiscordManager());
 	}
 
 	@Test
@@ -76,6 +78,8 @@ public class SubscribeCommandTest {
 				Arrays.asList("subscribe"));
 
 		assertEquals(SubscribeCommand.SPECIFY_TEAM_MESSAGE, result);
+		verifyNoMoreInteractions(mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getPreferencesManager(),
+				mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getDiscordManager());
 	}
 
 	@Test
@@ -87,6 +91,8 @@ public class SubscribeCommandTest {
 				Arrays.asList("subscribe", "help"));
 
 		assertEquals(SubscribeCommand.HELP_MESSAGE, result);
+		verifyNoMoreInteractions(mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getPreferencesManager(),
+				mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getDiscordManager());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -116,7 +122,7 @@ public class SubscribeCommandTest {
 		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockGuild, mockMessage);
 		Consumer<MessageCreateSpec> subscribedMessage = mock(Consumer.class);
 		Team team = Team.BUFFALO_SABRES;
-		doReturn(subscribedMessage).when(spySubscribeCommand).getSubscribedMessage(team, guildId);
+		doReturn(subscribedMessage).when(spySubscribeCommand).buildSubscribedMessage(team, guildId);
 
 		Consumer<MessageCreateSpec> result = spySubscribeCommand.getReply(mockGuild, null, mockMessage,
 				Arrays.asList("subscribe", team.getCode()));

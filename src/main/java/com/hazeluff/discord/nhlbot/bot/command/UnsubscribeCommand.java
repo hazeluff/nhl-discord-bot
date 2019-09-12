@@ -41,17 +41,7 @@ public class UnsubscribeCommand extends Command {
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
-			StringBuilder response = new StringBuilder(
-					"Unsubscribe from any of your subscribed teams by typing `?unsubscribe [team]`, "
-							+ "where [team] is the one of the three letter codes for your subscribed teams below: ")
-									.append("```");
-			List<Team> teams = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong()).getTeams();
-			for (Team team : teams) {
-				response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
-			}
-			response.append("all - all teams");
-			response.append("```\n");
-			return spec -> spec.setContent(response.toString());
+			return buildHelpMessage(guild);
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("all")) {
@@ -69,6 +59,24 @@ public class UnsubscribeCommand extends Command {
 		Team team = Team.parse(arguments.get(1));
 		nhlBot.getPreferencesManager().unsubscribeGuild(guild.getId().asLong(), team);
 		nhlBot.getGameDayChannelsManager().updateChannels(guild);
+		return buildUnsubscribeMessage(team);
+	}
+
+	Consumer<MessageCreateSpec> buildHelpMessage(Guild guild) {
+		StringBuilder response = new StringBuilder(
+				"Unsubscribe from any of your subscribed teams by typing `?unsubscribe [team]`, "
+						+ "where [team] is the one of the three letter codes for your subscribed teams below: ")
+								.append("```");
+		List<Team> teams = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong()).getTeams();
+		for (Team team : teams) {
+			response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
+		}
+		response.append("all - all teams");
+		response.append("```\n");
+		return spec -> spec.setContent(response.toString());
+	}
+
+	Consumer<MessageCreateSpec> buildUnsubscribeMessage(Team team) {
 		return spec -> spec
 				.setContent("This server is now unsubscribed from games of the **" + team.getFullName() + "**.");
 	}
