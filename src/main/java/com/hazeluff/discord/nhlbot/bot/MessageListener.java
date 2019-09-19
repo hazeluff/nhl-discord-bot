@@ -39,11 +39,6 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.MessageCreateSpec;
 
-/**
- * Listens for MessageReceivedEvents and will process the messages for commands.
- * 
- * Commands need to be in format '@NHLBot command'.
- */
 public class MessageListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
 
@@ -53,7 +48,7 @@ public class MessageListener {
 			.setContent("FUCK MESSIER");
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
-	private Map<TextChannel, List<Long>> messierCounter = new HashMap<>();
+	private Map<Snowflake, List<Long>> messierCounter = new HashMap<>();
 	private final List<Command> commands;
 	private final List<Topic> topics;
 
@@ -196,7 +191,6 @@ public class MessageListener {
 	 */
 	List<String> parseToCommandArguments(Message message) {
 		String messageContent = message.getContent().orElse("");
-
 		if (messageContent.startsWith(nhlBot.getMention())
 				|| messageContent.startsWith(nhlBot.getNicknameMentionId())
 				|| messageContent.toLowerCase().startsWith("?nhlbot")) {
@@ -258,17 +252,18 @@ public class MessageListener {
 	 *         false, otherwise (but should be never).
 	 */
 	public boolean shouldFuckMessier(TextChannel channel, Message message) {
-		String messageLowerCase = message.getContent().orElse(null);
-		if (messageLowerCase == null) {
+		Snowflake channelId = channel.getId();
+		String messageContent = message.getContent().orElse(null);
+		if (messageContent == null) {
 			return false;
 		}
 
-		if (!messierCounter.containsKey(channel)) {
-			messierCounter.put(channel, new ArrayList<Long>());
+		if (!messierCounter.containsKey(channelId)) {
+			messierCounter.put(channelId, new ArrayList<Long>());
 		}
-		List<Long> counter = messierCounter.get(channel);
-		if (messageLowerCase.contains("messier")) {
-			long currentTime = Utils.getCurrentTime();
+		List<Long> counter = messierCounter.get(channelId);
+		if (messageContent.toLowerCase().contains("messier")) {
+			long currentTime = getCurrentTime();
 			counter.add(currentTime);
 			counter.removeIf(time -> currentTime - time > FUCK_MESSIER_COUNT_LIFESPAN);
 			if (counter.size() >= 5) {
@@ -277,5 +272,9 @@ public class MessageListener {
 			}
 		}
 		return false;
+	}
+
+	long getCurrentTime() {
+		return Utils.getCurrentTime();
 	}
 }
