@@ -2,6 +2,7 @@ package com.hazeluff.discord.nhlbot.bot;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public class NHLBot extends Thread {
 	private PreferencesManager preferencesManager;
 	private GameScheduler gameScheduler;
 	private GameDayChannelsManager gameDayChannelsManager;
-	private boolean ready = false;
+	private AtomicBoolean ready = new AtomicBoolean(false);
 
 	private NHLBot() {
 		discordClient = null;
@@ -72,18 +73,18 @@ public class NHLBot extends Thread {
 		NHLBot nhlBot = new NHLBot();
 		nhlBot.gameScheduler = gameScheduler;
 
+		// Init MongoClient/GuildPreferences
+		nhlBot.initPreferences();
+		// Init Discord Client
 		nhlBot.initDiscord(botToken);
 
-		while (!nhlBot.ready) {
+		while (!nhlBot.ready.get()) {
 			LOGGER.info("Waiting for Discord client to be ready.");
 			Utils.sleep(5000);
 		}
 
 		nhlBot.discordManager.changePresence(STARTING_UP_PRESENCE);
 		LOGGER.info("NHLBot. id [" + nhlBot.discordManager.getId() + "]");
-
-		// Init MongoClient/GuildPreferences
-		nhlBot.initPreferences();
 
 		// Start the Game Day Channels Manager
 		nhlBot.initGameDayChannelsManager();
@@ -112,13 +113,18 @@ public class NHLBot extends Thread {
 		return nhlBot;
 	}
 	
+	/**
+	 * This needs to be done in its own Thread. login().block() hold the execution.
+	 * 
+	 * @param botToken
+	 */
 	public void initDiscord(String botToken) {
 		// Init DiscordClient and DiscordManager
 		discordClient = new DiscordClientBuilder(botToken).build();
 		discordManager = new DiscordManager(discordClient);
 		
 		discordClient.getEventDispatcher().on(ReadyEvent.class)
-				.subscribe(event -> ready = true);
+				.subscribe(event -> ready.set(true));
 				
 		MessageListener messageListener = new MessageListener(this);
 		discordClient.getEventDispatcher()
@@ -127,7 +133,8 @@ public class NHLBot extends Thread {
 				.subscribe(t -> {
 					Consumer<MessageCreateSpec> replySpec = messageListener.getReply(t.getT1(), t.getT2(), t.getT3());
 					if (replySpec != null) {
-						t.getT2().createMessage(replySpec);
+						// Send the message
+						t.getT2().createMessage(replySpec).block();
 					}
 				});
 
