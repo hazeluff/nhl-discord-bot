@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import com.hazeluff.discord.nhlbot.nhl.GameTracker;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
+import discord4j.core.object.entity.Category;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.TextChannel;
 
@@ -111,11 +113,12 @@ public class GameDayChannelsManager extends Thread {
 
 	@Override
 	public void run() {
+		LOGGER.info("GameDayChannelsManager Thread started.");
 		LocalDate lastUpdate = null;
 		while (!isStop()) {
 			LocalDate schedulerUpdate = nhlBot.getGameScheduler().getLastUpdate();
 			if (schedulerUpdate == null) {
-				LOGGER.debug("Waiting for GameScheduler to initialize...");
+				LOGGER.info("Waiting for GameScheduler to initialize...");
 				Utils.sleep(INIT_UPDATE_RATE);
 			} else if (lastUpdate == null || schedulerUpdate.compareTo(lastUpdate) > 0) {
 				LOGGER.info("Updating Channels...");
@@ -137,7 +140,7 @@ public class GameDayChannelsManager extends Thread {
 		LOGGER.info("Creating channels for latest games.");
 		for (Team team : Team.values()) {
 			List<Game> activeGames = nhlBot.getGameScheduler().getActiveGames(team);
-			List<Guild> guilds = nhlBot.getPreferencesManager().getSubscribedGuilds(team);
+			List<Guild> guilds = getSubscribedGuilds(team);
 			for (Guild guild : guilds) {
 				for (Game game : activeGames) {
 					createChannel(game, guild);
@@ -152,14 +155,29 @@ public class GameDayChannelsManager extends Thread {
 	public void createChannels(Game game) {
 		LOGGER.info("Creating channels for game [" + GameDayChannel.getChannelName(game) + "]");
 		for (Team team : game.getTeams()) {
-			for (Guild guild : nhlBot.getPreferencesManager().getSubscribedGuilds(team)) {
+			for (Guild guild : getSubscribedGuilds(team)) {
 				createChannel(game, guild);
 			}
 		}
 	}
 
 	/**
-	 * Creates a GameDayChannel for the given game-guild pair. If the channel exist, the existing one will be returned.
+	 * Gets the guilds that are subscribed to the specified team.
+	 * 
+	 * @param team
+	 *            team that the guilds are subscribed to
+	 * @return list of IGuilds
+	 */
+	public List<Guild> getSubscribedGuilds(Team team) {
+		return nhlBot.getDiscordManager().getGuilds().stream().filter(guild -> {
+			long guildId = guild.getId().asLong();
+			return nhlBot.getPreferencesManager().getGuildPreferences(guildId).getTeams().contains(team);
+		}).collect(Collectors.toList());
+	}
+
+	/**
+	 * Creates a GameDayChannel for the given game-guild pair. If the channel exist,
+	 * the existing one will be returned.
 	 * 
 	 * @param game
 	 * @param guild
@@ -329,7 +347,8 @@ public class GameDayChannelsManager extends Thread {
 	}
 
 	public static boolean isInGameDayCategory(TextChannel channel) {
-		return DiscordManager.getCategory(channel).getName().equalsIgnoreCase(GAME_DAY_CHANNEL_CATEGORY_NAME);
+		Category category = DiscordManager.getCategory(channel);
+		return category == null ? false : category.getName().equalsIgnoreCase(GAME_DAY_CHANNEL_CATEGORY_NAME);
 	}
 
 	/**

@@ -96,7 +96,6 @@ public class GameSchedulerTest {
 	private static final Team TEAM2 = Team.EDMONTON_OILERS;
 	private Set<Game> GAMES;
 	private Map<Game, GameTracker> GAME_TRACKERS;
-	private static final long GUILD_ID1 = Utils.getRandomLong();
 	
 	@Before
 	public void setup() throws Exception {

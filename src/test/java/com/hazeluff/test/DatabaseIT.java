@@ -38,7 +38,6 @@ public abstract class DatabaseIT {
 	public void before() {
 		mongoDatabase = getClient().getDatabase(Config.MONGO_TEST_DATABASE_NAME);
 		nhlBot = mock(NHLBot.class);
-		when(nhlBot.getMongoDatabase()).thenReturn(mongoDatabase);
 		when(nhlBot.getDiscordManager()).thenReturn(mock(DiscordManager.class));
 	}
 

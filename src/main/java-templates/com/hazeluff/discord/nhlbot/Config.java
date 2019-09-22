@@ -20,7 +20,7 @@ public class Config {
 	/**
 	 * The starting year of season (e.g. 2017 for the 2017-2018 season)
 	 */
-	public static final int SEASON_YEAR = 2018;
+	public static final int SEASON_YEAR = 2019;
 	
 	public static final String GIT_URL = "http://nhlbot.hazeluff.com";
 	public static final String DONATION_URL = "https://paypal.me/hazeluff";

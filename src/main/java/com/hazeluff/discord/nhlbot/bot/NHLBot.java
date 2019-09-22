@@ -2,7 +2,7 @@ package com.hazeluff.discord.nhlbot.bot;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -13,7 +13,6 @@ import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.utils.Utils;
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import discord4j.core.DiscordClient;
@@ -38,29 +37,21 @@ public class NHLBot extends Thread {
 
 	private static long UPDATE_PLAY_STATUS_INTERVAL = 3600000l;
 
-	private DiscordClient discordClient;
-	private DiscordManager discordManager;
-	private MongoDatabase mongoDatabase;
+	private AtomicReference<DiscordManager> discordManager = new AtomicReference<>();
 	private PreferencesManager preferencesManager;
 	private GameScheduler gameScheduler;
 	private GameDayChannelsManager gameDayChannelsManager;
-	private AtomicBoolean ready = new AtomicBoolean(false);
 
 	private NHLBot() {
-		discordClient = null;
-		discordManager = null;
-		mongoDatabase = null;
 		preferencesManager = null;
 		gameScheduler = null;
 		gameDayChannelsManager = null;
 	}
 
-	NHLBot(DiscordClient discordClient, DiscordManager discordManager, MongoDatabase mongoDatabase,
+	NHLBot(DiscordManager discordManager, MongoDatabase mongoDatabase,
 			PreferencesManager preferencesManager, GameScheduler gameScheduler,
 			GameDayChannelsManager gameDayChannelsManager) {
-		this.discordClient = discordClient;
-		this.discordManager = discordManager;
-		this.mongoDatabase = mongoDatabase;
+		this.discordManager.set(discordManager);
 		this.preferencesManager = preferencesManager;
 		this.gameScheduler = gameScheduler;
 		this.gameDayChannelsManager = gameDayChannelsManager;
@@ -78,13 +69,26 @@ public class NHLBot extends Thread {
 		// Init Discord Client
 		nhlBot.initDiscord(botToken);
 
-		while (!nhlBot.ready.get()) {
+		while (nhlBot.getDiscordManager() == null) {
 			LOGGER.info("Waiting for Discord client to be ready.");
 			Utils.sleep(5000);
 		}
 
-		nhlBot.discordManager.changePresence(STARTING_UP_PRESENCE);
-		LOGGER.info("NHLBot. id [" + nhlBot.discordManager.getId() + "]");
+		LOGGER.info("Attaching Listener.");
+		nhlBot.getDiscordManager().getClient().getEventDispatcher()
+				.on(MessageCreateEvent.class)
+				.flatMap(NHLBot::zipEvent)
+				.subscribe(t -> {
+					Consumer<MessageCreateSpec> replySpec = new MessageListener(nhlBot).getReply(
+							t.getT1(), t.getT2(), t.getT3());
+					if (replySpec != null) {
+						// Send the message
+						t.getT2().createMessage(replySpec).block();
+					}
+				});
+
+		nhlBot.getDiscordManager().changePresence(STARTING_UP_PRESENCE);
+		LOGGER.info("NHLBot. id [" + nhlBot.getDiscordManager().getId() + "]");
 
 		// Start the Game Day Channels Manager
 		nhlBot.initGameDayChannelsManager();
@@ -92,7 +96,7 @@ public class NHLBot extends Thread {
 		// Manage WelcomeChannels
 		LOGGER.info("Posting update to Discord channel.");
 		List<Long> supportGuilds = Arrays.asList(268247727400419329l, 276953120964083713l);
-		nhlBot.discordClient.getGuilds()
+		nhlBot.getDiscordManager().getClient().getGuilds()
 				.filter(guild -> supportGuilds.contains(guild.getId().asLong()))
 				.map(Guild::getChannels)
 				.flatMap(channels -> channels.filter(channel -> 
@@ -106,7 +110,7 @@ public class NHLBot extends Thread {
 			Utils.sleep(2000);
 		}
 
-		nhlBot.discordManager.changePresence(ONLINE_PRESENCE);
+		nhlBot.getDiscordManager().changePresence(ONLINE_PRESENCE);
 
 		nhlBot.start();
 
@@ -119,28 +123,22 @@ public class NHLBot extends Thread {
 	 * @param botToken
 	 */
 	public void initDiscord(String botToken) {
-		// Init DiscordClient and DiscordManager
-		discordClient = new DiscordClientBuilder(botToken).build();
-		discordManager = new DiscordManager(discordClient);
-		
-		discordClient.getEventDispatcher().on(ReadyEvent.class)
-				.subscribe(event -> ready.set(true));
-				
-		MessageListener messageListener = new MessageListener(this);
-		discordClient.getEventDispatcher()
-				.on(MessageCreateEvent.class)
-				.flatMap(NHLBot::zipEvent)
-				.subscribe(t -> {
-					Consumer<MessageCreateSpec> replySpec = messageListener.getReply(t.getT1(), t.getT2(), t.getT3());
-					if (replySpec != null) {
-						// Send the message
-						t.getT2().createMessage(replySpec).block();
-					}
-				});
+		new Thread(() -> {
+			LOGGER.info("Initializing Discord.");
+			// Init DiscordClient and DiscordManager
+			DiscordClient discordClient = new DiscordClientBuilder(botToken).build();
+			
+			discordClient.getEventDispatcher().on(ReadyEvent.class)
+					.subscribe(event -> {
+						discordManager.set(new DiscordManager(discordClient));
+						LOGGER.info("Discord Client is ready.");
+					});
 
-		// Login
-		LOGGER.info("Logging into Discord.");
-		discordClient.login().block();
+			// Login
+			LOGGER.info("Logging into Discord.");
+			discordClient.login().block();
+		}).start();
+		LOGGER.info("Discord Initializer started.");
 	}
 
 	/**
@@ -163,29 +161,20 @@ public class NHLBot extends Thread {
 	@Override
 	public void run() {
 		while (!isInterrupted()) {
-			discordManager.changePresence(ONLINE_PRESENCE);
+			getDiscordManager().changePresence(ONLINE_PRESENCE);
 			Utils.sleep(UPDATE_PLAY_STATUS_INTERVAL);
 		}
 	}
 
 	void initPreferences() {
-		this.mongoDatabase = getMongoDatabaseInstance();
-		this.preferencesManager = PreferencesManager.getInstance(this);
+		LOGGER.info("Initializing Preferences.");
+		this.preferencesManager = PreferencesManager.getInstance();
 	}
 
 	void initGameDayChannelsManager() {
+		LOGGER.info("Initializing GameDayChannelsManager.");
 		this.gameDayChannelsManager = new GameDayChannelsManager(this);
 		gameDayChannelsManager.start();
-	}
-
-	@SuppressWarnings("resource")
-	static MongoDatabase getMongoDatabaseInstance() {
-		// No need to close the connection.
-		return new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT).getDatabase(Config.MONGO_DATABASE_NAME);
-	}
-
-	public MongoDatabase getMongoDatabase() {
-		return mongoDatabase;
 	}
 
 	public PreferencesManager getPreferencesManager() {
@@ -193,7 +182,7 @@ public class NHLBot extends Thread {
 	}
 
 	public DiscordManager getDiscordManager() {
-		return discordManager;
+		return discordManager.get();
 	}
 
 	public GameScheduler getGameScheduler() {
@@ -211,7 +200,7 @@ public class NHLBot extends Thread {
 	 * @return
 	 */
 	public String getMention() {
-		return "<@" + discordManager.getId().asString() + ">";
+		return "<@" + getDiscordManager().getId().asString() + ">";
 	}
 
 	/**
@@ -221,6 +210,6 @@ public class NHLBot extends Thread {
 	 * @return
 	 */
 	public String getNicknameMentionId() {
-		return "<@!" + discordManager.getId().asString() + ">";
+		return "<@!" + getDiscordManager().getId().asString() + ">";
 	}
 }
