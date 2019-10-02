@@ -118,7 +118,6 @@ public class MessageListener {
 
 		Consumer<MessageCreateSpec> commandReply = null;
 		if ((commandReply = replyToCommand(event)) != null) {
-			System.out.println(commandReply);
 			return Mono.just(zipReply(commandReply, event));
 		}
 
