@@ -1,17 +1,16 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.verifyNoMoreInteractions;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.function.Consumer;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,37 +26,24 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
-import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.util.Snowflake;
+import discord4j.core.spec.MessageCreateSpec;
 
 @RunWith(PowerMockRunner.class)
 public class SubscribeCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SubscribeCommandTest.class);
 
-	private static final long GUILD_ID = Utils.getRandomLong();
-	private static final String CHANNEL_NAME = "ChannelName";
-	private static final Team TEAM = Team.COLORADO_AVALANCH;
-	private static final long USER_ID_AUTHOR = Utils.getRandomLong();
-	private static final long USER_ID_OWNER = Utils.getRandomLong();
-
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
 	@Mock
-	private IMessage mockMessage;
+	private Message mockMessage;
 	@Mock
-	private IChannel mockChannel;
-	@Mock
-	private IGuild mockGuild;
+	private Guild mockGuild;
 	@Mock
 	private Game mockGame;
-	@Mock
-	private IUser mockAuthorUser;
-	@Mock
-	private IUser mockOwnerUser;
 	@Captor
 	private ArgumentCaptor<String> captorString;
 
@@ -68,94 +54,82 @@ public class SubscribeCommandTest {
 	public void setup() {
 		subscribeCommand = new SubscribeCommand(mockNHLBot);
 		spySubscribeCommand = spy(subscribeCommand);
-		when(mockMessage.getChannel()).thenReturn(mockChannel);
-		when(mockMessage.getGuild()).thenReturn(mockGuild);
-		when(mockChannel.getName()).thenReturn(CHANNEL_NAME);
-		when(mockGuild.getLongID()).thenReturn(GUILD_ID);
-		when(mockMessage.getAuthor()).thenReturn(mockAuthorUser);
-		when(mockGuild.getOwner()).thenReturn(mockOwnerUser);
-		when(mockAuthorUser.getLongID()).thenReturn(USER_ID_AUTHOR);
-		when(mockOwnerUser.getLongID()).thenReturn(USER_ID_OWNER);
 	}
 
 	@Test
-	public void isAcceptShouldReturnTrueWhenCommandIsSubscribe() {
-		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsSubscribe");
-		assertTrue(subscribeCommand.isAccept(null, Arrays.asList("subscribe")));
-	}
+	public void replyShouldReturnMustHavePermissionsMessage() {
+		LOGGER.info("replyShouldReturnMustHavePermissionsMessage");
+		doReturn(false).when(spySubscribeCommand).hasSubscribePermissions(mockGuild, mockMessage);
 
-	@Test
-	public void isAcceptShouldReturnFalseWhenCommandIsNotSubscribe() {
-		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotSubscribe");
-		assertFalse(subscribeCommand.isAccept(null, Arrays.asList("asdf")));
-	}
-
-	@Test
-	public void replyToShouldSendUserMustBeAdminToSubscribeMessageWhenUserDoesNotHavePermissions() {
-		LOGGER.info("replyToShouldSendUserMustBeAdminToSubscribeMessageWhenUserDoesNotHavePermissions");
-		doReturn(false).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
-
-		spySubscribeCommand.replyTo(mockMessage, null);
+		Consumer<MessageCreateSpec> result = spySubscribeCommand.getReply(mockGuild, null, mockMessage,
+				Collections.emptyList());
 		
-		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel,
-				SubscribeCommand.MUST_HAVE_PERMISSIONS_MESSAGE);
+		assertEquals(SubscribeCommand.MUST_HAVE_PERMISSIONS_MESSAGE, result);
+		verifyNoMoreInteractions(mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getPreferencesManager(),
+				mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getDiscordManager());
 	}
 
 	@Test
-	public void replyToShouldSendSpecifyTeamMessageWhenMissingTeamArgument() {
-		LOGGER.info("replyToShouldSendSpecifyTeamMessageWhenMissingTeamArgument");
-		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
+	public void replyShouldReturnSpecifyTeamMessage() {
+		LOGGER.info("replyShouldReturnSpecifyTeamMessage");
+		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockGuild, mockMessage);
 
-		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe"));
+		Consumer<MessageCreateSpec> result = spySubscribeCommand.getReply(mockGuild, null, mockMessage,
+				Arrays.asList("subscribe"));
 
-		verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, SubscribeCommand.SPECIFY_TEAM_MESSAGE);
+		assertEquals(SubscribeCommand.SPECIFY_TEAM_MESSAGE, result);
+		verifyNoMoreInteractions(mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getPreferencesManager(),
+				mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getDiscordManager());
 	}
 
 	@Test
-	public void replyToShouldSendHelpMessageWhenArgumentIsHelp() {
-		LOGGER.info("replyToShouldSendHelpMessageWhenArgumentIsHelp");
-		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
+	public void replyShouldReturnHelpMessage() {
+		LOGGER.info("replyShouldReturnHelpMessage");
+		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockGuild, mockMessage);
 
-		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe", "help"));
+		Consumer<MessageCreateSpec> result = spySubscribeCommand.getReply(mockGuild, null, mockMessage,
+				Arrays.asList("subscribe", "help"));
 
-		verify(mockNHLBot.getGameDayChannelsManager(), never()).deleteInactiveGuildChannels(any(IGuild.class));
-		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
-		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
-		String message = captorString.getValue();
-		assertTrue(message.contains("`?subscribe [team]`"));
-		for(Team team: Team.values()) {
-			assertTrue(message.contains(team.getCode()));
-			assertTrue(message.contains(team.getFullName()));
-		}
+		assertEquals(SubscribeCommand.HELP_MESSAGE, result);
+		verifyNoMoreInteractions(mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getPreferencesManager(),
+				mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getDiscordManager());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
-	public void replyToShouldSendMessageAndInvokeClassesWhenChannelIsNotPrivateAndTeamIsValid() {
-		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenChannelIsNotPrivateAndTeamIsValid");
-		when(mockChannel.isPrivate()).thenReturn(false);
-		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
+	public void replyShouldReturnInvalidCodeMessage() {
+		LOGGER.info("replyShouldReturnInvalidCodeMessage");
+		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockGuild, mockMessage);
+		Consumer<MessageCreateSpec> invalidCodeMessage = mock(Consumer.class);
+		String invalidTeam = "asdf";
+		doReturn(invalidCodeMessage).when(spySubscribeCommand).getInvalidCodeMessage(invalidTeam, "subscribe");
 
-		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe", TEAM.getCode()));
+		Consumer<MessageCreateSpec> result = spySubscribeCommand.getReply(mockGuild, null, mockMessage,
+				Arrays.asList("subscribe", invalidTeam));
 
-		verify(mockNHLBot.getGameDayChannelsManager()).deleteInactiveGuildChannels(any(IGuild.class));
-		verify(mockNHLBot.getPreferencesManager()).subscribeGuild(GUILD_ID, TEAM);
+		assertEquals(invalidCodeMessage, result);
+		verifyNoMoreInteractions(mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getPreferencesManager(),
+				mockNHLBot.getGameDayChannelsManager(), mockNHLBot.getDiscordManager());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void replyShouldReturnMessage() {
+		LOGGER.info("replyShouldReturnMessage");
+		long guildId = 2128957234l;
+		when(mockGuild.getId()).thenReturn(mock(Snowflake.class));
+		when(mockGuild.getId().asLong()).thenReturn(guildId);
+		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockGuild, mockMessage);
+		Consumer<MessageCreateSpec> subscribedMessage = mock(Consumer.class);
+		Team team = Team.BUFFALO_SABRES;
+		doReturn(subscribedMessage).when(spySubscribeCommand).buildSubscribedMessage(team, guildId);
+
+		Consumer<MessageCreateSpec> result = spySubscribeCommand.getReply(mockGuild, null, mockMessage,
+				Arrays.asList("subscribe", team.getCode()));
+
+		assertEquals(subscribedMessage, result);
+		verify(mockNHLBot.getGameDayChannelsManager()).deleteInactiveGuildChannels(mockGuild);
+		verify(mockNHLBot.getPreferencesManager()).subscribeGuild(guildId, team);
 		verify(mockNHLBot.getGameDayChannelsManager()).initChannels(mockGuild);
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
-		assertTrue(captorString.getValue().contains(TEAM.getFullName()));
-	}
-
-	@Test
-	public void replyToShouldSendMessageAndInvokeClassesWhenTeamIsNotValid() {
-		LOGGER.info("replyToShouldSendMessageAndInvokeClassesWhenTeamIsNotValid");
-		doReturn(true).when(spySubscribeCommand).hasSubscribePermissions(mockMessage);
-
-		spySubscribeCommand.replyTo(mockMessage, Arrays.asList("subscribe", "ZZZ"));
-
-		verify(mockNHLBot.getGameDayChannelsManager(), never()).deleteInactiveGuildChannels(any(IGuild.class));
-		verify(mockNHLBot.getPreferencesManager(), never()).subscribeGuild(anyLong(), any(Team.class));
-		verify(mockNHLBot.getGameDayChannelsManager(), never()).initChannels(any(IGuild.class));
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(mockChannel), captorString.capture());
-		assertTrue(captorString.getValue().contains("`?subscribe help`"));
 	}
 }

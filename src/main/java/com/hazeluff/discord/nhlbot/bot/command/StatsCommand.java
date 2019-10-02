@@ -2,15 +2,17 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.spec.MessageCreateSpec;
 
 /**
  * Displays information about NHLBot and the author
@@ -28,35 +30,37 @@ public class StatsCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, List<String> arguments) {
-		IChannel channel = message.getChannel();
-
-		nhlBot.getDiscordManager().sendMessage(channel, buildMessage());
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
+		return getReply();
 	}
 
 	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
+	public boolean isAccept(Message message, List<String> arguments) {
 		return arguments.get(0).equalsIgnoreCase("stats");
 	}
 
-	public String buildMessage() {
-		String message = null;
-		List<IGuild> guilds = nhlBot.getDiscordManager().getGuilds();
+	public Consumer<MessageCreateSpec> getReply() {
+		return spec -> spec.setContent(getReplyString());
+	}
+
+	public String getReplyString() {
+		String reply = "No guilds found...";
+		List<Guild> guilds = nhlBot.getDiscordManager().getGuilds();
 		if (guilds != null) {
 			int numGuilds = guilds.size() - excludedGuilds.size();
 			int numUsers = 0;
-			for (IGuild guild : guilds) {
+			for (Guild g : guilds) {
 				try {
-					if (!excludedGuilds.contains(guild.getLongID())) {
-						numUsers += guild.getTotalMemberCount();
+					if (!excludedGuilds.contains(g.getId().asLong())) {
+						numUsers += g.getMemberCount().orElse(0);
 					}
 				} catch (Exception e) {
 					LOGGER.warn("Exception happened.", e);
 				}
 			}
-			message = String.format("**Stats**\nGuilds: %s\nUsers: %s", numGuilds, numUsers);
+			reply = String.format("**Stats**\nGuilds: %s\nUsers: %s", numGuilds, numUsers);
 		}
-		return message;
+		return reply;
 	}
-
 }

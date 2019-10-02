@@ -3,7 +3,8 @@ package com.hazeluff.discord.nhlbot.bot;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
@@ -14,7 +15,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -46,8 +46,8 @@ import com.hazeluff.discord.nhlbot.nhl.Team;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.TextChannel;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(DateUtils.class)
@@ -69,9 +69,9 @@ public class GameDayChannelTest {
 	@Mock
 	Game mockGame;
 	@Mock
-	IGuild mockGuild;
+	Guild mockGuild;
 	@Mock
-	IChannel mockChannel;
+	TextChannel mockChannel;
 
 	Team team = Utils.getRandom(Team.class);
 
@@ -453,13 +453,14 @@ public class GameDayChannelTest {
 		when(mockGame.getDate()).thenReturn(mockGameTime);
 		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(7200000l, 3500000l,
 				3400000l, 1700000l, 1600000l, 500000l, 400000l, 0l);
+		doReturn(null).when(spyGameDayChannel).sendMessage(anyString());
 
-		gameDayChannel.sendReminders();
+		spyGameDayChannel.sendReminders();
 
-		InOrder inOrder = inOrder(mockNHLBot.getDiscordManager());
-		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "60 minutes till puck drop.");
-		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "30 minutes till puck drop.");
-		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "10 minutes till puck drop.");
+		InOrder inOrder = inOrder(spyGameDayChannel);
+		inOrder.verify(spyGameDayChannel).sendMessage("60 minutes till puck drop.");
+		inOrder.verify(spyGameDayChannel).sendMessage("30 minutes till puck drop.");
+		inOrder.verify(spyGameDayChannel).sendMessage("10 minutes till puck drop.");
 	}
 
 	@Test
@@ -473,18 +474,19 @@ public class GameDayChannelTest {
 		when(mockGame.getDate()).thenReturn(mockGameTime);
 		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(1900000l, 1700000l,
 				500000l, 0l);
+		doReturn(null).when(spyGameDayChannel).sendMessage(anyString());
 
-		gameDayChannel.sendReminders();
+		spyGameDayChannel.sendReminders();
 
-		InOrder inOrder = inOrder(mockNHLBot.getDiscordManager());
-		inOrder.verify(mockNHLBot.getDiscordManager(), never()).sendMessage(mockChannel, "60 minutes till puck drop.");
-		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "30 minutes till puck drop.");
-		inOrder.verify(mockNHLBot.getDiscordManager()).sendMessage(mockChannel, "10 minutes till puck drop.");
+		InOrder inOrder = inOrder(spyGameDayChannel);
+		inOrder.verify(spyGameDayChannel, never()).sendMessage("60 minutes till puck drop.");
+		inOrder.verify(spyGameDayChannel).sendMessage("30 minutes till puck drop.");
+		inOrder.verify(spyGameDayChannel).sendMessage("10 minutes till puck drop.");
 	}
 
 	@Test
 	@PrepareForTest({ DateUtils.class, ZonedDateTime.class, Utils.class })
-	public void sendRemindersShouldSleepUntilNearStartOfGame() throws InterruptedException {
+	public void sendRemindersShouldSleepUntilNearStartOfGame() throws Exception {
 		LOGGER.info("sendRemindersShouldSleepUntilNearStartOfGame");
 
 		ZonedDateTime mockCurrentTime = ZonedDateTime.of(0, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
@@ -496,9 +498,8 @@ public class GameDayChannelTest {
 				GameDayChannel.CLOSE_TO_START_THRESHOLD_MS + 1, GameDayChannel.CLOSE_TO_START_THRESHOLD_MS + 1,
 				GameDayChannel.CLOSE_TO_START_THRESHOLD_MS + 1, GameDayChannel.CLOSE_TO_START_THRESHOLD_MS - 1);
 
-		gameDayChannel.sendReminders();
-		verifyStatic(times(3));
-		Utils.sleep(GameDayChannel.IDLE_POLL_RATE_MS);
+		spyGameDayChannel.sendReminders();
+		verify(spyGameDayChannel, never()).sendMessage(anyString());
 	}
 
 	@Test

@@ -12,12 +12,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameEvent;
@@ -31,10 +33,11 @@ import com.hazeluff.discord.nhlbot.nhl.custommessages.CanucksCustomMessages;
 import com.hazeluff.discord.nhlbot.utils.DateUtils;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.ICategory;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Category;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.spec.TextChannelCreateSpec;
 
 public class GameDayChannel extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameDayChannel.class);
@@ -61,27 +64,25 @@ public class GameDayChannel extends Thread {
 		}
 	};
 
-	static final String GAME_DAY_CHANNEL_CATEGORY_NAME = "Game Day Channels";
-
 	private final NHLBot nhlBot;
 	private final GameTracker gameTracker;
 	private final Game game;
-	private final IGuild guild;
+	private final Guild guild;
 
-	private IChannel channel;
+	private TextChannel channel;
 
 	private List<GameEvent> events = new ArrayList<>();
 	private int eventsRetries = 0;
 
 	// Map<eventId, message>
-	private Map<Integer, IMessage> eventMessages = new HashMap<>();
+	private Map<Integer, Message> eventMessages = new HashMap<>();
 
-	private IMessage endOfGameMessage;
+	private Message endOfGameMessage;
 
 	private AtomicBoolean started = new AtomicBoolean(false);
 
-	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Game game, List<GameEvent> events, IGuild guild,
-			IChannel channel) {
+	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Game game, List<GameEvent> events, Guild guild,
+			TextChannel channel) {
 		setUncaughtExceptionHandler(new ExceptionHandler(GameDayChannelsManager.class));
 		this.nhlBot = nhlBot;
 		this.gameTracker = gameTracker;
@@ -91,15 +92,15 @@ public class GameDayChannel extends Thread {
 		this.channel = channel;
 	}
 
-	GameDayChannel(NHLBot nhlBot, Game game, IGuild guild) {
+	GameDayChannel(NHLBot nhlBot, Game game, Guild guild) {
 		this(nhlBot, null, game, game.getEvents(), guild, null);
 	}
 
-	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, IGuild guild) {
+	GameDayChannel(NHLBot nhlBot, GameTracker gameTracker, Guild guild) {
 		this(nhlBot, gameTracker, gameTracker.getGame(), gameTracker.getGame().getEvents(), guild, null);
 	}
 
-	public static GameDayChannel get(NHLBot nhlBot, GameTracker gameTracker, IGuild guild) {
+	public static GameDayChannel get(NHLBot nhlBot, GameTracker gameTracker, Guild guild) {
 		GameDayChannel gameDayChannel = new GameDayChannel(nhlBot, gameTracker, guild);
 		gameDayChannel.createChannel();
 		gameDayChannel.start();
@@ -177,7 +178,7 @@ public class GameDayChannel extends Thread {
 		LOGGER.info("Thread Completed");
 	}
 
-	public IGuild getGuild() {
+	public Guild getGuild() {
 		return guild;
 	}
 
@@ -187,25 +188,30 @@ public class GameDayChannel extends Thread {
 
 	void createChannel() {
 		String channelName = getChannelName();
-		Predicate<IChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
-		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID());
-		if (!guild.getChannels().stream().anyMatch(channelMatcher)) {
-			channel = nhlBot.getDiscordManager().createChannel(guild, channelName);
+		Predicate<TextChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
+		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+		if (!DiscordManager.getTextChannels(guild).stream().anyMatch(channelMatcher)) {
+			Consumer<TextChannelCreateSpec> channelSpec = spec -> spec
+					.setName(channelName)
+					.setTopic(preferences.getCheer());
+			channel = DiscordManager.createChannel(guild, channelSpec);
 			if (channel != null) {
-				nhlBot.getDiscordManager().changeTopic(channel, preferences.getCheer());
+				// TODO This can be done at creation.
 				ZoneId timeZone = preferences.getTimeZone();
-				IMessage message = sendMessage(getDetailsMessage(timeZone));
-				nhlBot.getDiscordManager().pinMessage(channel, message);
+				Message message = sendMessage(getDetailsMessage(timeZone));
+				DiscordManager.pinMessage(message);
 			}
 		} else {
 			LOGGER.debug("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
-			channel = guild.getChannels().stream().filter(channelMatcher).findAny().get();
+			channel = DiscordManager.getTextChannels(guild).stream().filter(channelMatcher).findAny().get();
 		}
 
+		// TODO This can be done at creation. We don't need to move the channel after
+		// creation.
 		if (channel != null) {
-			ICategory category = getCategory(guild, GAME_DAY_CHANNEL_CATEGORY_NAME);
+			Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
 			if (category != null) {
-				nhlBot.getDiscordManager().moveChannel(category, channel);
+				DiscordManager.moveChannel(category, channel);
 			}
 		}
 	}
@@ -220,8 +226,8 @@ public class GameDayChannel extends Thread {
 	 *            name of the category
 	 * @return the {@link ICategory}
 	 */
-	ICategory getCategory(IGuild guild, String categoryName) {
-		ICategory category = nhlBot.getDiscordManager().getCategory(guild, categoryName);
+	Category getCategory(Guild guild, String categoryName) {
+		Category category = DiscordManager.getCategory(guild, categoryName);
 		if (category == null) {
 			category = nhlBot.getDiscordManager().createCategory(guild, categoryName);
 		}
@@ -232,8 +238,8 @@ public class GameDayChannel extends Thread {
 	 * Stops the thread and deletes the channel from the Discord Guild.
 	 */
 	void stopAndRemoveGuildChannel() {
+		DiscordManager.deleteChannel(channel);
 		interrupt();
-		nhlBot.getDiscordManager().deleteChannel(channel);
 	}
 
 	/**
@@ -388,7 +394,7 @@ public class GameDayChannel extends Thread {
 	void sendEventMessage(GameEvent event) {
 		LOGGER.info("Sending message for event [" + event + "].");
 		String strMessage = buildEventMessage(event);
-		IMessage message = sendMessage(strMessage);
+		Message message = sendMessage(strMessage);
 		if (message != null) {
 			eventMessages.put(event.getId(), message);
 		}
@@ -409,8 +415,7 @@ public class GameDayChannel extends Thread {
 			LOGGER.warn("No message exists for the event: {}", event);
 		} else {
 			String message = buildEventMessage(event);
-			IMessage updatedMessage = nhlBot.getDiscordManager().updateMessage(eventMessages.get(event.getId()),
-					message);
+			Message updatedMessage = DiscordManager.updateMessage(eventMessages.get(event.getId()), message);
 			eventMessages.put(event.getId(), updatedMessage);
 		}
 	}
@@ -472,7 +477,7 @@ public class GameDayChannel extends Thread {
 	 */
 	void sendStartOfGameMessage() {
 		LOGGER.info("Sending start message.");
-		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID());
+		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
 		sendMessage("Game is about to start! " + preferences.getCheer());
 	}
 
@@ -486,12 +491,15 @@ public class GameDayChannel extends Thread {
 			}
 			if (endOfGameMessage != null) {
 				LOGGER.info("Sent end of game message for game. Pinning it...");
-				nhlBot.getDiscordManager().pinMessage(channel, endOfGameMessage);
+				DiscordManager.pinMessage(endOfGameMessage);
 			}
 		} else {
 			LOGGER.trace("End of game message already sent.");
 			String newEndOfGameMessage = buildEndOfGameMessage();
-			endOfGameMessage = nhlBot.getDiscordManager().updateMessage(endOfGameMessage, newEndOfGameMessage);
+			Message updatedMessage = DiscordManager.updateMessage(endOfGameMessage, newEndOfGameMessage);
+			if (updatedMessage != null) {
+				endOfGameMessage = updatedMessage;
+			}
 		}
 	}
 
@@ -508,14 +516,14 @@ public class GameDayChannel extends Thread {
 		String message = "Game has ended. Thanks for joining!\n" + "Final Score: " + getScoreMessage() + "\n"
 				+ "Goals Scored:\n" + getGoalsMessage();
 
-		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID());
+		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
 		List<Game> nextGames = preferences.getTeams().stream()
 				.map(team -> nhlBot.getGameScheduler().getNextGame(team))
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
 		if (!nextGames.isEmpty()) {
-			ZoneId timeZone = nhlBot.getPreferencesManager().getGuildPreferences(guild.getLongID()).getTimeZone();
+			ZoneId timeZone = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong()).getTimeZone();
 			if (nextGames.size() > 1) {
 
 			} else {
@@ -724,17 +732,6 @@ public class GameDayChannel extends Thread {
 	}
 
 	/**
-	 * Determines if the given channel is in the "Game Day Channel" category.
-	 * 
-	 * @param channel
-	 * @return true, if part of the category; false, otherwise.
-	 */
-	public static boolean isInCategory(IChannel channel) {
-		ICategory category = channel.getCategory();
-		return category == null ? false : GAME_DAY_CHANNEL_CATEGORY_NAME.equalsIgnoreCase(category.getName());
-	}
-
-	/**
 	 * Determines if the given channel name is that of a possible game. Does not
 	 * factor into account whether or not the game is real.
 	 * 
@@ -751,8 +748,8 @@ public class GameDayChannel extends Thread {
 		return channelName.matches(regex);
 	}
 
-	private IMessage sendMessage(String message) {
-		return channel == null ? null : nhlBot.getDiscordManager().sendMessage(channel, message);
+	protected Message sendMessage(String message) {
+		return channel == null ? null : DiscordManager.sendMessage(channel, spec -> spec.setContent(message));
 	}
 
 	static List<Team> getRelevantTeams(List<Team> teams, Game game) {

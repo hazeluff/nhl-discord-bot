@@ -498,6 +498,10 @@ public class GameScheduler extends Thread {
 		return new HashSet<>(games);
 	}
 
+	public GameTracker toGameTracker(Game game) {
+		return GameTracker.get(game);
+	}
+
 	public boolean isGameExist(Game game) {
 		return games.contains(game);
 	}

@@ -1,5 +1,6 @@
 package com.hazeluff.discord.nhlbot.nhl;
 
+import java.awt.Color;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -14,7 +15,7 @@ public enum Team {
 			"NJD", 
 			Division.METRO, 
 			"Lets Go Devils!",
-			0xC8102E,
+			new Color(0xC8102E),
 			ZoneId.of("America/New_York")),
 	NEW_YORK_ISLANDERS(
 			2, 
@@ -23,7 +24,7 @@ public enum Team {
 			"NYI", 
 			Division.METRO, 
 			"Lets Go Islanders!",
-			0xF26924,
+			new Color(0xF26924),
 			ZoneId.of("America/New_York")), 
 	NEW_YORK_RANGERS(
 			3, 
@@ -32,7 +33,7 @@ public enum Team {
 			"NYR", 
 			Division.METRO, 
 			"Lets Go Rangers!",
-			0x0038A8,
+			new Color(0x0038A8),
 			ZoneId.of("America/New_York")),
 	PHILADELPHIA_FLYERS(
 			4, 
@@ -41,7 +42,7 @@ public enum Team {
 			"PHI", 
 			Division.METRO, 
 			"Lets Go Flyers!",
-			0xFA4616,
+			new Color(0xFA4616),
 			ZoneId.of("America/New_York")),
 	PITTSBURGH_PENGUINS(
 			5, 
@@ -50,7 +51,7 @@ public enum Team {
 			"PIT", 
 			Division.METRO, 
 			"Lets Go Pens!", 
-			0xFFB81C,
+			new Color(0xFFB81C),
 			ZoneId.of("America/New_York")),
 	BOSTON_BRUINS(
 			6, 
@@ -59,7 +60,7 @@ public enum Team {
 			"BOS", 
 			Division.ATLANTIC, 
 			"Lets Go Bruins!", 
-			0xFFB81C,
+			new Color(0xFFB81C),
 			ZoneId.of("America/New_York")),
 	BUFFALO_SABRES(
 			7, 
@@ -68,7 +69,7 @@ public enum Team {
 			"BUF", 
 			Division.ATLANTIC, 
 			"Lets Go Buffalo!", 
-			0xFFB81C,
+			new Color(0xFFB81C),
 			ZoneId.of("America/New_York")),
 	MONTREAL_CANADIENS(
 			8, 
@@ -77,7 +78,7 @@ public enum Team {
 			"MTL", 
 			Division.ATLANTIC, 
 			"Olé Olé Olé",
-			0xA6192E,
+			new Color(0xA6192E),
 			ZoneId.of("America/Montreal")),
 	OTTAWA_SENATORS(
 			9, 
@@ -86,7 +87,7 @@ public enum Team {
 			"OTT", 
 			Division.ATLANTIC, 
 			"Go Sens Go!", 
-			0xC8102E,
+			new Color(0xC8102E),
 			ZoneId.of("America/Toronto")),
 	TORONTO_MAPLE_LEAFS(
 			10, 
@@ -95,7 +96,7 @@ public enum Team {
 			"TOR", 
 			Division.ATLANTIC, 
 			"Go Leafs Go!",
-			0x00205B,
+			new Color(0x00205B),
 			ZoneId.of("America/Toronto")),
 	CAROLINA_HURRICANES(
 			12, 
@@ -104,7 +105,7 @@ public enum Team {
 			"CAR", 
 			Division.METRO, 
 			"Lets Go Canes!", 
-			0xCC0000,
+			new Color(0xCC0000),
 			ZoneId.of("America/New_York")),
 	FLORIDA_PANTHERS(
 			13, 
@@ -113,7 +114,7 @@ public enum Team {
 			"FLA", 
 			Division.ATLANTIC, 
 			"Lets Go Panthers!", 
-			0xB9975B,
+			new Color(0xB9975B),
 			ZoneId.of("America/New_York")),
 	TAMPA_BAY_LIGHTNING(
 			14, 
@@ -122,7 +123,7 @@ public enum Team {
 			"TBL", 
 			Division.ATLANTIC, 
 			"Lets Go Lightning!", 
-			0x00205B,
+			new Color(0x00205B),
 			ZoneId.of("America/New_York")),
 	WASHINGTON_CAPITALS(
 			15, 
@@ -131,7 +132,7 @@ public enum Team {
 			"WSH", 
 			Division.METRO, 
 			"Lets Go Caps!", 
-			0xC8102E,
+			new Color(0xC8102E),
 			ZoneId.of("America/New_York")),
 	CHICAGO_BLACKHAWKS(
 			16, 
@@ -140,7 +141,7 @@ public enum Team {
 			"CHI", 
 			Division.CENTRAL, 
 			"Lets Go Hawks!",
-			0xC8102E,
+			new Color(0xC8102E),
 			ZoneId.of("America/Chicago")),
 	DETROIT_RED_WINGS(
 			17, 
@@ -149,7 +150,7 @@ public enum Team {
 			"DET",
 			Division.ATLANTIC,
 			"Lets Go Red Wings!",
-			0xC8102E,
+			new Color(0xC8102E),
 			ZoneId.of("America/Detroit")),
 	NASHVILLE_PREDATORS(
 			18, 
@@ -158,7 +159,7 @@ public enum Team {
 			"NSH", 
 			Division.CENTRAL, 
 			"Lets Go Predators!", 
-			0xFFB81C,
+			new Color(0xFFB81C),
 			ZoneId.of("America/Chicago")),
 	ST_LOUIS_BLUES(
 			19, 
@@ -167,7 +168,7 @@ public enum Team {
 			"STL", 
 			Division.CENTRAL, 
 			"Lets Go Blues!",
-			0x003087,
+			new Color(0x003087),
 			ZoneId.of("America/Chicago")),
 	CALGARY_FLAMES(
 			20, 
@@ -176,7 +177,7 @@ public enum Team {
 			"CGY", 
 			Division.PACIFIC, 
 			"Go Flames Go!", 
-			0xC8102E,
+			new Color(0xC8102E),
 			ZoneId.of("America/Edmonton")),
 	COLORADO_AVALANCH(
 			21, 
@@ -185,7 +186,7 @@ public enum Team {
 			"COL", 
 			Division.CENTRAL, 
 			"Lets Go Colorado!",
-			0x6F263D,
+			new Color(0x6F263D),
 			ZoneId.of("America/Denver")),
 	EDMONTON_OILERS(
 			22, 
@@ -194,7 +195,7 @@ public enum Team {
 			"EDM",
 			Division.PACIFIC,
 			"Let go Oilers!", 
-			0xFC4C02,
+			new Color(0xFC4C02),
 			ZoneId.of("America/Edmonton")),
 	VANCOUVER_CANUCKS(
 			23, 
@@ -203,7 +204,7 @@ public enum Team {
 			"VAN", 
 			Division.PACIFIC, 
 			"Go Canucks Go!",
-			0x00843D,
+			new Color(0x00843D),
 			ZoneId.of("America/Vancouver")),
 	ANAHEIM_DUCKS(
 			24, 
@@ -212,7 +213,7 @@ public enum Team {
 			"ANA", 
 			Division.PACIFIC, 
 			"Lets Go Ducks!",
-			0xFC4C02,
+			new Color(0xFC4C02),
 			ZoneId.of("America/Los_Angeles")),
 	DALLAS_STARS(
 			25, 
@@ -221,7 +222,7 @@ public enum Team {
 			"DAL",
 			Division.CENTRAL, 
 			"Go Stars Go!", 
-			0x006341,
+			new Color(0x006341),
 			ZoneId.of("America/Chicago")),
 	LA_KINGS(
 			26, 
@@ -230,7 +231,7 @@ public enum Team {
 			"LAK",
 			Division.PACIFIC,
 			"Go Kings Go!", 
-			0x000000,
+			new Color(0x000000),
 			ZoneId.of("America/Los_Angeles")),
 	SAN_JOSE_SHARKS(
 			28, 
@@ -239,7 +240,7 @@ public enum Team {
 			"SJS", 
 			Division.PACIFIC, 
 			"Lets Go Sharks!",
-			0x006272,
+			new Color(0x006272),
 			ZoneId.of("America/Los_Angeles")),
 	COLUMBUS_BLUE_JACKETS(
 			29, 
@@ -248,7 +249,7 @@ public enum Team {
 			"CBJ", 
 			Division.METRO, 
 			"C B J! C B J!", // WTF Seriously?
-			0x041E42,
+			new Color(0x041E42),
 			ZoneId.of("America/Chicago")),
 	MINNESOTA_WILD(
 			30, 
@@ -257,7 +258,7 @@ public enum Team {
 			"MIN", 
 			Division.CENTRAL, 
 			"Lets Go Wild!", 
-			0x154734,
+			new Color(0x154734),
 			ZoneId.of("America/Chicago")),
 	WINNIPEG_JETS(
 			52, 
@@ -266,7 +267,7 @@ public enum Team {
 			"WPG", 
 			Division.CENTRAL, 
 			"Go Jets Go!", 
-			0xFFFFFF,
+			new Color(0xFFFFFF),
 			ZoneId.of("America/Winnipeg")),
 	ARIZONA_COYOTES(
 			53, 
@@ -275,7 +276,7 @@ public enum Team {
 			"ARI", 
 			Division.PACIFIC, 
 			"Lets Go Coyotes!", 
-			0x8C2633,
+			new Color(0x8C2633),
 			ZoneId.of("America/Denver")),
 	VEGAS_GOLDEN_KNIGHTS(
 			54, 
@@ -284,7 +285,7 @@ public enum Team {
 			"VGK", 
 			Division.PACIFIC, 
 			"Go Knights Go!",
-			0xB9975B,
+			new Color(0xB9975B),
 			ZoneId.of("America/Los_Angeles"));
 
 	public static final String MULTI_TEAM_CHEER = "Lets Go!";
@@ -295,7 +296,7 @@ public enum Team {
 	private final String code;
 	private final Division division;
 	private final String cheer;
-	private final int color;
+	private final Color color;
 	private final ZoneId timeZone;
 
 	private static final Map<Integer, Team> VALUES_MAP = new HashMap<>();
@@ -314,7 +315,7 @@ public enum Team {
 		SORTED_VALUES.sort((t1, t2) -> t1.getFullName().compareTo(t2.getFullName()));
 	}
 
-	private Team(int id, String location, String name, String code, Division division, String cheer, int color,
+	private Team(int id, String location, String name, String code, Division division, String cheer, Color color,
 			ZoneId timeZone) {
 		this.id = id;
 		this.location = location;
@@ -354,7 +355,7 @@ public enum Team {
 		return cheer;
 	}
 
-	public int getColor() {
+	public Color getColor() {
 		return color;
 	}
 

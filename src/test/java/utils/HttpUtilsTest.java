@@ -158,7 +158,6 @@ public class HttpUtilsTest {
 		HttpUtils.get(mockURI);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test(expected = HttpException.class)
 	public void getShouldThrowHttpExceptionWhenRetriesExceededAndIOExceptionIsThrown()
 			throws URISyntaxException, ClientProtocolException, IOException, HttpException {
@@ -169,7 +168,6 @@ public class HttpUtilsTest {
 		HttpUtils.get(mockURI);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test(expected = HttpException.class)
 	public void getShouldThrowHttpExceptionWhenReadLineThrowsIOException()
 			throws ClientProtocolException, IOException, HttpException {
@@ -183,7 +181,6 @@ public class HttpUtilsTest {
 		HttpUtils.get(mockURI);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test(expected = HttpException.class)
 	public void getShouldThrowHttpExceptionWhenGetContentThrowsUnsupportedOperationException()
 			throws ClientProtocolException, IOException, HttpException {
@@ -197,7 +194,6 @@ public class HttpUtilsTest {
 		HttpUtils.get(mockURI);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test(expected = HttpException.class)
 	public void getShouldThrowHttpExceptionWhenGetContentThrowsIOException()
 			throws ClientProtocolException, IOException, HttpException {

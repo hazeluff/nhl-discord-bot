@@ -1,15 +1,19 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.verifyNoMoreInteractions;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.function.Consumer;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,99 +21,96 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.util.Snowflake;
+import discord4j.core.spec.MessageCreateSpec;
 
 @RunWith(PowerMockRunner.class)
+@PrepareForTest(FuckCommand.class)
 public class FuckCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FuckCommandTest.class);
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private NHLBot mockNHLBot;
-	@Mock
-	private DiscordManager mockDiscordManager;
-	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
-	private IMessage mockMessage;
 	@Captor
 	private ArgumentCaptor<String> captorString;
 
 	private FuckCommand fuckCommand;
+	private FuckCommand spyFuckCommand;
 
 	@Before
 	public void setup() {
 		fuckCommand = new FuckCommand(mockNHLBot);
-		when(mockNHLBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockMessage.getAuthor().getLongID()).thenReturn(1043500l);
+		spyFuckCommand = spy(fuckCommand);
 	}
 
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void replyToShouldSendMessage() {
 		LOGGER.info("replyToShouldSendMessage");
+		Message message = mock(Message.class, Answers.RETURNS_DEEP_STUBS);
+		User author = mock(User.class, Answers.RETURNS_DEEP_STUBS);
+		Consumer<MessageCreateSpec> dontAtReply = mock(Consumer.class);
+		String subject = "subject";
+		Consumer<MessageCreateSpec> randomResponse = mock(Consumer.class);
 
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.NOT_ENOUGH_PARAMETERS_REPLY);
-		verifyNoMoreInteractions(mockDiscordManager);
+		mockStatic(FuckCommand.class);
+		when(FuckCommand.buildDontAtReply(message)).thenReturn(dontAtReply);
+		doReturn(randomResponse).when(spyFuckCommand).getRandomResponse(subject);
 
-		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "you"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.NO_YOU_REPLY);
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(FuckCommand.NOT_ENOUGH_PARAMETERS_REPLY,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck")));
 
-		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "u"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.NO_YOU_REPLY);
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(FuckCommand.NO_YOU_REPLY,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "you")));
 
-		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "hazeluff"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(FuckCommand.NO_YOU_REPLY,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "u")));
 
-		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "hazel"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(FuckCommand.HAZELUFF_REPLY,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "hazeluff")));
 
-		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "haze"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(FuckCommand.HAZELUFF_REPLY,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "hazel")));
 
-		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "haz"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.HAZELUFF_REPLY);
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(FuckCommand.HAZELUFF_REPLY,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "haze")));
 
-		reset(mockDiscordManager);
-		fuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "<@32598237599>"));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.buildDontAtReply(mockMessage));
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(FuckCommand.HAZELUFF_REPLY,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "haz")));
 
-		reset(mockDiscordManager);
-		FuckCommand spyFuckCommand = spy(fuckCommand);
-		IUser author = mockMessage.getAuthor();
-		doReturn(true).when(spyFuckCommand).isDev(author);
-		spyFuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "add", "sub", "This", "is", "the", "response."));
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(),
-				FuckCommand.buildAddReply("sub", "This is the response."));
-		verifyNoMoreInteractions(mockDiscordManager);
+		assertEquals(dontAtReply,
+				spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "<@32598237599>")));
 
-		reset(mockDiscordManager);
-		doReturn(false).when(spyFuckCommand).isDev(author);
-		spyFuckCommand.replyTo(mockMessage, Arrays.asList("fuck", "add", "sub", "resp"));
-		verifyNoMoreInteractions(mockDiscordManager);
 
-		reset(mockDiscordManager);
-		List<String> arguments = Arrays.asList("fuck", "mark", "messier");
-		fuckCommand.replyTo(mockMessage, arguments);
-		verify(mockDiscordManager).sendMessage(mockMessage.getChannel(), FuckCommand.buildFuckReply(arguments));
-		verifyNoMoreInteractions(mockDiscordManager);
+		when(message.getAuthor().orElse(any(User.class))).thenReturn(null);
+		assertNull(spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", "add", "anything")));
+
+		when(message.getAuthor().orElse(any())).thenReturn(author);
+		doReturn(false).when(spyFuckCommand).isDev(any(Snowflake.class));
+		assertNull(spyFuckCommand.getReply(null, null, message,
+				Arrays.asList("fuck", "add", "anything")));
+
+		Consumer<MessageCreateSpec> addReply = mock(Consumer.class);
+		when(FuckCommand.buildAddReply(anyString(), anyString())).thenReturn(addReply);
+		when(message.getAuthor().orElse(any())).thenReturn(author);
+		doReturn(true).when(spyFuckCommand).isDev(any(Snowflake.class));
+		assertEquals(addReply, spyFuckCommand.getReply(null, null, message,
+				Arrays.asList("fuck", "add", subject, "This", "is", "the", "response.")));
+
+		doReturn(true).when(spyFuckCommand).hasResponses(subject);
+		assertEquals(randomResponse, spyFuckCommand.getReply(null, null, message, Arrays.asList("fuck", subject)));
+
+		doReturn(false).when(spyFuckCommand).hasResponses(subject);
+		assertNull(spyFuckCommand.getReply(null, null, message,
+				Arrays.asList("fuck", RandomStringUtils.randomAlphanumeric(8))));
 	}
 }

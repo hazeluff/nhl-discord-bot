@@ -1,11 +1,14 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.spec.MessageCreateSpec;
 
 /**
  * Displays help for the NHLBot commands
@@ -17,18 +20,13 @@ public class HelpCommand extends Command {
 	}
 
 	@Override
-	public void replyTo(IMessage message, List<String> arguments) {
-		sendMessage(message.getChannel());
+	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
+			List<String> arguments) {
+		return getReply();
 	}
 
-	@Override
-	public boolean isAccept(IMessage message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("help");
-	}
-
-	public void sendMessage(IChannel channel) {
-		nhlBot.getDiscordManager().sendMessage(channel,
-				"Here are a list of commands:\n\n"
+	public Consumer<MessageCreateSpec> getReply() {
+		return spec -> spec.setContent("Here are a list of commands:\n\n"
 
 						+ "You can use the commands by doing `?nhlbot [command]` or `?[command]`.\n\n"
 
@@ -50,6 +48,11 @@ public class HelpCommand extends Command {
 
 						+ "Commands with **(+)** have detailed help and can be accessed by typing:\n"
 						+ "`?nhlbot [command] help`");
+	}
+
+	@Override
+	public boolean isAccept(Message message, List<String> arguments) {
+		return arguments.get(0).equalsIgnoreCase("help");
 	}
 
 }

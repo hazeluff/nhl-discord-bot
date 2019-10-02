@@ -1,21 +1,17 @@
 package com.hazeluff.discord.nhlbot.bot.command;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Consumer;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -24,136 +20,79 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.nhlbot.bot.GameDayChannel;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
-import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.spec.MessageCreateSpec;
 
 @RunWith(PowerMockRunner.class)
 public class NextGameCommandTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NextGameCommandTest.class);
 
-	private static final long GUILD_ID = Utils.getRandomLong();
-	private static final long USER_ID = Utils.getRandomLong();
-	private static final String CHANNEL_NAME = "ChannelName";
 
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
-	private NHLBot mockNHLBot;
+	private NHLBot nhlBot;
 	@Captor
 	private ArgumentCaptor<String> captorString;
 
 	private NextGameCommand nextGameCommand;
+	private NextGameCommand spyNextGameCommand;
 
 	@Before
 	public void setup() {
-		nextGameCommand = new NextGameCommand(mockNHLBot);
+		nextGameCommand = new NextGameCommand(nhlBot);
+		spyNextGameCommand = spy(nextGameCommand);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
-	public void isAcceptShouldReturnTrueWhenCommandIsNextGame() {
-		LOGGER.info("isAcceptShouldReturnTrueWhenCommandIsNextGame");
-		assertTrue(nextGameCommand.isAccept(null, Arrays.asList("nextgame")));
-	}
+	public void getReplyShouldReturnValues() {
+		LOGGER.info("getReplyShouldReturnValues");
 
-	@Test
-	public void isAcceptShouldReturnFalseWhenCommandIsNotNextGame() {
-		LOGGER.info("isAcceptShouldReturnFalseWhenCommandIsNotNextGame");
-		assertFalse(nextGameCommand.isAccept(null, Arrays.asList("asdf")));
-	}
-
-	@Test
-	@PrepareForTest(GameDayChannel.class)
-	public void replyToShouldInvokeMethods() {
-		LOGGER.info("replyToShouldInvokeMethods");
-		mockStatic(GameDayChannel.class);
-
-		IMessage message = mock(IMessage.class, Mockito.RETURNS_DEEP_STUBS);		
-		long guildId = message.getGuild().getLongID();
-		GuildPreferences preferences = mock(GuildPreferences.class, Mockito.RETURNS_DEEP_STUBS);
-		when(mockNHLBot.getPreferencesManager().getGuildPreferences(guildId)).thenReturn(preferences);
-		
-		Game game = mock(Game.class);
-		Team team = Team.ANAHEIM_DUCKS;
-		when(mockNHLBot.getGameScheduler().getNextGame(team)).thenReturn(game);
-		String detailsMessage = "DetailsMessage";
-		when(GameDayChannel.getDetailsMessage(game, preferences.getTimeZone())).thenReturn(detailsMessage);
+		Guild guild = mock(Guild.class, Answers.RETURNS_DEEP_STUBS);
+		GuildPreferences preferences = mock(GuildPreferences.class, Answers.RETURNS_DEEP_STUBS);
+		Team noGameTeam = Team.ANAHEIM_DUCKS;
+		when(nhlBot.getGameScheduler().getNextGame(noGameTeam)).thenReturn(null);
+		Team teamWithGame1 = Team.BOSTON_BRUINS;
+		Game game1 = mock(Game.class);
+		when(nhlBot.getGameScheduler().getNextGame(teamWithGame1)).thenReturn(game1);
+		Team teamWithGame2 = Team.ARIZONA_COYOTES;
 		Game game2 = mock(Game.class);
-		Team team2 = Team.VANCOUVER_CANUCKS;
-		when(mockNHLBot.getGameScheduler().getNextGame(team2)).thenReturn(game2);
-		String detailsMessage2 = "DetailsMessage2";
-		when(GameDayChannel.getDetailsMessage(game2, preferences.getTimeZone())).thenReturn(detailsMessage2);
-		Team team3 = Team.CALGARY_FLAMES;
-		when(mockNHLBot.getGameScheduler().getNextGame(team3)).thenReturn(null);
-		Team team4 = Team.LA_KINGS;
-		when(mockNHLBot.getGameScheduler().getNextGame(team4)).thenReturn(null);
-
+		when(nhlBot.getGameScheduler().getNextGame(teamWithGame2)).thenReturn(game2);
+		Consumer<MessageCreateSpec> nextGameDetailsMessage = mock(Consumer.class);
+		doReturn(nextGameDetailsMessage).when(spyNextGameCommand).getNextGameDetailsMessage(any(Game.class),
+				eq(preferences));
+		Consumer<MessageCreateSpec> nextGamesDetailsMessage = mock(Consumer.class);
+		doReturn(nextGamesDetailsMessage).when(spyNextGameCommand).getNextGameDetailsMessage(anySet(),
+				eq(preferences));
 		
-		NextGameCommand spyNextGameCommand;
+		when(nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong())).thenReturn(preferences);
 
 		// Not subscribed
-		spyNextGameCommand = getSpyNextGameCommand();
 		when(preferences.getTeams()).thenReturn(Collections.emptyList());
-		spyNextGameCommand.replyTo(message, null);
-		verify(spyNextGameCommand).sendSubscribeFirstMessage(any(IChannel.class));
-		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
-		
-		// One Team; No Next Game
-		reset(mockNHLBot.getDiscordManager());
-		spyNextGameCommand = getSpyNextGameCommand();
-		when(preferences.getTeams()).thenReturn(Arrays.asList(team3));
-		spyNextGameCommand.replyTo(message, null);
-		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
-		assertTrue(captorString.getValue().contains(NextGameCommand.NO_NEXT_GAME_MESSAGE));
-		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
+		assertEquals(NextGameCommand.SUBSCRIBE_FIRST_MESSAGE, spyNextGameCommand.getReply(guild, null, null, null));
 
-		// One Team; Has Next Game
-		reset(mockNHLBot.getDiscordManager());
-		spyNextGameCommand = getSpyNextGameCommand();
-		when(preferences.getTeams()).thenReturn(Arrays.asList(team));
-		spyNextGameCommand.replyTo(message, null);
-		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
-		assertTrue(captorString.getValue().contains(detailsMessage));
-		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
+		// One team; No next game
+		when(preferences.getTeams()).thenReturn(Arrays.asList(noGameTeam));
+		assertEquals(NextGameCommand.NO_NEXT_GAME_MESSAGE, spyNextGameCommand.getReply(guild, null, null, null));
 
-		// Multiple Teams; No Next Games
-		reset(mockNHLBot.getDiscordManager());
-		spyNextGameCommand = getSpyNextGameCommand();
-		when(preferences.getTeams()).thenReturn(Arrays.asList(team3, team4));
-		spyNextGameCommand.replyTo(message, null);
-		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
-		assertTrue(captorString.getValue().contains(NextGameCommand.NO_NEXT_GAMES_MESSAGE));
-		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
+		// One team; Has next game
+		when(preferences.getTeams()).thenReturn(Arrays.asList(teamWithGame1));
+		assertEquals(nextGameDetailsMessage, spyNextGameCommand.getReply(guild, null, null, null));
 
-		// Multiple Teams; Has Next Games
-		reset(mockNHLBot.getDiscordManager());
-		spyNextGameCommand = getSpyNextGameCommand();
-		when(preferences.getTeams()).thenReturn(Arrays.asList(team, team2, team3));
-		spyNextGameCommand.replyTo(message, null);
-		verify(spyNextGameCommand, never()).sendSubscribeFirstMessage(any(IChannel.class));
-		verify(mockNHLBot.getDiscordManager()).sendMessage(eq(message.getChannel()), captorString.capture());
-		String sentMessage = captorString.getValue();
-		assertTrue(sentMessage.contains(detailsMessage));
-		assertTrue(sentMessage.contains(detailsMessage2));
-		verifyNoMoreInteractions(mockNHLBot.getDiscordManager());
-	}
+		// Multi team; No next game
+		when(preferences.getTeams()).thenReturn(Arrays.asList(noGameTeam, noGameTeam));
+		assertEquals(NextGameCommand.NO_NEXT_GAMES_MESSAGE, spyNextGameCommand.getReply(guild, null, null, null));
 
-	private NextGameCommand getSpyNextGameCommand() {
-		NextGameCommand spyNextGameCommand = spy(new NextGameCommand(mockNHLBot));
-		doReturn(null).when(spyNextGameCommand).sendSubscribeFirstMessage(any(IChannel.class));
-		return spyNextGameCommand;
+		// Multi team; No next game
+		when(preferences.getTeams()).thenReturn(Arrays.asList(noGameTeam, teamWithGame1, teamWithGame2));
+		assertEquals(nextGamesDetailsMessage, spyNextGameCommand.getReply(guild, null, null, null));
 	}
 }

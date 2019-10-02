@@ -1,5 +1,10 @@
 package com.hazeluff.discord.nhlbot.bot;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,149 +13,168 @@ import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.utils.Utils;
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
-import sx.blah.discord.api.ClientBuilder;
-import sx.blah.discord.api.IDiscordClient;
-import sx.blah.discord.api.events.EventDispatcher;
-import sx.blah.discord.handle.obj.ActivityType;
-import sx.blah.discord.handle.obj.StatusType;
-import sx.blah.discord.util.DiscordException;
+import discord4j.core.DiscordClient;
+import discord4j.core.DiscordClientBuilder;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.presence.Activity;
+import discord4j.core.object.presence.Presence;
+import discord4j.core.spec.MessageCreateSpec;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple3;
 
 public class NHLBot extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBot.class);
 
+	private static final Presence STARTING_UP_PRESENCE = Presence.doNotDisturb(Activity.watching("itself start up"));
+	private static final Presence ONLINE_PRESENCE = Presence.online(Activity.playing(Config.STATUS_MESSAGE));
+
 	private static long UPDATE_PLAY_STATUS_INTERVAL = 3600000l;
 
-	private IDiscordClient discordClient;
-	private DiscordManager discordManager;
-	private MongoDatabase mongoDatabase;
+	private AtomicReference<DiscordManager> discordManager = new AtomicReference<>();
 	private PreferencesManager preferencesManager;
 	private GameScheduler gameScheduler;
 	private GameDayChannelsManager gameDayChannelsManager;
-	private String userId;
 
-	private NHLBot() {}
+	private NHLBot() {
+		preferencesManager = null;
+		gameScheduler = null;
+		gameDayChannelsManager = null;
+	}
 
-	NHLBot(IDiscordClient discordClient, DiscordManager discordManager, MongoDatabase mongoDatabase,
+	NHLBot(DiscordManager discordManager, MongoDatabase mongoDatabase,
 			PreferencesManager preferencesManager, GameScheduler gameScheduler,
-			GameDayChannelsManager gameDayChannelsManager, String id) {
-		this.discordClient = discordClient;
-		this.discordManager = discordManager;
-		this.mongoDatabase = mongoDatabase;
+			GameDayChannelsManager gameDayChannelsManager) {
+		this.discordManager.set(discordManager);
 		this.preferencesManager = preferencesManager;
 		this.gameScheduler = gameScheduler;
 		this.gameDayChannelsManager = gameDayChannelsManager;
-		this.userId = id;
 	}
 
-	public static NHLBot create(String botToken, GameScheduler gameScheduler) {
+	public static NHLBot create(GameScheduler gameScheduler, String botToken) {
 		LOGGER.info("Running NHLBot v" + Config.VERSION);
 		Thread.currentThread().setName("NHLBot");
 
 		NHLBot nhlBot = new NHLBot();
 		nhlBot.gameScheduler = gameScheduler;
 
-		// Init DiscordClient and DiscordManager
-		nhlBot.initDiscord(botToken);
-
 		// Init MongoClient/GuildPreferences
 		nhlBot.initPreferences();
+		// Init Discord Client
+		nhlBot.initDiscord(botToken);
+
+		while (nhlBot.getDiscordManager() == null) {
+			LOGGER.info("Waiting for Discord client to be ready.");
+			Utils.sleep(5000);
+		}
+
+		LOGGER.info("Attaching Listener.");
+		nhlBot.getDiscordManager().getClient().getEventDispatcher()
+				.on(MessageCreateEvent.class)
+				.flatMap(NHLBot::zipEvent)
+				.subscribe(t -> {
+					Consumer<MessageCreateSpec> replySpec = new MessageListener(nhlBot).getReply(
+							t.getT1(), t.getT2(), t.getT3());
+					if (replySpec != null) {
+						// Send the message
+						t.getT2().createMessage(replySpec).block();
+					}
+				});
+
+		nhlBot.getDiscordManager().changePresence(STARTING_UP_PRESENCE);
+		LOGGER.info("NHLBot. id [" + nhlBot.getDiscordManager().getId() + "]");
 
 		// Start the Game Day Channels Manager
 		nhlBot.initGameDayChannelsManager();
 
-		// Register listeners
-		nhlBot.registerListeners();
-		
 		// Manage WelcomeChannels
 		LOGGER.info("Posting update to Discord channel.");
-		nhlBot.discordManager.getGuilds().stream().filter(guild -> {
-			long id = guild.getLongID();
-			return id == 268247727400419329l || id == 276953120964083713l;
-		}).forEach(guild -> WelcomeChannel.get(nhlBot, guild));
+		List<Long> supportGuilds = Arrays.asList(268247727400419329l, 276953120964083713l);
+		nhlBot.getDiscordManager().getClient().getGuilds()
+				.filter(guild -> supportGuilds.contains(guild.getId().asLong()))
+				.map(Guild::getChannels)
+				.flatMap(channels -> channels.filter(channel -> 
+						channel.getName().equals("welcome")).take(1))
+				.filter(TextChannel.class::isInstance)
+				.cast(TextChannel.class)
+				.subscribe(channel -> WelcomeChannel.create(nhlBot, channel));
 
 		while (!nhlBot.getGameScheduler().isInit()) {
 			LOGGER.info("Waiting for GameScheduler...");
 			Utils.sleep(2000);
 		}
 
-		nhlBot.setPlayingStatus();
+		nhlBot.getDiscordManager().changePresence(ONLINE_PRESENCE);
 
 		nhlBot.start();
 
 		return nhlBot;
 	}
+	
+	/**
+	 * This needs to be done in its own Thread. login().block() hold the execution.
+	 * 
+	 * @param botToken
+	 */
+	public void initDiscord(String botToken) {
+		new Thread(() -> {
+			LOGGER.info("Initializing Discord.");
+			// Init DiscordClient and DiscordManager
+			DiscordClient discordClient = new DiscordClientBuilder(botToken).build();
+			
+			discordClient.getEventDispatcher().on(ReadyEvent.class)
+					.subscribe(event -> {
+						discordManager.set(new DiscordManager(discordClient));
+						LOGGER.info("Discord Client is ready.");
+					});
+
+			// Login
+			LOGGER.info("Logging into Discord.");
+			discordClient.login().block();
+		}).start();
+		LOGGER.info("Discord Initializer started.");
+	}
+
+	/**
+	 * Takes a event and returns a Mono that zips up the following properties of the
+	 * event (in order):
+	 * <ol>
+	 * <li>guild</li>
+	 * <li>channel</li>
+	 * <li>message</li>
+	 * </ol>
+	 * 
+	 * @param event
+	 *            the event to zip
+	 * @return {@link Tuple3} containing (in order): guild, channel, message
+	 */
+	private static Mono<Tuple3<Guild, MessageChannel, Message>> zipEvent(MessageCreateEvent event) {
+		return Mono.zip(event.getGuild(), event.getMessage().getChannel(), Mono.just(event.getMessage()));
+	}
 
 	@Override
 	public void run() {
 		while (!isInterrupted()) {
-			setPlayingStatus();
+			getDiscordManager().changePresence(ONLINE_PRESENCE);
 			Utils.sleep(UPDATE_PLAY_STATUS_INTERVAL);
 		}
 	}
 
-	void setStartingUpStatus() {
-		discordManager.changePresence(StatusType.DND, ActivityType.WATCHING, "itself start up.");
-	}
-
-	void setPlayingStatus() {
-		discordManager.changePresence(StatusType.ONLINE, ActivityType.PLAYING, Config.STATUS_MESSAGE);
-	}
-
-	void initDiscord(String botToken) {
-		this.discordClient = getClient(botToken);
-		this.discordManager = new DiscordManager(discordClient);
-		setStartingUpStatus();
-		this.userId = discordManager.getApplicationClientId();
-		LOGGER.info("NHLBot. id [" + userId + "]");
-	}
-
-	static IDiscordClient getClient(String token) {
-		ClientBuilder clientBuilder = new ClientBuilder();
-		clientBuilder.withToken(token);
-		IDiscordClient client;
-		LOGGER.info("Logging in...");
-		try {
-			client = clientBuilder.login();
-		} catch (DiscordException e) {
-			LOGGER.error("Could not log in.", e);
-			throw new NHLBotException(e);
-		}
-
-		while (!client.isReady()) {
-			LOGGER.info("Waiting for client to be ready.");
-			Utils.sleep(2000);
-		}
-
-		return client;
-	}
-
 	void initPreferences() {
-		this.mongoDatabase = getMongoDatabaseInstance();
-		this.preferencesManager = PreferencesManager.getInstance(this);
+		LOGGER.info("Initializing Preferences.");
+		this.preferencesManager = PreferencesManager.getInstance();
 	}
 
 	void initGameDayChannelsManager() {
+		LOGGER.info("Initializing GameDayChannelsManager.");
 		this.gameDayChannelsManager = new GameDayChannelsManager(this);
 		gameDayChannelsManager.start();
-	}
-
-	void registerListeners() {
-		EventDispatcher dispatcher = discordClient.getDispatcher();
-		dispatcher.registerListener(new MessageListener(this));
-		dispatcher.registerListener(new ConnectionListener(this));
-	}
-
-	@SuppressWarnings("resource")
-	static MongoDatabase getMongoDatabaseInstance() {
-		// No need to close the connection.
-		return new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT).getDatabase(Config.MONGO_DATABASE_NAME);
-	}
-
-	public MongoDatabase getMongoDatabase() {
-		return mongoDatabase;
 	}
 
 	public PreferencesManager getPreferencesManager() {
@@ -158,7 +182,7 @@ public class NHLBot extends Thread {
 	}
 
 	public DiscordManager getDiscordManager() {
-		return discordManager;
+		return discordManager.get();
 	}
 
 	public GameScheduler getGameScheduler() {
@@ -169,10 +193,6 @@ public class NHLBot extends Thread {
 		return gameDayChannelsManager;
 	}
 
-	public String getUserId() {
-		return userId;
-	}
-
 	/**
 	 * Gets the mention for the bot. It is how the raw message displays a mention of
 	 * the bot's user.
@@ -180,7 +200,7 @@ public class NHLBot extends Thread {
 	 * @return
 	 */
 	public String getMention() {
-		return "<@" + userId + ">";
+		return "<@" + getDiscordManager().getId().asString() + ">";
 	}
 
 	/**
@@ -190,6 +210,6 @@ public class NHLBot extends Thread {
 	 * @return
 	 */
 	public String getNicknameMentionId() {
-		return "<@!" + userId + ">";
+		return "<@!" + getDiscordManager().getId().asString() + ">";
 	}
 }

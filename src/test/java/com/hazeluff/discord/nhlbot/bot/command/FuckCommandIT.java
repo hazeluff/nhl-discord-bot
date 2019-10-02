@@ -2,7 +2,7 @@ package com.hazeluff.discord.nhlbot.bot.command;
 
 import static org.junit.Assert.assertTrue;
 
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -53,7 +53,11 @@ public class FuckCommandIT extends DatabaseIT {
 
 		fuckCommand = new FuckCommand(getNHLBot());
 
-		assertTrue(fuckCommand.getResponses().get(subject).contains(response1));
-		assertTrue(fuckCommand.getResponses().get(subject).contains(response2));
+		assertTrue(fuckCommand.getResponses(subject).contains(response1));
+		assertTrue(fuckCommand.getResponses(subject.toUpperCase()).contains(response1));
+		assertTrue(fuckCommand.getResponses(subject.toLowerCase()).contains(response1));
+		assertTrue(fuckCommand.getResponses(subject).contains(response2));
+		assertTrue(fuckCommand.getResponses(subject.toUpperCase()).contains(response2));
+		assertTrue(fuckCommand.getResponses(subject.toLowerCase()).contains(response2));
 	}
 }

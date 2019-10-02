@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -29,23 +30,25 @@ import com.hazeluff.discord.nhlbot.bot.command.SubscribeCommand;
 import com.hazeluff.discord.nhlbot.bot.command.UnsubscribeCommand;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import sx.blah.discord.api.events.EventSubscriber;
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
+import discord4j.core.object.entity.Channel;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.util.Snowflake;
+import discord4j.core.spec.MessageCreateSpec;
 
-/**
- * Listens for MessageReceivedEvents and will process the messages for commands.
- * 
- * Commands need to be in format '@NHLBot command'.
- */
 public class MessageListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
 
+	static final Consumer<MessageCreateSpec> UNKNOWN_COMMAND_REPLY = spec -> spec
+			.setContent("Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
+	static final Consumer<MessageCreateSpec> FUCK_MESSIER_REPLY = spec -> spec
+			.setContent("FUCK MESSIER");
 	static long FUCK_MESSIER_COUNT_LIFESPAN = 60000;
 
-	private Map<IChannel, List<Long>> messierCounter = new HashMap<>();
+	private Map<Snowflake, List<Long>> messierCounter = new HashMap<>();
 	private final List<Command> commands;
 	private final List<Topic> topics;
 
@@ -82,94 +85,101 @@ public class MessageListener {
 		this.userThrottler = userThrottler;
 	}
 
-	@EventSubscriber
-	public void onReceivedMessageEvent(MessageReceivedEvent event) {
-		IUser user = event.getAuthor();
-		IMessage message = event.getMessage();
-		if (!userThrottler.isThrottle(user)) {
-			if (message.getChannel().isPrivate()) {
-				return;
-			}
-
-			LOGGER.trace(String.format("[%s][%s][%s][%s]", message.getGuild().getName(), message.getChannel().getName(),
-					message.getAuthor().getName(), message.getContent()));
-
-			if (replyToCommand(message)) {
-				userThrottler.add(user);
-				return;
-			}
-
-			if (replyToMention(message)) {
-				userThrottler.add(user);
-				return;
-			}
-
-			// Message is a command
-			if (getCommand(message) != null) {
-				nhlBot.getDiscordManager().sendMessage(message.getChannel(),
-						"Sorry, I don't understand that. Send `@NHLBot help` for a list of commands.");
-				return;
-			}
-		} else {
-			return;
+	/**
+	 * Gets a specification for the message to reply with.
+	 * 
+	 * @param message
+	 *            the message to reply to
+	 * @return MessageCreateSpec of the reply; null if no reply.
+	 */
+	public Consumer<MessageCreateSpec> getReply(Guild guild, MessageChannel channel, Message message) {
+		User author = message.getAuthor().orElse(null);
+		if (author == null) {
+			return null;
 		}
 
-		if (shouldFuckMessier(message)) {
-			nhlBot.getDiscordManager().sendMessage(message.getChannel(), "FUCK MESSIER");
+		Snowflake authorId = author.getId();
+
+		if (channel.getType() != Channel.Type.GUILD_TEXT) {
+			return null;
 		}
+
+		TextChannel textChannel = (TextChannel) channel;
+
+		userThrottler.add(authorId);
+
+		if (userThrottler.isThrottle(authorId)) {
+			return null;
+		}
+		
+		LOGGER.trace(String.format("[%s][%s][%s][%s]", 
+				guild.getName(),
+				textChannel.getName(),
+				author.getUsername(), 
+				message.getContent()));
+
+		Consumer<MessageCreateSpec> commandReply = null;
+		if ((commandReply = replyToCommand(guild, textChannel, message)) != null) {
+			return commandReply;
+		}
+
+		Consumer<MessageCreateSpec> mentionReply = null;
+		if ((mentionReply = replyToMention(message)) != null) {
+			return mentionReply;
+		}
+
+		// Message is a command
+		if (getCommand(message) != null) {
+			userThrottler.add(authorId);
+			return UNKNOWN_COMMAND_REPLY;
+		}
+
+		if (shouldFuckMessier(textChannel, message)) {
+			return FUCK_MESSIER_REPLY;
+		}
+
+		return null;
 	}
 
 	/**
-	 * Sends a message if the message in the form of a command (Starts with
-	 * "@NHLBot")
+	 * Gets the specification for the reply message that are in the form of a
+	 * command (Starts with "@NHLBot")
 	 * 
+	 * @param guild
+	 *            guild the message was in
 	 * @param channel
-	 *            channel to send the message to
+	 *            channel the message was in
 	 * @param message
 	 *            message received
-	 * @return true, if message was a command (or invalid command)<br>
-	 *         false, otherwise
+	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	boolean replyToCommand(IMessage message) {
+	Consumer<MessageCreateSpec> replyToCommand(Guild guild, TextChannel channel, Message message) {
 		Command command = getCommand(message);
 		if (command != null) {
 			List<String> commandArgs = parseToCommandArguments(message);
-			LOGGER.info(String.format("Received Command:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
-					message.getChannel().getName(), message.getAuthor().getName(), "Command:" + commandArgs));
-			command.replyTo(message, commandArgs);
-			return true;
+			return command.getReply(guild, channel, message, commandArgs);
 		}
 
-		return false;
+		return null;
 	}
 
 	/**
-	 * Sends a message if NHLBot is mentioned and phrases match ones that have
-	 * responses.
+	 * Gets the specification for the reply message for if the NHLBot is mentioned
+	 * and phrases match ones that have responses.
 	 * 
 	 * @param message
 	 *            message received
-	 * @return true, if message is sent responded to.<br>
-	 *         false, otherwise.
+	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	boolean replyToMention(IMessage message) {
+	Consumer<MessageCreateSpec> replyToMention(Message message) {
 		if (isBotMentioned(message)) {
-			if (message.getChannel().isPrivate()) {
-				LOGGER.info(String.format("Received Mention:[Direct Message][%s][%s][%s]",
-						message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
-			} else {
-				LOGGER.info(
-						String.format("Received Mention:[%s][%s][%s][%s]", message.getChannel().getGuild().getName(),
-								message.getChannel().getName(), message.getAuthor().getName(), message.getContent()));
-			}
 			Optional<Topic> matchedCommand = topics.stream().filter(topic -> topic.isReplyTo(message)).findFirst();
 			if (matchedCommand.isPresent()) {
-				matchedCommand.get().replyTo(message);
-				return true;
+				return matchedCommand.get().getReply(message);
 			}
 		}
 
-		return false;
+		return null;
 	}
 
 	/**
@@ -179,9 +189,8 @@ public class MessageListener {
 	 *            message to determine if NHLBot is mentioned in
 	 * @return list of commands if command; null if not a command
 	 */
-	List<String> parseToCommandArguments(IMessage message) {
-		String messageContent = message.getContent();
-
+	List<String> parseToCommandArguments(Message message) {
+		String messageContent = message.getContent().orElse("");
 		if (messageContent.startsWith(nhlBot.getMention())
 				|| messageContent.startsWith(nhlBot.getNicknameMentionId())
 				|| messageContent.toLowerCase().startsWith("?nhlbot")) {
@@ -190,7 +199,7 @@ public class MessageListener {
 			return commandArgs;
 		}
 
-		if (message.getContent().startsWith("?")) {
+		if (messageContent.startsWith("?")) {
 			String[] commandArray = messageContent.split("\\s+");
 			if (commandArray[0].length() > 1) {
 				commandArray[0] = commandArray[0].substring(1, commandArray[0].length());
@@ -208,7 +217,7 @@ public class MessageListener {
 	 *            the message received
 	 * @return the {@link Command} for the message/arguments
 	 */
-	Command getCommand(IMessage message) {
+	Command getCommand(Message message) {
 		List<String> commandArgs = parseToCommandArguments(message);
 
 		return commandArgs == null
@@ -227,10 +236,8 @@ public class MessageListener {
 	 * @return true, if NHL Bot is mentioned.<br>
 	 *         false, otherwise.
 	 */
-	boolean isBotMentioned(IMessage message) {
-		String messageContent = message.getContent();
-		return messageContent.contains(nhlBot.getMention()) || messageContent.contains(nhlBot.getNicknameMentionId())
-				|| message.getChannel().isPrivate();
+	boolean isBotMentioned(Message message) {
+		return message.getUserMentionIds().contains(nhlBot.getDiscordManager().getId());
 	}
 
 	/**
@@ -244,15 +251,19 @@ public class MessageListener {
 	 * @return true, if we should display "Fuck Messier" message<br>
 	 *         false, otherwise (but should be never).
 	 */
-	public boolean shouldFuckMessier(IMessage message) {
-		IChannel channel = message.getChannel();
-		String messageLowerCase = message.getContent().toLowerCase();
-		if (!messierCounter.containsKey(channel)) {
-			messierCounter.put(channel, new ArrayList<Long>());
+	public boolean shouldFuckMessier(TextChannel channel, Message message) {
+		Snowflake channelId = channel.getId();
+		String messageContent = message.getContent().orElse(null);
+		if (messageContent == null) {
+			return false;
 		}
-		List<Long> counter = messierCounter.get(channel);
-		if (messageLowerCase.contains("messier")) {
-			long currentTime = Utils.getCurrentTime();
+
+		if (!messierCounter.containsKey(channelId)) {
+			messierCounter.put(channelId, new ArrayList<Long>());
+		}
+		List<Long> counter = messierCounter.get(channelId);
+		if (messageContent.toLowerCase().contains("messier")) {
+			long currentTime = getCurrentTime();
 			counter.add(currentTime);
 			counter.removeIf(time -> currentTime - time > FUCK_MESSIER_COUNT_LIFESPAN);
 			if (counter.size() >= 5) {
@@ -261,5 +272,9 @@ public class MessageListener {
 			}
 		}
 		return false;
+	}
+
+	long getCurrentTime() {
+		return Utils.getCurrentTime();
 	}
 }

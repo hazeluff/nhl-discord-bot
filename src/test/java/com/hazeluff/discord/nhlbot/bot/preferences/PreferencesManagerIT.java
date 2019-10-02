@@ -1,6 +1,5 @@
 package com.hazeluff.discord.nhlbot.bot.preferences;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -46,7 +45,7 @@ public class PreferencesManagerIT extends DatabaseIT {
 	@Before
 	public void before() {
 		super.before();
-		preferencesManager = new PreferencesManager(getNHLBot());
+		preferencesManager = PreferencesManager.getInstance();
 	}
 	
 	@Test
@@ -56,9 +55,8 @@ public class PreferencesManagerIT extends DatabaseIT {
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM2);
 
 		// Reload
-		preferencesManager = new PreferencesManager(getNHLBot());
-		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
-		preferencesManager.loadPreferences();
+		preferencesManager = PreferencesManager.getInstance();
+		assertTrue(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 
 		assertTrue(Utils.isListEquivalent(Arrays.asList(TEAM, TEAM2),
 				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
@@ -72,9 +70,8 @@ public class PreferencesManagerIT extends DatabaseIT {
 		preferencesManager.unsubscribeGuild(GUILD_ID, TEAM);
 
 		// Reload
-		preferencesManager = new PreferencesManager(getNHLBot());
-		assertFalse(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
-		preferencesManager.loadPreferences();
+		preferencesManager = PreferencesManager.getInstance();
+		assertTrue(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
 
 		assertTrue(Utils.isListEquivalent(
 				Arrays.asList(TEAM2),
