@@ -20,14 +20,12 @@ import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.MessageCreateSpec;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple3;
+import reactor.util.function.Tuple2;
 
 public class NHLBot extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NHLBot.class);
@@ -75,21 +73,16 @@ public class NHLBot extends Thread {
 		}
 
 		LOGGER.info("Attaching Listener.");
+		MessageListener messageListener = new MessageListener(nhlBot);
 		nhlBot.getDiscordManager().getClient().getEventDispatcher()
 				.on(MessageCreateEvent.class)
-				.flatMap(NHLBot::zipEvent)
+				.map(event -> messageListener.getReply(event))
+				.doOnError(t -> LOGGER.error("Error occurred when responding to message.", t))
 				.retry()
-				.subscribe(t -> {
-					Consumer<MessageCreateSpec> replySpec = new MessageListener(nhlBot).getReply(
-							t.getT1(), t.getT2(), t.getT3());
-					if (replySpec != null) {
-						// Send the message
-						t.getT2().createMessage(replySpec).block();
-					}
-				});
+				.subscribe(NHLBot::sendMessage);
 
 		nhlBot.getDiscordManager().changePresence(STARTING_UP_PRESENCE);
-		LOGGER.info("NHLBot. id [" + nhlBot.getDiscordManager().getId() + "]");
+		LOGGER.info("NHLBot Started. id [" + nhlBot.getDiscordManager().getId() + "]");
 
 		// Start the Game Day Channels Manager
 		nhlBot.initGameDayChannelsManager();
@@ -104,7 +97,9 @@ public class NHLBot extends Thread {
 						channel.getName().equals("welcome")).take(1))
 				.filter(TextChannel.class::isInstance)
 				.cast(TextChannel.class)
-				.subscribe(channel -> WelcomeChannel.create(nhlBot, channel));
+				.subscribe(
+						channel -> WelcomeChannel.create(nhlBot, channel),
+						t -> LOGGER.error("Error occurred when starting WelcomeChannel.", t));
 
 		while (!nhlBot.getGameScheduler().isInit()) {
 			LOGGER.info("Waiting for GameScheduler...");
@@ -117,7 +112,14 @@ public class NHLBot extends Thread {
 
 		return nhlBot;
 	}
-	
+
+	private static void sendMessage(Mono<Tuple2<Consumer<MessageCreateSpec>, TextChannel>> replyMono) {
+		Tuple2<Consumer<MessageCreateSpec>, TextChannel> reply = replyMono.block();
+		if (reply != null) {
+			reply.getT2().createMessage(reply.getT1()).subscribe();
+		}
+	}
+
 	/**
 	 * This needs to be done in its own Thread. login().block() hold the execution.
 	 * 
@@ -142,23 +144,6 @@ public class NHLBot extends Thread {
 		LOGGER.info("Discord Initializer started.");
 	}
 
-	/**
-	 * Takes a event and returns a Mono that zips up the following properties of the
-	 * event (in order):
-	 * <ol>
-	 * <li>guild</li>
-	 * <li>channel</li>
-	 * <li>message</li>
-	 * </ol>
-	 * 
-	 * @param event
-	 *            the event to zip
-	 * @return {@link Tuple3} containing (in order): guild, channel, message
-	 */
-	private static Mono<Tuple3<Guild, MessageChannel, Message>> zipEvent(MessageCreateEvent event) {
-		return Mono.zip(event.getGuild(), event.getMessage().getChannel(), Mono.just(event.getMessage()));
-	}
-
 	@Override
 	public void run() {
 		while (!isInterrupted()) {
@@ -173,9 +158,13 @@ public class NHLBot extends Thread {
 	}
 
 	void initGameDayChannelsManager() {
-		LOGGER.info("Initializing GameDayChannelsManager.");
-		this.gameDayChannelsManager = new GameDayChannelsManager(this);
-		gameDayChannelsManager.start();
+		if (Config.Debug.isLoadGames()) {
+			LOGGER.info("Initializing GameDayChannelsManager.");
+			this.gameDayChannelsManager = new GameDayChannelsManager(this);
+			gameDayChannelsManager.start();
+		} else {
+			LOGGER.warn("Skipping Initialization of GameDayChannelsManager");
+		}
 	}
 
 	public PreferencesManager getPreferencesManager() {

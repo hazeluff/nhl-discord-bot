@@ -9,9 +9,8 @@ import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader;
 import com.hazeluff.discord.nhlbot.bot.ResourceLoader.Resource;
 
-import discord4j.core.object.entity.Guild;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 
@@ -25,8 +24,7 @@ public class AboutCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
-			List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
 		return getReply();
 	}
 

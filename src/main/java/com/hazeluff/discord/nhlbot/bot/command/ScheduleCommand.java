@@ -12,9 +12,8 @@ import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.GameScheduler;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
-import discord4j.core.object.entity.Guild;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 
@@ -33,10 +32,10 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
-			List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
 		if (arguments.size() <= 1) {
-			List<Team> preferredTeams = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong())
+			List<Team> preferredTeams = nhlBot.getPreferencesManager()
+					.getGuildPreferences(event.getGuildId().get().asLong())
 					.getTeams();
 
 			if (preferredTeams.isEmpty()) {

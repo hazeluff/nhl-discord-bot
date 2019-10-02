@@ -14,6 +14,7 @@ import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -48,16 +49,13 @@ public abstract class Command {
 	 * Replies to the command arguments provided. Replies to the channel that the
 	 * source message was sent to.
 	 * 
-	 * @param guild
-	 *            guild that the message was sent in
-	 * @param message
-	 *            message to reply to.
+	 * @param event
+	 *            event that we are replying to
 	 * @param arguments
 	 *            command arguments
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	public abstract Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
-			List<String> arguments);
+	public abstract Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments);
 
 	/**
 	 * Determines if the command arguments are accepted by this command. i.e the

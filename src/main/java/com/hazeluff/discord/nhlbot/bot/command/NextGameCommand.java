@@ -12,9 +12,8 @@ import com.hazeluff.discord.nhlbot.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.nhlbot.nhl.Game;
 import com.hazeluff.discord.nhlbot.nhl.Team;
 
-import discord4j.core.object.entity.Guild;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 
 /**
@@ -31,9 +30,9 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
-			List<String> arguments) {
-		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
+		GuildPreferences preferences = nhlBot.getPreferencesManager()
+				.getGuildPreferences(event.getGuildId().get().asLong());
 		List<Team> preferredTeams = preferences.getTeams();
 		
 		if (preferredTeams.isEmpty()) {

@@ -11,9 +11,8 @@ import com.hazeluff.discord.nhlbot.bot.NHLBot;
 import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.hazeluff.discord.nhlbot.utils.Utils;
 
-import discord4j.core.object.entity.Guild;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.MessageCreateSpec;
 
@@ -38,8 +37,7 @@ public class FuckCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
-			List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
 		
 		if(arguments.size() < 2) {
 			return NOT_ENOUGH_PARAMETERS_REPLY;
@@ -58,12 +56,12 @@ public class FuckCommand extends Command {
 		}
 
 		if (arguments.get(1).startsWith("<@") && arguments.get(1).endsWith(">")) {
-			DiscordManager.deleteMessage(message);
-			return buildDontAtReply(message);
+			DiscordManager.deleteMessage(event.getMessage());
+			return buildDontAtReply(event.getMessage());
 		}
 
 		if (arguments.get(1).toLowerCase().equals("add")) {
-			User author = message.getAuthor().orElse(null);
+			User author = event.getMessage().getAuthor().orElse(null);
 			if (author != null && isDev(author.getId())) {
 				String subject = arguments.get(2);
 				List<String> response = new ArrayList<>(arguments);

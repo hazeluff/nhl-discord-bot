@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
 
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 
 /**
@@ -30,8 +30,7 @@ public class StatsCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(Guild guild, TextChannel channel, Message message,
-			List<String> arguments) {
+	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
 		return getReply();
 	}
 
@@ -41,10 +40,10 @@ public class StatsCommand extends Command {
 	}
 
 	public Consumer<MessageCreateSpec> getReply() {
-		return spec -> spec.setContent(getReplyString());
+		return spec -> spec.setContent(buildReplyString());
 	}
 
-	public String getReplyString() {
+	public String buildReplyString() {
 		String reply = "No guilds found...";
 		List<Guild> guilds = nhlBot.getDiscordManager().getGuilds();
 		if (guilds != null) {

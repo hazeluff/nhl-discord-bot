@@ -1,9 +1,7 @@
 package com.hazeluff.discord.nhlbot.bot;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -143,71 +141,5 @@ public class MessageListenerTest {
 		doReturn(null).when(spyMessageListener).parseToCommandArguments(mockMessage);
 
 		assertNull(spyMessageListener.getCommand(mockMessage));
-	}
-
-	// shouldFuckMessier
-	@SuppressWarnings("unchecked")
-	@Test
-	public void shouldFuckMessierShouldReturnFalseWhenMessageDoesNotContainMessier() {
-		LOGGER.info("shouldFuckMessierShouldReturnFalseWhenMessageDoesNotContainMessier");
-		Optional<String> mockOpt = mock(Optional.class);
-		when(mockMessage.getContent()).thenReturn(mockOpt);
-		when(mockOpt.orElse(null)).thenReturn("<@1234> mark wahlberg", "<@1234> mark twain",
-				"<@1234> mark stone", "<@1234> mark ruffalo", "<@1234> mark cuban");
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-	}
-
-	@SuppressWarnings("unchecked")
-	@Test
-	public void shouldFuckMessierShouldReturnTrueWhenNumberOfSubmittedRecentlyIsFive() {
-		LOGGER.info("shouldFuckMessierShouldReturnTrueWhenNumberOfSubmittedRecentlyIsFive");
-		Optional<String> mockOpt = mock(Optional.class);
-		when(mockMessage.getContent()).thenReturn(mockOpt);
-		when(mockOpt.orElse(null)).thenReturn("<@1234> mark messier", "<@1234> mark messier",
-				"<@1234> mark messier", "<@1234> mark messier", "<@1234> mark messier");
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertTrue(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-	}
-
-	@SuppressWarnings("unchecked")
-	@Test
-	public void shouldFuckMessierShouldNotBeCaseSensitive() {
-		LOGGER.info("shouldFuckMessierShouldNotBeCaseSensitive");
-		Optional<String> mockOpt = mock(Optional.class);
-		when(mockMessage.getContent()).thenReturn(mockOpt);
-		when(mockOpt.orElse(null)).thenReturn("<@1234> Mark meSsier", "<@1234> mark MessiEr",
-				"<@1234> mARk mesSIEr", "<@1234> marK mESsier", "<@1234> mark MEsSieR");
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertTrue(messageListener.shouldFuckMessier(mockChannel, mockMessage));
-	}
-
-	@SuppressWarnings("unchecked")
-	@Test
-	public void shouldFuckMessierShouldNotCountsThatArePastLifespan() {
-		LOGGER.info("shouldFuckMessierShouldNotCountsThatArePastLifespan");
-		Optional<String> mockOpt = mock(Optional.class);
-		when(mockMessage.getContent()).thenReturn(mockOpt);
-		long lifespan = MessageListener.FUCK_MESSIER_COUNT_LIFESPAN;
-		doReturn(0l, 1l, lifespan + 2, lifespan + 3, lifespan + 4, lifespan + 5, lifespan + 6)
-				.when(spyMessageListener).getCurrentTime();
-		when(mockOpt.orElse(null)).thenReturn("<@1234> messier");
-		assertFalse(spyMessageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(spyMessageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(spyMessageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(spyMessageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(spyMessageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertFalse(spyMessageListener.shouldFuckMessier(mockChannel, mockMessage));
-		assertTrue(spyMessageListener.shouldFuckMessier(mockChannel, mockMessage));
-
 	}
 }

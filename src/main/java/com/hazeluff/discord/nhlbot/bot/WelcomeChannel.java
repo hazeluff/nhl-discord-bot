@@ -70,11 +70,11 @@ public class WelcomeChannel extends Thread {
 		DiscordManager.sendMessage(channel, helpCommand.getReply());
 		statsMessage = DiscordManager.sendMessage(channel, statsCommand.getReply());
 
-		String strStatsMessage = statsCommand.getReplyString();
+		String strStatsMessage = statsCommand.buildReplyString();
 		while (!isStop() && !isInterrupted()) {
 			Utils.sleep(UPDATE_RATE);
-			if (!strStatsMessage.equals(statsCommand.getReplyString())) {
-				strStatsMessage = statsCommand.getReplyString();
+			if (!strStatsMessage.equals(statsCommand.buildReplyString())) {
+				strStatsMessage = statsCommand.buildReplyString();
 				if (strStatsMessage != null) {
 					DiscordManager.updateMessage(statsMessage, strStatsMessage);
 				} else {
