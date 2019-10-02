@@ -78,6 +78,7 @@ public class NHLBot extends Thread {
 		nhlBot.getDiscordManager().getClient().getEventDispatcher()
 				.on(MessageCreateEvent.class)
 				.flatMap(NHLBot::zipEvent)
+				.retry()
 				.subscribe(t -> {
 					Consumer<MessageCreateSpec> replySpec = new MessageListener(nhlBot).getReply(
 							t.getT1(), t.getT2(), t.getT3());
