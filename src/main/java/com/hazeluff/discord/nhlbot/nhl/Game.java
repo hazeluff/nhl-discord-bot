@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,16 +93,24 @@ public class Game {
 			uriBuilder = new URIBuilder("https://statsapi.web.nhl.com/api/v1/schedule");
 			uriBuilder.addParameter("gamePk", Integer.toString(gamePk));
 			uriBuilder.addParameter("expand", "schedule.scoringplays");
-			strJSONSchedule = HttpUtils.getAndRetry(uriBuilder.build(), 
-					5, // 5 retries
-					60000l, // 
+			strJSONSchedule = HttpUtils.getAndRetry(uriBuilder.build(), 5, // 5 retries
+					60000l, //
 					"Update the game.");
+		} catch (URISyntaxException e) {
+			LOGGER.error("Error building URI", e);
+		}
+
+		if (strJSONSchedule.isEmpty()) {
+			return;
+		}
+
+		try {
 			JSONObject jsonSchedule = new JSONObject(strJSONSchedule);
 			JSONObject jsonGame = jsonSchedule.getJSONArray("dates").getJSONObject(0).getJSONArray("games")
 					.getJSONObject(0);
 			updateState(jsonGame);
-		} catch (URISyntaxException e) {
-			LOGGER.error("Error building URI", e);
+		} catch (JSONException e) {
+			LOGGER.error("Failed to parse game.", e);
 		}
 	}
 
