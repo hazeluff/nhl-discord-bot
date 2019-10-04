@@ -190,29 +190,24 @@ public class GameDayChannel extends Thread {
 		String channelName = getChannelName();
 		Predicate<TextChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+		Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
 		if (!DiscordManager.getTextChannels(guild).stream().anyMatch(channelMatcher)) {
-			Consumer<TextChannelCreateSpec> channelSpec = spec -> spec
-					.setName(channelName)
-					.setTopic(preferences.getCheer());
+			Consumer<TextChannelCreateSpec> channelSpec = spec -> {
+				spec.setName(channelName);
+				spec.setTopic(preferences.getCheer());
+				if (category != null) {
+					spec.setParentId(category.getId());
+				}
+			};
 			channel = DiscordManager.createChannel(guild, channelSpec);
 			if (channel != null) {
-				// TODO This can be done at creation.
 				ZoneId timeZone = preferences.getTimeZone();
 				Message message = sendMessage(getDetailsMessage(timeZone));
 				DiscordManager.pinMessage(message);
 			}
 		} else {
 			LOGGER.debug("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
-			channel = DiscordManager.getTextChannels(guild).stream().filter(channelMatcher).findAny().get();
-		}
-
-		// TODO This can be done at creation. We don't need to move the channel after
-		// creation.
-		if (channel != null) {
-			Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
-			if (category != null) {
-				DiscordManager.moveChannel(category, channel);
-			}
+			channel = DiscordManager.getTextChannels(guild).stream().filter(channelMatcher).findAny().orElse(null);
 		}
 	}
 
