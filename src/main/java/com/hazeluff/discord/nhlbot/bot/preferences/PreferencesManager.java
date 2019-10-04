@@ -42,9 +42,19 @@ public class PreferencesManager {
 	}
 
 	public static PreferencesManager getInstance() {
-		MongoDatabase database = getDatabase();
+		return getInstance(getDatabase());
+	}
+
+	/**
+	 * FOR TESTING PURPOSES
+	 * 
+	 * @param database
+	 * @return
+	 */
+	public static PreferencesManager getInstance(MongoDatabase database) {
 		Map<Long, GuildPreferences> guildPreferences = loadGuildPreferences(getGuildCollection(database));
 		Map<String, List<String>> fuckResponses = loadFuckResponses(getFuckCollection(database));
+		System.out.println("Loaded: " + fuckResponses);
 		PreferencesManager preferencesManager = new PreferencesManager(database, guildPreferences, fuckResponses);
 		return preferencesManager;
 	}
@@ -184,6 +194,8 @@ public class PreferencesManager {
 	}
 
 	public void saveToFuckSubjectResponses(String subject, List<String> subjectResponses) {
+		fuckResponses.put(subject, subjectResponses);
+		System.out.println("Putting " + subject + " - " + subjectResponses);
 		getFuckCollection().updateOne(
 				new Document("subject", subject),
 				new Document("$set", new Document("responses", subjectResponses)), 

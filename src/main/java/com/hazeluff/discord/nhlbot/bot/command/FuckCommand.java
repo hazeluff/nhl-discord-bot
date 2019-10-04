@@ -98,15 +98,13 @@ public class FuckCommand extends Command {
 	void add(String subject, String response) {
 		subject = subject.toLowerCase();
 		if(!responses.containsKey(subject)) {
-			responses.put(subject, new ArrayList<>());
 		}
 		responses.get(subject).add(response);
 
-		saveToCollection(subject);
+		saveToCollection(subject, responses.get(subject));
 	}
 
-	void saveToCollection(String subject) {
-		List<String> subjectResponses = responses.get(subject);
+	void saveToCollection(String subject, List<String> subjectResponses) {
 		nhlBot.getPreferencesManager().saveToFuckSubjectResponses(subject, subjectResponses);
 	}
 

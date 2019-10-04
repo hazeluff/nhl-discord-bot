@@ -1,14 +1,13 @@
 package com.hazeluff.test;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import org.junit.After;
 import org.junit.Before;
+import org.mockito.Answers;
 
 import com.hazeluff.discord.nhlbot.Config;
 import com.hazeluff.discord.nhlbot.bot.NHLBot;
-import com.hazeluff.discord.nhlbot.bot.discord.DiscordManager;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
@@ -37,8 +36,7 @@ public abstract class DatabaseIT {
 	@Before
 	public void before() {
 		mongoDatabase = getClient().getDatabase(Config.MONGO_TEST_DATABASE_NAME);
-		nhlBot = mock(NHLBot.class);
-		when(nhlBot.getDiscordManager()).thenReturn(mock(DiscordManager.class));
+		nhlBot = mock(NHLBot.class, Answers.RETURNS_DEEP_STUBS);
 	}
 
 	@After

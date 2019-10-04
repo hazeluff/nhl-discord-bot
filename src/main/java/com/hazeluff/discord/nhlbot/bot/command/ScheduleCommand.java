@@ -144,6 +144,10 @@ public class ScheduleCommand extends Command {
 					? String.format("vs %s", g.getAwayTeam().getFullName())
 					: String.format("@ %s", g.getHomeTeam().getFullName());
 		};
+
+		// Add Time
+		date.append(" at ").append(GameDayChannel.getTime(game, preferedTeam.getTimeZone()));
+
 		switch(state) {
 		case PAST:
 			message = GameDayChannel.getScoreMessage(game);
@@ -154,15 +158,16 @@ public class ScheduleCommand extends Command {
 			break;
 		case NEXT:
 			date.append(" (next game)");
-			message = getAgainstTeamMessage.apply(game);
+			message = preferedTeam.getFullName() + " " + getAgainstTeamMessage.apply(game);
 			break;
 		case FUTURE:
-			message = getAgainstTeamMessage.apply(game);
+			message = preferedTeam.getFullName() + " " + getAgainstTeamMessage.apply(game);
 			break;
 		default:
 			message = "";
 			break;
 		}
+
 		return embed -> embed.addField(date.toString(), message, false);
 	}
 
