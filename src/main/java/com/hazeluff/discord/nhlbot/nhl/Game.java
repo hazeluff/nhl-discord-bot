@@ -87,10 +87,9 @@ public class Game {
 	 */
 	public void update() throws HttpException {
 		LOGGER.trace("Updating. [" + gamePk + "]");
-		URIBuilder uriBuilder = null;
 		String strJSONSchedule = "";
 		try {
-			uriBuilder = new URIBuilder("https://statsapi.web.nhl.com/api/v1/schedule");
+			URIBuilder uriBuilder = new URIBuilder("https://statsapi.web.nhl.com/api/v1/schedule");
 			uriBuilder.addParameter("gamePk", Integer.toString(gamePk));
 			uriBuilder.addParameter("expand", "schedule.scoringplays");
 			strJSONSchedule = HttpUtils.getAndRetry(uriBuilder.build(), 5, // 5 retries
