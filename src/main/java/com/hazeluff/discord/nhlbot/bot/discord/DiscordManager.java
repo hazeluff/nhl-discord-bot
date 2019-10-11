@@ -1,5 +1,6 @@
 package com.hazeluff.discord.nhlbot.bot.discord;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -264,6 +265,7 @@ public class DiscordManager {
 
 		return request(() -> guild.getChannels()
 				.filter(channel -> (channel instanceof Category))
+				.filter(category -> category.getName().equalsIgnoreCase(categoryName))
 				.take(1)
 				.cast(Category.class)
 				.next());
@@ -324,6 +326,7 @@ public class DiscordManager {
 		return monoSupplier.get()
 				.doOnError(DiscordManager::logError)
 				.onErrorReturn(null)
+				.retryBackoff(5, Duration.ofSeconds(1), Duration.ofSeconds(10))
 				.block();
 	}
 

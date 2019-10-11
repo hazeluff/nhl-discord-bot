@@ -1,5 +1,6 @@
 package com.hazeluff.discord.nhlbot.bot;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,7 +25,12 @@ import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.rest.http.client.ClientException;
+import discord4j.rest.request.RouteMatcher;
+import discord4j.rest.request.RouterOptions;
+import discord4j.rest.response.ResponseFunction;
 import reactor.core.publisher.Mono;
+import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
 
 public class NHLBot extends Thread {
@@ -129,7 +135,20 @@ public class NHLBot extends Thread {
 		new Thread(() -> {
 			LOGGER.info("Initializing Discord.");
 			// Init DiscordClient and DiscordManager
-			DiscordClient discordClient = new DiscordClientBuilder(botToken).build();
+			DiscordClient discordClient = new DiscordClientBuilder(botToken)
+					.setRouterOptions(RouterOptions.builder()
+							// globally suppress any not found (404) error
+							.onClientResponse(ResponseFunction.emptyIfNotFound())
+							// 403 Forbidden will not be retried.
+							.onClientResponse(ResponseFunction
+									.emptyOnErrorStatus(RouteMatcher.any(), 403))
+							.onClientResponse(ResponseFunction.retryWhen(RouteMatcher.any(),
+			                        Retry.onlyIf(ClientException.isRetryContextStatusCode(500))
+			                                .exponentialBackoffWithJitter(
+			                                		Duration.ofSeconds(2), 
+			                                		Duration.ofSeconds(10))))
+							.build())
+					.build();
 			
 			discordClient.getEventDispatcher().on(ReadyEvent.class)
 					.subscribe(event -> {

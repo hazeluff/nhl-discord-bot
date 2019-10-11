@@ -190,7 +190,9 @@ public class GameDayChannel extends Thread {
 		String channelName = getChannelName();
 		Predicate<TextChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		GuildPreferences preferences = nhlBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+
 		Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
+
 		if (!DiscordManager.getTextChannels(guild).stream().anyMatch(channelMatcher)) {
 			Consumer<TextChannelCreateSpec> channelSpec = spec -> {
 				spec.setName(channelName);
@@ -208,6 +210,10 @@ public class GameDayChannel extends Thread {
 		} else {
 			LOGGER.debug("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
 			channel = DiscordManager.getTextChannels(guild).stream().filter(channelMatcher).findAny().orElse(null);
+
+			if (!channel.getCategoryId().isPresent() && category != null) {
+				DiscordManager.moveChannel(category, channel);
+			}
 		}
 	}
 
