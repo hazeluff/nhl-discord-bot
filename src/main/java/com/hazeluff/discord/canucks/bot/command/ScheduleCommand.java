@@ -6,10 +6,11 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.CanucksBot;
+import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameScheduler;
+import com.hazeluff.discord.canucks.nhl.GameStatus;
 import com.hazeluff.discord.canucks.nhl.Team;
 
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -153,14 +154,25 @@ public class ScheduleCommand extends Command {
 			message = GameDayChannel.getScoreMessage(game);
 			break;
 		case CURRENT:
-			date.append(" (current game)");
+			if (game.getStatus() == GameStatus.POSTPONED) {
+				date.append(" **(postponed)**");
+			} else {
+				date.append(" **(current game)**");
+			}
 			message = GameDayChannel.getScoreMessage(game);
 			break;
 		case NEXT:
-			date.append(" (next game)");
+			if (game.getStatus() == GameStatus.POSTPONED) {
+				date.append(" **(postponed)**");
+			} else {
+				date.append(" **(next game)**");
+			}
 			message = preferedTeam.getFullName() + " " + getAgainstTeamMessage.apply(game);
 			break;
 		case FUTURE:
+			if (game.getStatus() == GameStatus.POSTPONED) {
+				date.append(" **(postponed)**");
+			}
 			message = preferedTeam.getFullName() + " " + getAgainstTeamMessage.apply(game);
 			break;
 		default:

@@ -332,7 +332,7 @@ public class GameScheduler extends Thread {
 	public Game getFutureGame(Team team, int futureIndex) {
 		List<Game> futureGames = games.stream()
 				.filter(game -> game.containsTeam(team))
-				.filter(game -> game.getStatus() == GameStatus.PREVIEW)
+				.filter(game -> game.getStatus() == GameStatus.PREVIEW || game.getStatus() == GameStatus.POSTPONED)
 				.collect(Collectors.toList());
 		if (futureIndex >= futureGames.size()) {
 			return null;
