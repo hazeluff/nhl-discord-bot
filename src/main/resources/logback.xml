@@ -55,10 +55,10 @@
       </encoder>
     </appender>
     
-    <appender name="NHLBot" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/nhlbot.log</file>
+    <appender name="CanucksBot" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>logs/canucksbot.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-        <fileNamePattern>logs/nhlbot.%i.log</fileNamePattern>
+        <fileNamePattern>logs/canucksbot.%i.log</fileNamePattern>
         <minIndex>1</minIndex>
         <maxIndex>10</maxIndex>
       </rollingPolicy>
@@ -70,10 +70,10 @@
       </encoder>
     </appender>
     
-    <appender name="NHLBotError" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/nhlbot.err</file>
+    <appender name="CanucksBotError" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>logs/canucksbot.err</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-        <fileNamePattern>logs/nhlbot.%i.err</fileNamePattern>
+        <fileNamePattern>logs/canucksbot.%i.err</fileNamePattern>
         <minIndex>1</minIndex>
         <maxIndex>10</maxIndex>
       </rollingPolicy>
@@ -85,40 +85,40 @@
       </encoder>
     </appender>
     
-    <logger name="com.hazeluff.discord.nhlbot.bot.GameDayChannelsManager" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.canucks.bot.GameDayChannelsManager" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="GameDayChannel"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.nhlbot.bot.GameDayChannel" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.canucks.bot.GameDayChannel" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="GameDayChannel"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.nhlbot.bot.MessageListener" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.canucks.bot.MessageListener" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="Messages"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.nhlbot.bot.command.*" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.canucks.bot.command.*" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="Messages"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.nhlbot.bot.ConnectionListener" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.canucks.bot.ConnectionListener" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="Connectivity"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.nhlbot" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.canucks" level="info" additivity="false">
       <appender-ref ref="Console"/>
-      <appender-ref ref="NHLBot"/>
+      <appender-ref ref="CanucksBot"/>
     </logger>
     
     <root level="warn">
       <appender-ref ref="Console"/>
-      <appender-ref ref="NHLBot"/>
-      <appender-ref ref="NHLBotError"/>
+      <appender-ref ref="CanucksBot"/>
+      <appender-ref ref="CanucksBotError"/>
     </root>
     
     
