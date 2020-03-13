@@ -9,5 +9,5 @@ This bot creates channels (Game Day Channels) for each NHL team that the server 
 # Join the Vancouver /r/Canucks Discord Server!
 [![Vancouver /r/Canucks](https://img.shields.io/badge/Discord-Vancouver_/r/Canucks-7289DA.svg?style=flat-square&logo=discord)](https://discord.gg/YCCUVdY)
 
-# Learning to Program? Want to contribute?
+## Learning to Program? Want to contribute?
 If you're an aspiring programmer/student looking to get experience, I am more than willing to work with you to improve the bot. Just shoot me a message!
