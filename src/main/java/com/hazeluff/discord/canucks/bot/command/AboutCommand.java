@@ -49,6 +49,11 @@ public class AboutCommand extends Command {
 								+ "\nPaypal: " + Config.DONATION_URL
 								+ "\nBTC: " + Config.DONATION_BTC
 								+ "\nETH: " + Config.DONATION_ETH,
+						false)
+				.addField(
+						"Studying Programming? Want to contribute?",
+						"If you’re an aspiring programmer/student looking to get experience, "
+						+ "I am more than willing to work with you to improve the bot. Just shoot me a message!", 
 						false);
 		return spec -> spec
 				.addFile(resource.getFileName(), resource.getStream())
