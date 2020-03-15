@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.Config;
 import com.hazeluff.discord.canucks.bot.CanucksBot;
+import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.Team;
@@ -193,7 +193,10 @@ public abstract class Command {
 	 * @return the subscribed team for the User/Guild
 	 */
 	List<Team> getTeams(Guild guild) {
-		return canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong()).getTeams();
+		return canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong())
+				.getTeams();
 	}
 
 	/**

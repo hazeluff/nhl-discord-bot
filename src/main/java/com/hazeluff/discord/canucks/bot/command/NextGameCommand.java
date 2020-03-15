@@ -6,9 +6,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.CanucksBot;
-import com.hazeluff.discord.canucks.bot.preferences.GuildPreferences;
+import com.hazeluff.discord.canucks.bot.GameDayChannel;
+import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.Team;
 
@@ -31,7 +31,8 @@ public class NextGameCommand extends Command {
 
 	@Override
 	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
-		GuildPreferences preferences = canucksBot.getPreferencesManager()
+		GuildPreferences preferences = canucksBot.getPersistentData()
+				.getPreferencesManager()
 				.getGuildPreferences(event.getGuildId().get().asLong());
 		List<Team> preferredTeams = preferences.getTeams();
 		

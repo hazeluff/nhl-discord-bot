@@ -33,7 +33,7 @@ public class FuckCommand extends Command {
 
 	public FuckCommand(CanucksBot canucksBot) {
 		super(canucksBot);
-		responses = canucksBot.getPreferencesManager().getFuckResponses();
+		responses = canucksBot.getPersistentData().getFucksManager().getFucks();
 	}
 
 	@Override
@@ -105,7 +105,7 @@ public class FuckCommand extends Command {
 	}
 
 	void saveToCollection(String subject, List<String> subjectResponses) {
-		canucksBot.getPreferencesManager().saveToFuckSubjectResponses(subject, subjectResponses);
+		canucksBot.getPersistentData().getFucksManager().saveToFuckSubjectResponses(subject, subjectResponses);
 	}
 
 	Consumer<MessageCreateSpec> getRandomResponse(String subject) {

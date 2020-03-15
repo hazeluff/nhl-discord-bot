@@ -1,4 +1,4 @@
-package com.hazeluff.discord.canucks.bot.preferences;
+package com.hazeluff.discord.canucks.bot.database.preferences;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,9 +11,8 @@ import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.Config;
+import com.hazeluff.discord.canucks.bot.database.DatabaseManager;
 import com.hazeluff.discord.canucks.nhl.Team;
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -22,63 +21,27 @@ import com.mongodb.client.model.UpdateOptions;
 /**
  * This class is used to manage preferences of Guilds and Users. Preferences are stored in MongoDB.
  */
-public class PreferencesManager {
-	
-	
+public class PreferencesManager extends DatabaseManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManager.class);
-
-	private final MongoDatabase database;
 
 	// GuildID -> GuildPreferences
 	private final Map<Long, GuildPreferences> guildPreferences;
-	private final Map<String, List<String>> fuckResponses;
 
-
-	PreferencesManager(MongoDatabase database, Map<Long, GuildPreferences> guildPreferences,
-			Map<String, List<String>> fuckResponses) {
-		this.database = database;
+	PreferencesManager(MongoDatabase database, Map<Long, GuildPreferences> guildPreferences) {
+		super(database);
 		this.guildPreferences = guildPreferences;
-		this.fuckResponses = fuckResponses;
 	}
 
-	public static PreferencesManager getInstance() {
-		return getInstance(getDatabase());
+	public static PreferencesManager load(MongoDatabase database) {
+		return new PreferencesManager(database, loadGuildPreferences(database.getCollection("guilds")));
 	}
 
-	/**
-	 * FOR TESTING PURPOSES
-	 * 
-	 * @param database
-	 * @return
-	 */
-	public static PreferencesManager getInstance(MongoDatabase database) {
-		Map<Long, GuildPreferences> guildPreferences = loadGuildPreferences(getGuildCollection(database));
-		Map<String, List<String>> fuckResponses = loadFuckResponses(getFuckCollection(database));
-		System.out.println("Loaded: " + fuckResponses);
-		PreferencesManager preferencesManager = new PreferencesManager(database, guildPreferences, fuckResponses);
-		return preferencesManager;
-	}
-
-	@SuppressWarnings("resource")
-	private static MongoDatabase getDatabase() {
-		return new MongoClient(Config.MONGO_HOST, Config.MONGO_PORT)
-				.getDatabase(Config.MONGO_DATABASE_NAME);
+	private MongoCollection<Document> getGuildCollection() {
+		return getGuildCollection(getDatabase());
 	}
 
 	private static MongoCollection<Document> getGuildCollection(MongoDatabase database) {
 		return database.getCollection("guilds");
-	}
-
-	private static MongoCollection<Document> getFuckCollection(MongoDatabase database) {
-		return database.getCollection("fucks");
-	}
-
-	MongoCollection<Document> getGuildCollection() {
-		return database.getCollection("guilds");
-	}
-
-	MongoCollection<Document> getFuckCollection() {
-		return database.getCollection("fucks");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -169,36 +132,5 @@ public class PreferencesManager {
 
 	Map<Long, GuildPreferences> getGuildPreferences() {
 		return guildPreferences;
-	}
-
-	@SuppressWarnings("unchecked")
-	static Map<String, List<String>> loadFuckResponses(MongoCollection<Document> fuckCollection) {
-		LOGGER.info("Loading Fucks...");
-		Map<String, List<String>> fuckResponses = new HashMap<>();
-		MongoCursor<Document> iterator = fuckCollection.find().iterator();
-		// Load Guild preferences
-		while (iterator.hasNext()) {
-			Document doc = iterator.next();
-			String subject = doc.getString("subject").toLowerCase();
-			List<String> subjectResponses = doc.containsKey("responses") ? (List<String>) doc.get("responses")
-					: new ArrayList<>();
-
-			fuckResponses.put(subject, subjectResponses);
-		}
-		LOGGER.info("Fucks loaded.");
-		return fuckResponses;
-	}
-
-	public Map<String, List<String>> getFuckResponses() {
-		return fuckResponses;
-	}
-
-	public void saveToFuckSubjectResponses(String subject, List<String> subjectResponses) {
-		fuckResponses.put(subject, subjectResponses);
-		System.out.println("Putting " + subject + " - " + subjectResponses);
-		getFuckCollection().updateOne(
-				new Document("subject", subject),
-				new Document("$set", new Document("responses", subjectResponses)), 
-				new UpdateOptions().upsert(true));
 	}
 }

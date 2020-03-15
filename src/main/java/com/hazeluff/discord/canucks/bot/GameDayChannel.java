@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
-import com.hazeluff.discord.canucks.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameEvent;
 import com.hazeluff.discord.canucks.nhl.GameEventStrength;
@@ -189,7 +189,9 @@ public class GameDayChannel extends Thread {
 	void createChannel() {
 		String channelName = getChannelName();
 		Predicate<TextChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
-		GuildPreferences preferences = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+		GuildPreferences preferences = canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong());
 
 		Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
 
@@ -478,7 +480,9 @@ public class GameDayChannel extends Thread {
 	 */
 	void sendStartOfGameMessage() {
 		LOGGER.info("Sending start message.");
-		GuildPreferences preferences = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+		GuildPreferences preferences = canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong());
 		sendMessage("Game is about to start! " + preferences.getCheer());
 	}
 
@@ -517,14 +521,16 @@ public class GameDayChannel extends Thread {
 		String message = "Game has ended. Thanks for joining!\n" + "Final Score: " + getScoreMessage() + "\n"
 				+ "Goals Scored:\n" + getGoalsMessage();
 
-		GuildPreferences preferences = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+		GuildPreferences preferences = canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong());
 		List<Game> nextGames = preferences.getTeams().stream()
 				.map(team -> canucksBot.getGameScheduler().getNextGame(team))
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
 		if (!nextGames.isEmpty()) {
-			ZoneId timeZone = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong()).getTimeZone();
+			ZoneId timeZone = preferences.getTimeZone();
 			if (nextGames.size() > 1) {
 
 			} else {

@@ -48,7 +48,9 @@ public class UnsubscribeCommand extends Command {
 
 		if (arguments.get(1).equalsIgnoreCase("all")) {
 			// Unsubscribe from all teams
-			canucksBot.getPreferencesManager().unsubscribeGuild(guild.getId().asLong(), null);
+			canucksBot.getPersistentData()
+					.getPreferencesManager()
+					.unsubscribeGuild(guild.getId().asLong(), null);
 			canucksBot.getGameDayChannelsManager().updateChannels(guild);
 			return UNSUBSCRIBED_FROM_ALL_MESSAGE;
 		}
@@ -59,7 +61,9 @@ public class UnsubscribeCommand extends Command {
 
 		// Unsubscribe from a team
 		Team team = Team.parse(arguments.get(1));
-		canucksBot.getPreferencesManager().unsubscribeGuild(guild.getId().asLong(), team);
+		canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.unsubscribeGuild(guild.getId().asLong(), team);
 		canucksBot.getGameDayChannelsManager().updateChannels(guild);
 		return buildUnsubscribeMessage(team);
 	}
@@ -69,7 +73,10 @@ public class UnsubscribeCommand extends Command {
 				"Unsubscribe from any of your subscribed teams by typing `?unsubscribe [team]`, "
 						+ "where [team] is the one of the three letter codes for your subscribed teams below: ")
 								.append("```");
-		List<Team> teams = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong()).getTeams();
+		List<Team> teams = canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong())
+				.getTeams();
 		for (Team team : teams) {
 			response.append("\n").append(team.getCode()).append(" - ").append(team.getFullName());
 		}

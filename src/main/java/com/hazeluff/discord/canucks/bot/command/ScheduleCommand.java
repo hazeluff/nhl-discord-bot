@@ -35,7 +35,8 @@ public class ScheduleCommand extends Command {
 	@Override
 	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
 		if (arguments.size() <= 1) {
-			List<Team> preferredTeams = canucksBot.getPreferencesManager()
+			List<Team> preferredTeams = canucksBot.getPersistentData()
+					.getPreferencesManager()
 					.getGuildPreferences(event.getGuildId().get().asLong())
 					.getTeams();
 

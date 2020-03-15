@@ -10,8 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucks.Config;
+import com.hazeluff.discord.canucks.bot.database.PersistentData;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
-import com.hazeluff.discord.canucks.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.canucks.nhl.GameScheduler;
 import com.hazeluff.discord.canucks.utils.Utils;
 import com.mongodb.client.MongoDatabase;
@@ -42,7 +42,7 @@ public class CanucksBot extends Thread {
 	private static long UPDATE_PLAY_STATUS_INTERVAL = 3600000l;
 
 	private AtomicReference<DiscordManager> discordManager = new AtomicReference<>();
-	private PreferencesManager preferencesManager;
+	private PersistentData preferencesManager;
 	private GameScheduler gameScheduler;
 	private GameDayChannelsManager gameDayChannelsManager;
 
@@ -53,7 +53,7 @@ public class CanucksBot extends Thread {
 	}
 
 	CanucksBot(DiscordManager discordManager, MongoDatabase mongoDatabase,
-			PreferencesManager preferencesManager, GameScheduler gameScheduler,
+			PersistentData preferencesManager, GameScheduler gameScheduler,
 			GameDayChannelsManager gameDayChannelsManager) {
 		this.discordManager.set(discordManager);
 		this.preferencesManager = preferencesManager;
@@ -172,7 +172,7 @@ public class CanucksBot extends Thread {
 
 	void initPreferences() {
 		LOGGER.info("Initializing Preferences.");
-		this.preferencesManager = PreferencesManager.getInstance();
+		this.preferencesManager = PersistentData.getInstance();
 	}
 
 	void initGameDayChannelsManager() {
@@ -185,7 +185,7 @@ public class CanucksBot extends Thread {
 		}
 	}
 
-	public PreferencesManager getPreferencesManager() {
+	public PersistentData getPersistentData() {
 		return preferencesManager;
 	}
 

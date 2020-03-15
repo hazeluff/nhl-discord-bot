@@ -49,10 +49,10 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.GameDayChannelsManager;
+import com.hazeluff.discord.canucks.bot.database.PersistentData;
 import com.hazeluff.discord.canucks.Config;
 import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
-import com.hazeluff.discord.canucks.bot.preferences.PreferencesManager;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameScheduler;
 import com.hazeluff.discord.canucks.nhl.GameStatus;
@@ -75,7 +75,7 @@ public class GameSchedulerTest {
 	@Mock
 	DiscordManager mockDiscordManager;
 	@Mock
-	PreferencesManager mockPreferencesManager;
+	PersistentData mockPreferencesManager;
 	@Mock
 	GameDayChannelsManager mockGameChannelsManager;
 	@Mock
@@ -105,7 +105,7 @@ public class GameSchedulerTest {
 	@Before
 	public void setup() throws Exception {
 		when(mockCanucksBot.getDiscordManager()).thenReturn(mockDiscordManager);
-		when(mockCanucksBot.getPreferencesManager()).thenReturn(mockPreferencesManager);
+		when(mockCanucksBot.getPersistentData()).thenReturn(mockPreferencesManager);
 		when(mockCanucksBot.getGameDayChannelsManager()).thenReturn(mockGameChannelsManager);
 
 		mockStatic(GameDayChannel.class);

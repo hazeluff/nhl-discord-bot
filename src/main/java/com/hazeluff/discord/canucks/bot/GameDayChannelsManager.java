@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
-import com.hazeluff.discord.canucks.bot.preferences.GuildPreferences;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameTracker;
 import com.hazeluff.discord.canucks.nhl.Team;
@@ -171,7 +171,11 @@ public class GameDayChannelsManager extends Thread {
 	public List<Guild> getSubscribedGuilds(Team team) {
 		return canucksBot.getDiscordManager().getGuilds().stream().filter(guild -> {
 			long guildId = guild.getId().asLong();
-			return canucksBot.getPreferencesManager().getGuildPreferences(guildId).getTeams().contains(team);
+			return canucksBot.getPersistentData()
+					.getPreferencesManager()
+					.getGuildPreferences(guildId)
+					.getTeams()
+					.contains(team);
 		}).collect(Collectors.toList());
 	}
 
@@ -226,7 +230,9 @@ public class GameDayChannelsManager extends Thread {
 	 */
 	public void deleteInactiveGuildChannels(Guild guild) {
 		LOGGER.info("Cleaning up old channels: guild={}", guild.getName());
-		GuildPreferences preferences = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong());
+		GuildPreferences preferences = canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong());
 		for (TextChannel channel : DiscordManager.getTextChannels(guild)) {
 			deleteInactiveTextChannel(channel, preferences);
 		}
@@ -277,7 +283,8 @@ public class GameDayChannelsManager extends Thread {
 	}
 
 	boolean isGameDayChannelActive(GameDayChannel gameDayChannel) {
-		List<Team> teams = canucksBot.getPreferencesManager()
+		List<Team> teams = canucksBot.getPersistentData()
+				.getPreferencesManager()
 				.getGuildPreferences(gameDayChannel.getGuild().getId().asLong())
 				.getTeams();
 		String channelName = gameDayChannel.getChannelName();
@@ -299,7 +306,9 @@ public class GameDayChannelsManager extends Thread {
 	}
 
 	void initGuildChannels(Guild guild) {
-		List<Team> subscribedTeams = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong())
+		List<Team> subscribedTeams = canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong())
 				.getTeams();
 		List<Game> activeGames = canucksBot.getGameScheduler().getActiveGames(subscribedTeams);
 		for (Game game : activeGames) {
@@ -316,7 +325,10 @@ public class GameDayChannelsManager extends Thread {
 	 */
 	public void initChannels(Guild guild) {
 		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
-		List<Team> teams = canucksBot.getPreferencesManager().getGuildPreferences(guild.getId().asLong()).getTeams();
+		List<Team> teams = canucksBot.getPersistentData()
+				.getPreferencesManager()
+				.getGuildPreferences(guild.getId().asLong())
+				.getTeams();
 
 		// Create game channels of latest game for current subscribed team
 		for (Team team : teams) {

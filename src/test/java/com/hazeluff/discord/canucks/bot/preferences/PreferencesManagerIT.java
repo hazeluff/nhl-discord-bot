@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.bot.preferences.PreferencesManager;
+import com.hazeluff.discord.canucks.bot.database.preferences.PreferencesManager;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.discord.canucks.utils.Utils;
 import com.hazeluff.test.DatabaseIT;
@@ -46,7 +46,7 @@ public class PreferencesManagerIT extends DatabaseIT {
 	@Before
 	public void before() {
 		super.before();
-		preferencesManager = PreferencesManager.getInstance();
+		preferencesManager = PreferencesManager.load(getDatabase());
 	}
 	
 	@Test
@@ -56,11 +56,9 @@ public class PreferencesManagerIT extends DatabaseIT {
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM2);
 
 		// Reload
-		preferencesManager = PreferencesManager.getInstance();
-		assertTrue(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
-
+		preferencesManager = PreferencesManager.load(getDatabase());
 		assertTrue(Utils.isListEquivalent(Arrays.asList(TEAM, TEAM2),
-				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
+				preferencesManager.getGuildPreferences(GUILD_ID).getTeams()));
 	}
 
 	@Test
@@ -71,12 +69,10 @@ public class PreferencesManagerIT extends DatabaseIT {
 		preferencesManager.unsubscribeGuild(GUILD_ID, TEAM);
 
 		// Reload
-		preferencesManager = PreferencesManager.getInstance();
-		assertTrue(preferencesManager.getGuildPreferences().containsKey(GUILD_ID));
-
+		preferencesManager = PreferencesManager.load(getDatabase());
 		assertTrue(Utils.isListEquivalent(
 				Arrays.asList(TEAM2),
-				preferencesManager.getGuildPreferences().get(GUILD_ID).getTeams()));
+				preferencesManager.getGuildPreferences(GUILD_ID).getTeams()));
 	}
 
 }

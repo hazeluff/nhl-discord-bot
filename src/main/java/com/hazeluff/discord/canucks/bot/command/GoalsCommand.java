@@ -3,8 +3,8 @@ package com.hazeluff.discord.canucks.bot.command;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.CanucksBot;
+import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameStatus;
@@ -26,7 +26,8 @@ public class GoalsCommand extends Command {
 
 	@Override
 	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
-		List<Team> preferredTeams = canucksBot.getPreferencesManager()
+		List<Team> preferredTeams = canucksBot.getPersistentData()
+				.getPreferencesManager()
 				.getGuildPreferences(event.getGuildId().get().asLong())
 				.getTeams();
 
