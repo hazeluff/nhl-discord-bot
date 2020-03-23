@@ -38,22 +38,23 @@ public class AboutCommand extends Command {
 				.setDescription(
 						"A bot that provides information about NHL games, "
 								+ "and creates channels that provides game information in real time.")
-				.addField("Contact", Config.HAZELUFF_MENTION, true)
+				.addField("Discord", Config.HAZELUFF_MENTION, true)
+				.addField("Twitter", Config.HAZELUFF_TWITTER, true)
 				.addField("Email", Config.HAZELUFF_EMAIL, true)
-				.addField("Version", Config.VERSION, true)
+				.addField("Version", Config.VERSION, false)
 				.addField("GitHub", Config.GIT_URL, true)
+				.addField(
+						"Studying Programming? Want to contribute?",
+						"If you’re an aspiring programmer/student looking to get experience, "
+								+ "I am more than willing to work with you to improve the bot. Just shoot me a message!",
+						false)
 				.addField(
 						"Donations",
 						"I support this bot personally. "
 								+ "Donations will help offset my costs of running the server."
-								+ "\nPaypal: " + Config.DONATION_URL
-								+ "\nBTC: " + Config.DONATION_BTC
-								+ "\nETH: " + Config.DONATION_ETH,
-						false)
-				.addField(
-						"Studying Programming? Want to contribute?",
-						"If you’re an aspiring programmer/student looking to get experience, "
-						+ "I am more than willing to work with you to improve the bot. Just shoot me a message!", 
+								+ "\n**Paypal**: " + Config.DONATION_URL
+								+ "\n**BTC**: " + Config.DONATION_BTC
+								+ "\n**ETH**: " + Config.DONATION_ETH,
 						false);
 		return spec -> spec
 				.addFile(resource.getFileName(), resource.getStream())

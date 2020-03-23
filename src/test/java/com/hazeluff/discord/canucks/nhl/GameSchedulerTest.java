@@ -47,17 +47,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.Config;
+import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.GameDayChannelsManager;
 import com.hazeluff.discord.canucks.bot.database.PersistentData;
-import com.hazeluff.discord.canucks.Config;
-import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
-import com.hazeluff.discord.canucks.nhl.Game;
-import com.hazeluff.discord.canucks.nhl.GameScheduler;
-import com.hazeluff.discord.canucks.nhl.GameStatus;
-import com.hazeluff.discord.canucks.nhl.GameTracker;
-import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.HttpException;
 import com.hazeluff.discord.canucks.utils.HttpUtils;
@@ -372,8 +367,8 @@ public class GameSchedulerTest {
 	@PrepareForTest({ HttpUtils.class, GameScheduler.class, GameDayChannel.class })
 	public void getGamesShouldLimitEndDate() throws Exception {
 		LOGGER.info("getGamesShouldLimitEndDate");
-		ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-		ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 7, 5, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR_END - 1, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 7, 5, 0, 0, 0, 0, ZoneOffset.UTC);
 
 		URIBuilder mockURIBuilder = mock(URIBuilder.class);
 		whenNew(URIBuilder.class).withAnyArguments().thenReturn(mockURIBuilder);
@@ -384,7 +379,7 @@ public class GameSchedulerTest {
 		
 		gameScheduler.getGames(TEAM, startDate, endDate);
 
-		verify(mockURIBuilder).addParameter("endDate", (Config.SEASON_YEAR + 1) + "-06-15");
+		verify(mockURIBuilder).addParameter("endDate", (Config.SEASON_YEAR_END) + "-06-15");
 	}
 
 	@Test

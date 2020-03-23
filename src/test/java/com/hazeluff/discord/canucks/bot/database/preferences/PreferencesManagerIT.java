@@ -1,4 +1,4 @@
-package com.hazeluff.discord.canucks.bot.preferences;
+package com.hazeluff.discord.canucks.bot.database.preferences;
 
 import static org.junit.Assert.assertTrue;
 

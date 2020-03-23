@@ -10,7 +10,7 @@ public abstract class DatabaseManager {
 		this.database = database;
 	}
 
-	public MongoDatabase getDatabase() {
+	protected MongoDatabase getDatabase() {
 		return database;
 	}
 }

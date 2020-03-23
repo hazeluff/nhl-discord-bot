@@ -1,9 +1,9 @@
 package com.hazeluff.discord.canucks.bot.database.fuck;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -21,8 +21,6 @@ import com.mongodb.client.model.UpdateOptions;
 public class FucksManager extends DatabaseManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FucksManager.class);
 
-
-	// GuildID -> GuildPreferences
 	private final Map<String, List<String>> fuckResponses;
 
 	FucksManager(MongoDatabase database, Map<String, List<String>> fuckResponses) {
@@ -31,14 +29,14 @@ public class FucksManager extends DatabaseManager {
 	}
 
 	public static FucksManager load(MongoDatabase database) {
-		return new FucksManager(database, loadFuckResponses(getFuckCollection(database)));
+		return new FucksManager(database, loadFuckResponses(getCollection(database)));
 	}
 
-	private MongoCollection<Document> getFuckCollection() {
-		return getFuckCollection(getDatabase());
+	private MongoCollection<Document> getCollection() {
+		return getCollection(getDatabase());
 	}
 
-	private static MongoCollection<Document> getFuckCollection(MongoDatabase database) {
+	private static MongoCollection<Document> getCollection(MongoDatabase database) {
 		return database.getCollection("fucks");
 	}
 
@@ -46,7 +44,7 @@ public class FucksManager extends DatabaseManager {
 	@SuppressWarnings("unchecked")
 	static Map<String, List<String>> loadFuckResponses(MongoCollection<Document> fuckCollection) {
 		LOGGER.info("Loading Fucks...");
-		Map<String, List<String>> fuckResponses = new HashMap<>();
+		Map<String, List<String>> fuckResponses = new ConcurrentHashMap<>();
 		MongoCursor<Document> iterator = fuckCollection.find().iterator();
 		// Load Guild preferences
 		while (iterator.hasNext()) {
@@ -64,7 +62,7 @@ public class FucksManager extends DatabaseManager {
 	public void saveToFuckSubjectResponses(String subject, List<String> subjectResponses) {
 		fuckResponses.put(subject, subjectResponses);
 		System.out.println("Putting " + subject + " - " + subjectResponses);
-		getFuckCollection().updateOne(
+		getCollection().updateOne(
 				new Document("subject", subject),
 				new Document("$set", new Document("responses", subjectResponses)), 
 				new UpdateOptions().upsert(true));

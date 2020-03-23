@@ -1,10 +1,10 @@
 package com.hazeluff.discord.canucks.bot.database.preferences;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
@@ -36,18 +36,18 @@ public class PreferencesManager extends DatabaseManager {
 		return new PreferencesManager(database, loadGuildPreferences(database.getCollection("guilds")));
 	}
 
-	private MongoCollection<Document> getGuildCollection() {
-		return getGuildCollection(getDatabase());
+	private MongoCollection<Document> getCollection() {
+		return getCollection(getDatabase());
 	}
 
-	private static MongoCollection<Document> getGuildCollection(MongoDatabase database) {
+	private static MongoCollection<Document> getCollection(MongoDatabase database) {
 		return database.getCollection("guilds");
 	}
 
 	@SuppressWarnings("unchecked")
 	static Map<Long, GuildPreferences> loadGuildPreferences(MongoCollection<Document> guildCollection) {
 		LOGGER.info("Loading Guild preferences...");
-		Map<Long, GuildPreferences> guildPreferences = new HashMap<>();
+		Map<Long, GuildPreferences> guildPreferences = new ConcurrentHashMap<>();
 		MongoCursor<Document> iterator = guildCollection.find().iterator();
 		// Load Guild preferences
 		while (iterator.hasNext()) {
@@ -97,7 +97,7 @@ public class PreferencesManager extends DatabaseManager {
 
 		guildPreferences.get(guildId).addTeam(team);
 
-		saveToCollection(getGuildCollection(), guildId, guildPreferences.get(guildId).getTeams());
+		saveToCollection(getCollection(), guildId, guildPreferences.get(guildId).getTeams());
 	}
 
 	/**
@@ -117,7 +117,7 @@ public class PreferencesManager extends DatabaseManager {
 			guildPreferences.get(guildId).removeTeam(team);
 		}
 
-		saveToCollection(getGuildCollection(), guildId, guildPreferences.get(guildId).getTeams());
+		saveToCollection(getCollection(), guildId, guildPreferences.get(guildId).getTeams());
 	}
 	
 	static void saveToCollection(MongoCollection<Document> guildCollection, long guildId, List<Team> teams) {

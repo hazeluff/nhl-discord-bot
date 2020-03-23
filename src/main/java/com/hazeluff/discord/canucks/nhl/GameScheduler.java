@@ -134,8 +134,8 @@ public class GameScheduler extends Thread {
 		LOGGER.info("Initializing");
 		// Retrieve schedule/game information from NHL API
 		for (Team team : Team.values()) {
-			ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-			ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+			ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR_END - 1, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+			ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
 			games.addAll(getGames(team, startDate, endDate));
 		}
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");
@@ -229,7 +229,7 @@ public class GameScheduler extends Thread {
 	 */
 	List<Game> getGames(Team team, ZonedDateTime startDate, ZonedDateTime endDate) throws HttpException {
 		LOGGER.info("Retrieving games of [" + team + "]");
-		ZonedDateTime latestDate = ZonedDateTime.of(Config.SEASON_YEAR + 1, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime latestDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
 		if (endDate.compareTo(latestDate) > 0) {
 			endDate = latestDate;
 		}

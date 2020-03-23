@@ -20,7 +20,7 @@ public class Config {
 	/**
 	 * The starting year of season (e.g. 2017 for the 2017-2018 season)
 	 */
-	public static final int SEASON_YEAR = 2019;
+	public static final int SEASON_YEAR_END = 2019;
 	
 	public static final String GIT_URL = "http://canucks-discord.hazeluff.com/";
 	public static final String DONATION_URL = "https://paypal.me/hazeluff";
@@ -28,9 +28,10 @@ public class Config {
 	public static final String DONATION_ETH = "0x313faE0D36BFf3F7a4817E52a71B74e2924D4b97";
 	public static final String STATUS_MESSAGE = "?canucksbot help";
 	public static final long HAZELUFF_ID = 225742618422673409l;
-	public static final String HAZELUFF_MENTION = "@Hazeluff#0201";
+	public static final String HAZELUFF_MENTION = "<@225742618422673409>";
 	public static final String HAZELUFF_SITE = "http://www.hazeluff.com";
 	public static final String HAZELUFF_EMAIL = "me@hazeluff.com";
+	public static final String HAZELUFF_TWITTER = "@Hazeluff";
 	public static final String VERSION = "${project.version}";
 	public static final String MONGO_HOST = "localhost";
 	public static final int MONGO_PORT = 27017;
