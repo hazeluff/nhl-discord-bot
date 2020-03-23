@@ -56,9 +56,9 @@ public class ResultsManagerIT extends DatabaseIT {
 		resultsMap.put(123, Team.VANCOUVER_CANUCKS);
 		TeamSeasonResults results = new TeamSeasonResults(campaignKey, resultsMap);
 		resultsManager.saveTeamSeasonResults(results);
+		assertEquals(results, resultsManager.loadTeamSeasonResults(campaignKey));
 
 		resultsManager = new ResultsManager(getDatabase(), null);
-
 		assertEquals(results, resultsManager.loadTeamSeasonResults(campaignKey));
 	}
 
