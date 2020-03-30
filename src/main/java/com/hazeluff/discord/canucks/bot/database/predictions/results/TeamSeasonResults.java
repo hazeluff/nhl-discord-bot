@@ -11,26 +11,58 @@ import java.util.stream.Collectors;
 import org.bson.Document;
 
 import com.hazeluff.discord.canucks.nhl.Team;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.UpdateOptions;
 
 public class TeamSeasonResults {
-	private final String campaignKey;
+	private static final String CAMPAIGN_ID_KEY = "campaignId";
+	private static final String RESULTS_KEY = "results";
+
+	private final String campaignId;
 	private final Map<Integer, Team> gamesResults;
 
-	public TeamSeasonResults(String campaignKey, Map<Integer, Team> gamesResults) {
-		this.campaignKey = campaignKey;
+	public TeamSeasonResults(String campaignId, Map<Integer, Team> gamesResults) {
+		this.campaignId = campaignId;
 		this.gamesResults = new ConcurrentHashMap<>(gamesResults);
 	}
 
-	public TeamSeasonResults(String campaignKey, List<Document> resultDocuments) {
-		this.campaignKey = campaignKey;
+	public TeamSeasonResults(String campaignId, List<Document> resultDocuments) {
+		this.campaignId = campaignId;
 		gamesResults = new ConcurrentHashMap<>();
 		for (Document doc : resultDocuments) {
 			gamesResults.put(doc.getInteger("gamePk"), Team.parse(doc.getInteger("winner")));
 		}
 	}
 
-	public String getCampaignKey() {
-		return campaignKey;
+	/**
+	 * Gets a TeamSeasonResults from the database collection with the given
+	 * campaignKey.
+	 * 
+	 * @param collection
+	 * @param campaignKey
+	 * @return a TeamSeasonsResults of the given campaignKey. null - if it does not
+	 *         exist.
+	 */
+	@SuppressWarnings("unchecked")
+	public static TeamSeasonResults findFromCollection(MongoCollection<Document> collection, String campaignId) {
+		Document doc = collection.find(new Document(CAMPAIGN_ID_KEY, campaignId)).first();
+		if (doc == null) {
+			return null;
+		}
+		List<Document> resultDocs = doc.get(RESULTS_KEY, List.class);
+		return new TeamSeasonResults(campaignId, resultDocs);
+	}
+
+	public void saveResults(MongoCollection<Document> collection) {
+		collection.updateOne(
+				new Document(CAMPAIGN_ID_KEY, campaignId),
+				new Document("$set", 
+						new Document(RESULTS_KEY, toDocumentList())),
+				new UpdateOptions().upsert(true));		
+	}
+
+	public String getCampaignId() {
+		return campaignId;
 	}
 
 	public Map<Integer, Integer> getRawResults() {
@@ -67,7 +99,7 @@ public class TeamSeasonResults {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((campaignKey == null) ? 0 : campaignKey.hashCode());
+		result = prime * result + ((campaignId == null) ? 0 : campaignId.hashCode());
 		result = prime * result + ((gamesResults == null) ? 0 : gamesResults.hashCode());
 		return result;
 	}
@@ -81,10 +113,10 @@ public class TeamSeasonResults {
 		if (getClass() != obj.getClass())
 			return false;
 		TeamSeasonResults other = (TeamSeasonResults) obj;
-		if (campaignKey == null) {
-			if (other.campaignKey != null)
+		if (campaignId == null) {
+			if (other.campaignId != null)
 				return false;
-		} else if (!campaignKey.equals(other.campaignKey))
+		} else if (!campaignId.equals(other.campaignId))
 			return false;
 		if (gamesResults == null) {
 			if (other.gamesResults != null)
@@ -96,7 +128,7 @@ public class TeamSeasonResults {
 
 	@Override
 	public String toString() {
-		return "TeamSeasonResults [campaignKey=" + campaignKey + ", gamesResults=" + gamesResults + "]";
+		return "TeamSeasonResults [campaignId=" + campaignId + ", gamesResults=" + gamesResults + "]";
 	}
 
 }

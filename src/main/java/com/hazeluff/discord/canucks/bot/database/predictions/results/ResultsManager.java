@@ -1,6 +1,5 @@
 package com.hazeluff.discord.canucks.bot.database.predictions.results;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,7 +10,6 @@ import com.hazeluff.discord.canucks.nhl.GameScheduler;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.UpdateOptions;
 
 public class ResultsManager extends DatabaseManager {
 	private final GameScheduler gameScheduler;
@@ -44,21 +42,21 @@ public class ResultsManager extends DatabaseManager {
 		return results;
 	}
 
-	@SuppressWarnings("unchecked")
-	public TeamSeasonResults loadTeamSeasonResults(String campaignKey) {
-		Document doc = getCollection().find(new Document("campaignKey", campaignKey)).first();
-		if (doc == null) {
-			return null;
-		}
-		List<Document> resultDocs = doc.get("results", List.class);
-		return new TeamSeasonResults(campaignKey, resultDocs);
+	/**
+	 * Loads a TeamSeasonResults from the database collection with the given
+	 * campaignKey.
+	 * 
+	 * @param collection
+	 * @param campaignKey
+	 * @return a TeamSeasonsResults of the given campaignKey. null - if it does not
+	 *         exist.
+	 */
+	TeamSeasonResults loadTeamSeasonResults(String campaignKey) {
+		return TeamSeasonResults.findFromCollection(getCollection(), campaignKey);
 	}
 
 	public void saveTeamSeasonResults(TeamSeasonResults results) {
-		getCollection().updateOne(
-				new Document("campaignKey", results.getCampaignKey()),
-				new Document("$set", new Document("results", results.toDocumentList())),
-				new UpdateOptions().upsert(true));
+		results.saveResults(getCollection());
 	}
 
 	private String buildTeamSeasonCampaignKey(int yearEnd, Team team) {

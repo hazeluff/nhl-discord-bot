@@ -13,6 +13,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.bot.database.predictions.results.ResultsManager;
+import com.hazeluff.discord.canucks.bot.database.predictions.results.TeamSeasonResults;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.test.DatabaseIT;
 import com.mongodb.MongoClient;
