@@ -39,7 +39,7 @@ public class DiscordManager {
 
 	public Snowflake getId() {
 		if (id == null) {
-			id = client.getSelfId().get();
+			id = getClient().getSelfId().get();
 		}
 		return id;
 	}
@@ -62,11 +62,15 @@ public class DiscordManager {
 	}
 
 	public void changePresence(Presence presence) {
-		request(() -> client.updatePresence(presence));
+		request(() -> getClient().updatePresence(presence));
 	}
 
 	public List<Guild> getGuilds() {
-		return client.getGuilds().collectList().block();
+		return getClient().getGuilds().collectList().block();
+	}
+
+	public Message getMessage(long channelId, long messageId) {
+		return request(() -> getClient().getMessageById(Snowflake.of(channelId), Snowflake.of(messageId)));
 	}
 
 	/**

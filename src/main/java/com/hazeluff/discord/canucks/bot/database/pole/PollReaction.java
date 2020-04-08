@@ -1,15 +1,15 @@
 package com.hazeluff.discord.canucks.bot.database.pole;
 
-public class PoleReaction {
-	private final long emoteId;
+public class PollReaction {
+	private final String emoteId;
 	private final String optionId;
 
-	public PoleReaction(long emoteId, String optionId) {
+	public PollReaction(String emoteId, String optionId) {
 		this.emoteId = emoteId;
 		this.optionId = optionId;
 	}
 
-	public long getEmoteId() {
+	public String getEmoteId() {
 		return emoteId;
 	}
 
@@ -21,7 +21,7 @@ public class PoleReaction {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) (emoteId ^ (emoteId >>> 32));
+		result = prime * result + ((emoteId == null) ? 0 : emoteId.hashCode());
 		result = prime * result + ((optionId == null) ? 0 : optionId.hashCode());
 		return result;
 	}
@@ -34,8 +34,11 @@ public class PoleReaction {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PoleReaction other = (PoleReaction) obj;
-		if (emoteId != other.emoteId)
+		PollReaction other = (PollReaction) obj;
+		if (emoteId == null) {
+			if (other.emoteId != null)
+				return false;
+		} else if (!emoteId.equals(other.emoteId))
 			return false;
 		if (optionId == null) {
 			if (other.optionId != null)

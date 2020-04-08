@@ -11,7 +11,7 @@ import org.bson.Document;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 
-public class PoleMessage {
+public class PollMessage {
 	private static final String CHANNEL_ID_KEY = "channelId";
 	private static final String MESSAGE_ID_KEY = "messageId";
 	private static final String POLE_ID_KEY = "poleId";
@@ -21,33 +21,45 @@ public class PoleMessage {
 
 	private final long channelId;
 	private final long messageId;
-	private final String poleId;
+	private final String pollId;
 	// Maps Id of emote to the String key of the option
-	private final Map<Long, String> reactionMap;
+	private final Map<String, String> reactionMap;
 
-	private PoleMessage(long channelId, long messageId, String poleId, Map<Long, String> reactionMap) {
+	PollMessage(long channelId, long messageId, String pollId, Map<String, String> reactionMap) {
 		this.channelId = channelId;
 		this.messageId = messageId;
-		this.poleId = poleId;
-		this.reactionMap = new ConcurrentHashMap<>();
+		this.pollId = pollId;
+		this.reactionMap = reactionMap;
+	}
+
+	PollMessage(long channelId, long messageId, String pollId) {
+		this(channelId, messageId, pollId, new ConcurrentHashMap<>());
+	}
+
+	public static PollMessage of(long channelId, long messageId, String pollId) {
+		return new PollMessage(channelId, messageId, pollId);
 	}
 
 	@SuppressWarnings("unchecked")
-	static PoleMessage findFromCollection(MongoCollection<Document> collection, long channelId, String poleId) {
+	static PollMessage findFromCollection(MongoCollection<Document> collection, long channelId, String poleId) {
 		Document doc = collection
 				.find(new Document()
 					.append(CHANNEL_ID_KEY, channelId)
 					.append(POLE_ID_KEY, poleId))
 				.first();
 
+		if (doc == null) {
+			return null;
+		}
+
 		long messageId = doc.getLong(MESSAGE_ID_KEY);
 		
 		List<Document> reactionDocs = doc.get(REACTIONS_KEY, List.class);
-		Map<Long, String> reactionMap = reactionDocs.stream().collect(Collectors.toMap(
-				d -> d.getLong(EMOTE_ID_KEY), 
+		Map<String, String> reactionMap = reactionDocs.stream().collect(Collectors.toMap(
+				d -> d.getString(EMOTE_ID_KEY), 
 				d -> d.getString(OPTION_ID_KEY)));
 
-		return new PoleMessage(channelId, messageId, poleId, reactionMap);
+		return new PollMessage(channelId, messageId, poleId, reactionMap);
 	}
 
 	void saveToCollection(MongoCollection<Document> collection) {
@@ -55,7 +67,8 @@ public class PoleMessage {
 				new Document(MESSAGE_ID_KEY, messageId),
 				new Document("$set", new Document()
 						.append(CHANNEL_ID_KEY, channelId)
-						.append(POLE_ID_KEY, poleId)
+						.append(POLE_ID_KEY,
+								pollId)
 						.append(REACTIONS_KEY,
 								getReactionDocuments())),
 				new UpdateOptions().upsert(true));
@@ -69,11 +82,11 @@ public class PoleMessage {
 		return messageId;
 	}
 
-	public String getPoleId() {
-		return poleId;
+	public String getPollId() {
+		return pollId;
 	}
 
-	public Map<Long, String> getReactionMap() {
+	public Map<String, String> getReactionMap() {
 		return new HashMap<>(reactionMap);
 	}
 
@@ -86,7 +99,21 @@ public class PoleMessage {
 	 *            option to add
 	 * @return self - for chaining
 	 */
-	public PoleMessage addReaction(long emoteId, String option) {
+	public PollMessage addReaction(long emoteId, String option) {
+		reactionMap.put(String.valueOf(emoteId), option);
+		return this;
+	}
+
+	/**
+	 * Adds a reaction to the mapping
+	 * 
+	 * @param emoteId
+	 *            id of the emote
+	 * @param option
+	 *            option to add
+	 * @return self - for chaining
+	 */
+	public PollMessage addReaction(String emoteId, String option) {
 		reactionMap.put(emoteId, option);
 		return this;
 	}
@@ -105,7 +132,7 @@ public class PoleMessage {
 		int result = 1;
 		result = prime * result + (int) (channelId ^ (channelId >>> 32));
 		result = prime * result + (int) (messageId ^ (messageId >>> 32));
-		result = prime * result + ((poleId == null) ? 0 : poleId.hashCode());
+		result = prime * result + ((pollId == null) ? 0 : pollId.hashCode());
 		result = prime * result + ((reactionMap == null) ? 0 : reactionMap.hashCode());
 		return result;
 	}
@@ -118,15 +145,15 @@ public class PoleMessage {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PoleMessage other = (PoleMessage) obj;
+		PollMessage other = (PollMessage) obj;
 		if (channelId != other.channelId)
 			return false;
 		if (messageId != other.messageId)
 			return false;
-		if (poleId == null) {
-			if (other.poleId != null)
+		if (pollId == null) {
+			if (other.pollId != null)
 				return false;
-		} else if (!poleId.equals(other.poleId))
+		} else if (!pollId.equals(other.pollId))
 			return false;
 		if (reactionMap == null) {
 			if (other.reactionMap != null)
@@ -138,8 +165,8 @@ public class PoleMessage {
 
 	@Override
 	public String toString() {
-		return "PoleMessage [channelId=" + channelId + ", messageId=" + messageId + ", poleId=" + poleId
-				+ ", reactionMap=" + reactionMap + "]";
+		return "PoleMessage [channelId=" + channelId + ", messageId=" + messageId + ", pollId="
+				+ pollId + ", reactionMap=" + reactionMap + "]";
 	}
 
 }

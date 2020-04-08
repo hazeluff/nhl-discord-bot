@@ -172,7 +172,7 @@ public class CanucksBot extends Thread {
 
 	void initPreferences() {
 		LOGGER.info("Initializing Preferences.");
-		this.preferencesManager = PersistentData.getInstance();
+		this.preferencesManager = PersistentData.getInstance(this);
 	}
 
 	void initGameDayChannelsManager() {

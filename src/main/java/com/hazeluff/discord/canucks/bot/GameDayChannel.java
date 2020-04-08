@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.bot.database.pole.PollMessage;
 import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Game;
@@ -37,6 +38,7 @@ import discord4j.core.object.entity.Category;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.TextChannelCreateSpec;
 
 public class GameDayChannel extends Thread {
@@ -143,6 +145,9 @@ public class GameDayChannel extends Thread {
 		setName(threadName);
 		LOGGER.info("Started thread for channel [{}] in guild [{}]", channelName, guild.getName());
 
+		// Post Predictions poll
+		createPredictionPoll();
+
 		if (game.getStatus() != GameStatus.FINAL) {
 			// Wait until close to start of game
 			LOGGER.info("Idling until near game start.");
@@ -184,6 +189,40 @@ public class GameDayChannel extends Thread {
 
 	public Game getGame() {
 		return game;
+	}
+
+	private void createPredictionPoll() {
+		String pollId = "gameday-" + getChannelName();
+		PollMessage poll = canucksBot.getPersistentData().getPolesManager().loadPoll(channel.getId().asLong(), pollId);
+
+		
+		if (poll == null) {
+			Message message = sendPredictionMessage();
+			
+			poll = PollMessage.of(channel.getId().asLong(), message.getId().asLong(), pollId);
+			poll.addReaction("🏠", "home");
+			poll.addReaction("✈️", "away");
+
+			// Save pole to database
+			canucksBot.getPersistentData().getPolesManager().savePoll(poll);
+		} else {
+			Message message = canucksBot.getDiscordManager().getMessage(poll.getChannelId(), poll.getMessageId());
+			if (message == null) {
+				sendPredictionMessage();
+			}
+		}
+	}
+	
+	private Message sendPredictionMessage() {
+		String pollMessage = String.format(
+				"Predict the outcome of this game!\n🏠: %s\n✈️: %s", 
+				game.getHomeTeam().getFullName(), game.getAwayTeam().getFullName());
+		
+		Message message = sendMessage(pollMessage);
+		message.addReaction(ReactionEmoji.unicode("🏠")).subscribe();
+		message.addReaction(ReactionEmoji.unicode("✈️")).subscribe();
+
+		return message;
 	}
 
 	void createChannel() {

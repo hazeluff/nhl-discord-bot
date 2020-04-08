@@ -1,5 +1,11 @@
 package com.hazeluff.discord.canucks.bot.database.pole;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -13,7 +19,7 @@ import com.mongodb.MongoClient;
 public class PolesManagerIT extends DatabaseIT {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PolesManagerIT.class);
 
-	PolesManager polesManager;
+	PollsManager polesManager;
 
 	private static MongoClient client;
 
@@ -35,12 +41,23 @@ public class PolesManagerIT extends DatabaseIT {
 	@Before
 	public void before() {
 		super.before();
-		polesManager = new PolesManager(getDatabase());
+		polesManager = new PollsManager(getDatabase());
 	}
 
 	@Test
 	public void polesCanBeSavedAndLoaded() {
 		LOGGER.info("polesCanBeSavedAndLoaded");
-
+		long channelId = 100;
+		long messageId = 200;
+		String poleId = "test";
+		Map<String, String> reactions = new HashMap<>();
+		reactions.put("react1", "option1");
+		reactions.put("react1", "option1");
+		PollMessage message = new PollMessage(channelId, messageId, poleId, reactions);
+		
+		assertNull(polesManager.loadPoll(channelId, poleId));
+		polesManager.savePoll(message);
+		assertEquals(message, polesManager.loadPoll(channelId, poleId));
+		assertEquals(message, new PollsManager(getDatabase()).loadPoll(channelId, poleId));
 	}
 }

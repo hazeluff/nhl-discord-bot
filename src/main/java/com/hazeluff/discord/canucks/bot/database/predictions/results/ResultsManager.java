@@ -22,6 +22,10 @@ public class ResultsManager extends DatabaseManager {
 		seasonResults = new ConcurrentHashMap<>();
 	}
 
+	public static ResultsManager load(MongoDatabase database, GameScheduler gameScheduler) {
+		return new ResultsManager(database, gameScheduler);
+	}
+
 	private MongoCollection<Document> getCollection() {
 		return getDatabase().getCollection("results");
 	}
