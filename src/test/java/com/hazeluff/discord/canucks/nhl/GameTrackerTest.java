@@ -30,9 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.bot.GameDayChannelsManager;
-import com.hazeluff.discord.canucks.nhl.Game;
-import com.hazeluff.discord.canucks.nhl.GameStatus;
-import com.hazeluff.discord.canucks.nhl.GameTracker;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.HttpException;
 import com.hazeluff.discord.canucks.utils.Utils;

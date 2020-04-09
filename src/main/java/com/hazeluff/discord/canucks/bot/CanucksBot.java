@@ -18,16 +18,16 @@ import com.mongodb.client.MongoDatabase;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
-import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.discordjson.json.gateway.StatusUpdate;
 import discord4j.rest.http.client.ClientException;
 import discord4j.rest.request.RouteMatcher;
-import discord4j.rest.request.RouterOptions;
 import discord4j.rest.response.ResponseFunction;
 import reactor.core.publisher.Mono;
 import reactor.retry.Retry;
@@ -36,8 +36,8 @@ import reactor.util.function.Tuple2;
 public class CanucksBot extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CanucksBot.class);
 
-	private static final Presence STARTING_UP_PRESENCE = Presence.doNotDisturb(Activity.watching("itself start up"));
-	private static final Presence ONLINE_PRESENCE = Presence.online(Activity.playing(Config.STATUS_MESSAGE));
+	private static final StatusUpdate STARTING_UP_STATUS = Presence.doNotDisturb(Activity.watching("itself start up"));
+	private static final StatusUpdate ONLINE_PRESENCE = Presence.online(Activity.playing(Config.STATUS_MESSAGE));
 
 	private static long UPDATE_PLAY_STATUS_INTERVAL = 3600000l;
 
@@ -86,7 +86,7 @@ public class CanucksBot extends Thread {
 				.retry()
 				.subscribe(CanucksBot::sendMessage);
 
-		canucksBot.getDiscordManager().changePresence(STARTING_UP_PRESENCE);
+		canucksBot.getDiscordManager().changePresence(STARTING_UP_STATUS);
 		LOGGER.info("CanucksBot Started. id [" + canucksBot.getDiscordManager().getId() + "]");
 
 		// Start the Game Day Channels Manager
@@ -134,30 +134,25 @@ public class CanucksBot extends Thread {
 		new Thread(() -> {
 			LOGGER.info("Initializing Discord.");
 			// Init DiscordClient and DiscordManager
-			DiscordClient discordClient = new DiscordClientBuilder(botToken)
-					.setRouterOptions(RouterOptions.builder()
-							// globally suppress any not found (404) error
-							.onClientResponse(ResponseFunction.emptyIfNotFound())
-							// 403 Forbidden will not be retried.
-							.onClientResponse(ResponseFunction
-									.emptyOnErrorStatus(RouteMatcher.any(), 403))
-							.onClientResponse(ResponseFunction.retryWhen(RouteMatcher.any(),
-			                        Retry.onlyIf(ClientException.isRetryContextStatusCode(500))
-			                                .exponentialBackoffWithJitter(
-			                                		Duration.ofSeconds(2), 
-			                                		Duration.ofSeconds(10))))
-							.build())
+			DiscordClient discordClient = DiscordClientBuilder.create(botToken)
+					// globally suppress any not found (404) error
+					.onClientResponse(ResponseFunction.emptyIfNotFound())
+					// 403 Forbidden will not be retried.
+					.onClientResponse(ResponseFunction
+							.emptyOnErrorStatus(RouteMatcher.any(), 403))
+					.onClientResponse(ResponseFunction.retryWhen(RouteMatcher.any(),
+	                        Retry.onlyIf(ClientException.isRetryContextStatusCode(500))
+	                                .exponentialBackoffWithJitter(
+	                                		Duration.ofSeconds(2), 
+	                                		Duration.ofSeconds(10))))
 					.build();
-			
-			discordClient.getEventDispatcher().on(ReadyEvent.class)
-					.subscribe(event -> {
-						discordManager.set(new DiscordManager(discordClient));
-						LOGGER.info("Discord Client is ready.");
-					});
 
 			// Login
 			LOGGER.info("Logging into Discord.");
-			discordClient.login().block();
+			GatewayDiscordClient gatewayDiscordClient = discordClient.login().block();
+
+			LOGGER.info("Discord Client is ready.");
+			discordManager.set(new DiscordManager(gatewayDiscordClient));
 		}).start();
 		LOGGER.info("Discord Initializer started.");
 	}
@@ -172,7 +167,7 @@ public class CanucksBot extends Thread {
 
 	void initPreferences() {
 		LOGGER.info("Initializing Preferences.");
-		this.preferencesManager = PersistentData.getInstance(this);
+		this.preferencesManager = PersistentData.getInstance();
 	}
 
 	void initGameDayChannelsManager() {

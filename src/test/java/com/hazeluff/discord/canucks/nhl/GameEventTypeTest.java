@@ -8,8 +8,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.nhl.GameEventType;
-
 @RunWith(PowerMockRunner.class)
 public class GameEventTypeTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameEventTypeTest.class);

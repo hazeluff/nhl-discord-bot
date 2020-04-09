@@ -35,21 +35,19 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.bot.GameDayChannel;
-import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameEvent;
 import com.hazeluff.discord.canucks.nhl.GamePeriod;
+import com.hazeluff.discord.canucks.nhl.GamePeriod.Type;
 import com.hazeluff.discord.canucks.nhl.GameStatus;
 import com.hazeluff.discord.canucks.nhl.GameTracker;
 import com.hazeluff.discord.canucks.nhl.Player;
 import com.hazeluff.discord.canucks.nhl.Team;
-import com.hazeluff.discord.canucks.nhl.GamePeriod.Type;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.channel.TextChannel;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(DateUtils.class)

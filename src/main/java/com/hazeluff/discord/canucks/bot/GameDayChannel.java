@@ -34,10 +34,10 @@ import com.hazeluff.discord.canucks.nhl.custommessages.CanucksCustomMessages;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
-import discord4j.core.object.entity.Category;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.channel.Category;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.TextChannelCreateSpec;
 
@@ -215,7 +215,7 @@ public class GameDayChannel extends Thread {
 	
 	private Message sendPredictionMessage() {
 		String pollMessage = String.format(
-				"Predict the outcome of this game!\n🏠: %s\n✈️: %s", 
+				"Predict the outcome of this game!\n🏠 %s\n✈️  %s", 
 				game.getHomeTeam().getFullName(), game.getAwayTeam().getFullName());
 		
 		Message message = sendMessage(pollMessage);

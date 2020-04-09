@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
-import discord4j.core.object.util.Snowflake;
+import discord4j.rest.util.Snowflake;
+
 
 /**
  * Class used to determine if actions from a user should be throttled.

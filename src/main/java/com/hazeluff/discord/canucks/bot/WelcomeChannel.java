@@ -13,9 +13,9 @@ import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.rest.util.Snowflake;
 
 public class WelcomeChannel extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeChannel.class);

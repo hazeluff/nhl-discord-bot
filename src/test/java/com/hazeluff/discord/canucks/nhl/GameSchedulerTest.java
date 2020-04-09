@@ -59,7 +59,7 @@ import com.hazeluff.discord.canucks.utils.HttpUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.channel.TextChannel;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GameDayChannel.class)

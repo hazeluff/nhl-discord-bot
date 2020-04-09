@@ -33,7 +33,7 @@ public class LovelyTopic extends Topic {
 	public boolean isReplyTo(Message message) {
 		return isStringMatch(
 				Pattern.compile("(\\bi\\s*(love|like)\\s*(u|you)\\b)|\\bilu\\b|:kiss:|:kissing:|:heart:|<3"),
-				message.getContent().orElse("").toLowerCase());
+				message.getContent().toLowerCase());
 	}
 
 }

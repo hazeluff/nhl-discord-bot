@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.bot.database.preferences.PreferencesManager;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.discord.canucks.utils.Utils;
 import com.hazeluff.test.DatabaseIT;

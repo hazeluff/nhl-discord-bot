@@ -6,24 +6,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.bson.Document;
 
 import com.hazeluff.discord.canucks.bot.database.DatabaseManager;
-import com.hazeluff.discord.canucks.nhl.GameScheduler;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 public class ResultsManager extends DatabaseManager {
-	private final GameScheduler gameScheduler;
 
 	private final Map<String, TeamSeasonResults> seasonResults;
 	
-	public ResultsManager(MongoDatabase database, GameScheduler gameScheduler) {
+	public ResultsManager(MongoDatabase database) {
 		super(database);
-		this.gameScheduler = gameScheduler;
 		seasonResults = new ConcurrentHashMap<>();
 	}
 
-	public static ResultsManager load(MongoDatabase database, GameScheduler gameScheduler) {
-		return new ResultsManager(database, gameScheduler);
+	public static ResultsManager load(MongoDatabase database) {
+		return new ResultsManager(database);
 	}
 
 	private MongoCollection<Document> getCollection() {

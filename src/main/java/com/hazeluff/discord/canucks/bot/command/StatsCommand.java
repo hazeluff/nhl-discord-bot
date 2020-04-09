@@ -52,7 +52,7 @@ public class StatsCommand extends Command {
 			for (Guild g : guilds) {
 				try {
 					if (!excludedGuilds.contains(g.getId().asLong())) {
-						numUsers += g.getMemberCount().orElse(0);
+						numUsers += g.getMemberCount();
 					}
 				} catch (Exception e) {
 					LOGGER.warn("Exception happened.", e);

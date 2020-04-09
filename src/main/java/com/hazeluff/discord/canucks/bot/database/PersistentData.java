@@ -1,7 +1,6 @@
 package com.hazeluff.discord.canucks.bot.database;
 
 import com.hazeluff.discord.canucks.Config;
-import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.database.fuck.FucksManager;
 import com.hazeluff.discord.canucks.bot.database.pole.PollsManager;
 import com.hazeluff.discord.canucks.bot.database.predictions.results.ResultsManager;
@@ -27,8 +26,8 @@ public class PersistentData {
 		this.resultsManager = resultsManager;
 	}
 
-	public static PersistentData getInstance(CanucksBot canucksBot) {
-		return getInstance(canucksBot, getDatabase());
+	public static PersistentData getInstance() {
+		return getInstance(getDatabase());
 	}
 
 	/**
@@ -37,11 +36,11 @@ public class PersistentData {
 	 * @param database
 	 * @return
 	 */
-	public static PersistentData getInstance(CanucksBot canucksBot, MongoDatabase database) {
+	public static PersistentData getInstance(MongoDatabase database) {
 		PreferencesManager preferencesManager = PreferencesManager.load(database);
 		FucksManager fucksManager = FucksManager.load(database);
 		PollsManager polesManager = PollsManager.load(database);
-		ResultsManager resultsManager = ResultsManager.load(database, canucksBot.getGameScheduler());
+		ResultsManager resultsManager = ResultsManager.load(database);
 		return new PersistentData(preferencesManager, fucksManager, polesManager, resultsManager);
 	}
 

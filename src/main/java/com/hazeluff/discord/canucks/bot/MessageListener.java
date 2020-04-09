@@ -31,10 +31,10 @@ import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.rest.util.Snowflake;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -186,7 +186,7 @@ public class MessageListener {
 	 * @return list of commands if command; null if not a command
 	 */
 	List<String> parseToCommandArguments(Message message) {
-		String messageContent = message.getContent().orElse("");
+		String messageContent = message.getContent();
 		if (messageContent.startsWith(canucksBot.getMention())
 				|| messageContent.startsWith(canucksBot.getNicknameMentionId())
 				|| messageContent.toLowerCase().startsWith("?canucksbot")) {

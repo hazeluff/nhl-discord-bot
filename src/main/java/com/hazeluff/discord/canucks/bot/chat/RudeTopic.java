@@ -40,7 +40,7 @@ public class RudeTopic extends Topic {
 	public boolean isReplyTo(Message message) {
 		return isStringMatch(
 				Pattern.compile("\\b((fuck\\s*off)|(shut\\s*(up|it))|(fuck\\s*(you|u)))\\b"),
-				message.getContent().orElse("").toLowerCase());
+				message.getContent().toLowerCase());
 	}
 
 }

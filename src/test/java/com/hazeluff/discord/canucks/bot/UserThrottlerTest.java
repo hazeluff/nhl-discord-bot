@@ -23,11 +23,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.bot.UserThrottler;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
-import discord4j.core.object.util.Snowflake;
+import discord4j.rest.util.Snowflake;
+
 
 @RunWith(PowerMockRunner.class)
 public class UserThrottlerTest {

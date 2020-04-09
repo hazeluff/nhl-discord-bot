@@ -2,7 +2,6 @@ package com.hazeluff.discord.canucks.bot;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -10,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
@@ -29,9 +27,9 @@ import com.hazeluff.discord.canucks.nhl.Game;
 
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.rest.util.Snowflake;
 
 @RunWith(PowerMockRunner.class)
 public class MessageListenerTest {
@@ -76,39 +74,36 @@ public class MessageListenerTest {
 
 
 	// getBotCommandArguments
-	@SuppressWarnings("unchecked")
 	@Test
 	public void parseToCommandArgumentsShouldParseMessage() {
 		LOGGER.info("parseToCommandArguments");
-		Optional<String> mockOpt = mock(Optional.class);
-		when(mockMessage.getContent()).thenReturn(mockOpt);
 		
 		// By mention
-		when(mockOpt.orElse(any())).thenReturn(BOT_MENTION_ID + " arg1 arg2");
+		when(mockMessage.getContent()).thenReturn(BOT_MENTION_ID + " arg1 arg2");
 		List<String> result = messageListener.parseToCommandArguments(mockMessage);
 		assertEquals(Arrays.asList("arg1", "arg2"), result);
 
 		// By nickname mention
-		when(mockOpt.orElse(any())).thenReturn(BOT_NICKNAME_MENTION_ID + " arg1 arg2");
+		when(mockMessage.getContent()).thenReturn(BOT_NICKNAME_MENTION_ID + " arg1 arg2");
 		result = messageListener.parseToCommandArguments(mockMessage);
 		assertEquals(Arrays.asList("arg1", "arg2"), result);
 
 		// By ?canucksbot
-		when(mockOpt.orElse(any())).thenReturn("?canucksbot arg1 arg2");
+		when(mockMessage.getContent()).thenReturn("?canucksbot arg1 arg2");
 		result = messageListener.parseToCommandArguments(mockMessage);
 		assertEquals(Arrays.asList("arg1", "arg2"), result);
 
 		// By ? prefix
-		when(mockOpt.orElse(any())).thenReturn("?arg1 arg2");
+		when(mockMessage.getContent()).thenReturn("?arg1 arg2");
 		result = messageListener.parseToCommandArguments(mockMessage);
 		assertEquals(Arrays.asList("arg1", "arg2"), result);
 
 		// invalid
-		when(mockOpt.orElse(any())).thenReturn("arg1 arg2");
+		when(mockMessage.getContent()).thenReturn("arg1 arg2");
 		result = messageListener.parseToCommandArguments(mockMessage);
 		assertNull(result);
 		
-		when(mockOpt.orElse(any())).thenReturn("");
+		when(mockMessage.getContent()).thenReturn("");
 		result = messageListener.parseToCommandArguments(mockMessage);
 		assertNull(result);
 	}

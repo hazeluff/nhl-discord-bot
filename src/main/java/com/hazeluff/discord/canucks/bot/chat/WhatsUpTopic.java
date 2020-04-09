@@ -31,7 +31,7 @@ public class WhatsUpTopic extends Topic {
 	public boolean isReplyTo(Message message) {
 		return isStringMatch(
 				Pattern.compile("\\b((what(')?s\\s*up)|whaddup|wassup|sup)\\b"),
-				message.getContent().orElse("").toLowerCase());
+				message.getContent().toLowerCase());
 	}
 
 }

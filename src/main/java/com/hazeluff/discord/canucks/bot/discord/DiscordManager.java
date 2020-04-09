@@ -8,17 +8,18 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import discord4j.core.DiscordClient;
-import discord4j.core.object.entity.Category;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.presence.Presence;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.Category;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.TextChannelCreateSpec;
+import discord4j.discordjson.json.gateway.StatusUpdate;
+import discord4j.rest.util.Snowflake;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 /**
  * Provides methods that interface with Discord. The methods provide error handling.
@@ -26,20 +27,20 @@ import reactor.core.publisher.Mono;
 public class DiscordManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DiscordManager.class);
 
-	private final DiscordClient client;
+	private final GatewayDiscordClient client;
 	private Snowflake id;
 
-	public DiscordManager(DiscordClient client) {
+	public DiscordManager(GatewayDiscordClient client) {
 		this.client = client;
 	}
 
-	public DiscordClient getClient() {
+	public GatewayDiscordClient getClient() {
 		return client;
 	}
 
 	public Snowflake getId() {
 		if (id == null) {
-			id = getClient().getSelfId().get();
+			id = getClient().getSelfId().block();
 		}
 		return id;
 	}
@@ -61,7 +62,7 @@ public class DiscordManager {
 		return message.getAuthor().map(User::getId).map(getId()::equals).orElse(false);
 	}
 
-	public void changePresence(Presence presence) {
+	public void changePresence(StatusUpdate presence) {
 		request(() -> getClient().updatePresence(presence));
 	}
 
@@ -330,7 +331,7 @@ public class DiscordManager {
 		return monoSupplier.get()
 				.doOnError(DiscordManager::logError)
 				.onErrorReturn(null)
-				.retryBackoff(5, Duration.ofSeconds(1), Duration.ofSeconds(10))
+				.retryWhen(Retry.backoff(2, Duration.ofSeconds(5)))
 				.block();
 	}
 

@@ -16,9 +16,9 @@ import com.hazeluff.discord.canucks.nhl.GameTracker;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.discord.canucks.utils.Utils;
 
-import discord4j.core.object.entity.Category;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.channel.Category;
+import discord4j.core.object.entity.channel.TextChannel;
 
 /**
  * This class is used to manage the channels in a Guild.

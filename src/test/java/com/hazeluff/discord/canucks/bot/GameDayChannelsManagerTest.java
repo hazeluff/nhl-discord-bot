@@ -29,16 +29,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.bot.GameDayChannel;
-import com.hazeluff.discord.canucks.bot.GameDayChannelsManager;
-import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameTracker;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.util.Snowflake;
+import discord4j.rest.util.Snowflake;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(DateUtils.class)

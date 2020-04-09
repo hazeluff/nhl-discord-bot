@@ -13,8 +13,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.bot.database.predictions.results.ResultsManager;
-import com.hazeluff.discord.canucks.bot.database.predictions.results.TeamSeasonResults;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.test.DatabaseIT;
 import com.mongodb.MongoClient;
@@ -44,7 +42,7 @@ public class ResultsManagerIT extends DatabaseIT {
 	@Before
 	public void before() {
 		super.before();
-		resultsManager = new ResultsManager(getDatabase(), null);
+		resultsManager = new ResultsManager(getDatabase());
 	}
 
 	@Test
@@ -60,7 +58,7 @@ public class ResultsManagerIT extends DatabaseIT {
 		resultsManager.saveTeamSeasonResults(results);
 		assertEquals(results, resultsManager.loadTeamSeasonResults(campaignKey));
 
-		resultsManager = new ResultsManager(getDatabase(), null);
+		resultsManager = new ResultsManager(getDatabase());
 		assertEquals(results, resultsManager.loadTeamSeasonResults(campaignKey));
 	}
 

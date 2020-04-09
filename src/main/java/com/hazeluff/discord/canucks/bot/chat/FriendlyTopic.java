@@ -33,7 +33,7 @@ public class FriendlyTopic extends Topic {
 	public boolean isReplyTo(Message message) {
 		return isStringMatch(
 				Pattern.compile("\\b(hi|hello|hey|heya|hiya|yo)\\b"),
-				message.getContent().orElse("").toLowerCase());
+				message.getContent().toLowerCase());
 	}
 
 }

@@ -38,11 +38,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hazeluff.discord.canucks.nhl.Game;
-import com.hazeluff.discord.canucks.nhl.GameEvent;
-import com.hazeluff.discord.canucks.nhl.GameStatus;
-import com.hazeluff.discord.canucks.nhl.Player;
-import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.discord.canucks.nhl.Player.EventRole;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.HttpUtils;
