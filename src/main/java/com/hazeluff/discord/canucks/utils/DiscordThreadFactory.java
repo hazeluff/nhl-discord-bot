@@ -1,5 +1,6 @@
 package com.hazeluff.discord.canucks.utils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -7,7 +8,7 @@ public class DiscordThreadFactory {
 
 	private static DiscordThreadFactory factory;
 
-	public final List<DiscordThread<?>> threads;
+	private final List<DiscordThread<?>> threads;
 
 	private DiscordThreadFactory() {
 		threads = new CopyOnWriteArrayList<>();
@@ -42,6 +43,11 @@ public class DiscordThreadFactory {
 		}
 
 		@Override
+		public void start() {
+			super.start();
+		}
+
+		@Override
 		public void run() {
 			super.run();
 			DiscordThreadFactory.getInstance().threads.remove(this);
@@ -50,6 +56,15 @@ public class DiscordThreadFactory {
 		public Class<T> getSource() {
 			return source;
 		}
+
+		@Override
+		public String toString() {
+			return String.format("DiscordThread[%s]-%s", source.getSimpleName(), getId());
+		}
+	}
+
+	public List<DiscordThread<?>> getThreads() {
+		return new ArrayList<>(threads);
 	}
 
 	public long getNumThreads(Class<?> source) {

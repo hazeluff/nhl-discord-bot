@@ -25,6 +25,7 @@ import com.hazeluff.discord.canucks.bot.command.ScheduleCommand;
 import com.hazeluff.discord.canucks.bot.command.ScoreCommand;
 import com.hazeluff.discord.canucks.bot.command.StatsCommand;
 import com.hazeluff.discord.canucks.bot.command.SubscribeCommand;
+import com.hazeluff.discord.canucks.bot.command.ThreadsCommand;
 import com.hazeluff.discord.canucks.bot.command.UnsubscribeCommand;
 import com.hazeluff.discord.canucks.utils.DiscordThreadFactory;
 import com.hazeluff.discord.canucks.utils.Utils;
@@ -64,6 +65,7 @@ public class MessageListener {
 		commands.add(new GoalsCommand(canucksBot));
 		commands.add(new StatsCommand(canucksBot));
 		commands.add(new ScheduleCommand(canucksBot));
+		commands.add(new ThreadsCommand(canucksBot));
 
 		topics = new ArrayList<>();
 		topics.add(new FriendlyTopic(canucksBot));
