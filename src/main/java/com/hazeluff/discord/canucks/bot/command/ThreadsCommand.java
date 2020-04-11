@@ -28,6 +28,6 @@ public class ThreadsCommand extends Command {
 	}
 
 	public Consumer<MessageCreateSpec> getReply() {
-		return spec -> spec.setContent("Threads: " + DiscordThreadFactory.getInstance().getThreads());
+		return spec -> spec.setContent("Threads: " + DiscordThreadFactory.getInstance().getThreads().size());
 	}
 }
