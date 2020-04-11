@@ -1,14 +1,12 @@
 package com.hazeluff.discord.canucks.bot.chat;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.utils.Utils;
 
-import discord4j.core.object.entity.Message;
-import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 
 public class LovelyTopic extends Topic {
 
@@ -17,23 +15,24 @@ public class LovelyTopic extends Topic {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(Message message) {
+	public Runnable getReply(MessageCreateEvent event) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Love you too.",
 				"<3",
 				":blush:",
 				":wink:",
 				"I think it's better we stay friends...",
-				":heart_eyes:", "愛してる。",
+				":heart_eyes:", 
+				"愛してる。",
 				"https://www.youtube.com/watch?v=25QyCxVkXwQ"));
-		return spec -> spec.setContent(reply);
+		return () -> sendMessage(event, reply);
 	}
 
 	@Override
-	public boolean isReplyTo(Message message) {
+	public boolean isReplyTo(MessageCreateEvent event) {
 		return isStringMatch(
 				Pattern.compile("(\\bi\\s*(love|like)\\s*(u|you)\\b)|\\bilu\\b|:kiss:|:kissing:|:heart:|<3"),
-				message.getContent().toLowerCase());
+				event.getMessage().getContent().toLowerCase());
 	}
 
 }

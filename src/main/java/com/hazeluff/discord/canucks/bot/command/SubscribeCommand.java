@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 
 import com.hazeluff.discord.canucks.bot.CanucksBot;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Team;
 
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -44,23 +43,23 @@ public class SubscribeCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
-		Guild guild = DiscordManager.request(() -> event.getGuild());
+	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+		Guild guild = canucksBot.getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
-			return MUST_HAVE_PERMISSIONS_MESSAGE;
+			return () -> sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
 		}
 
 		if (arguments.size() < 2) {
-			return SPECIFY_TEAM_MESSAGE;
+			return () -> sendMessage(event, SPECIFY_TEAM_MESSAGE);
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
-			return HELP_MESSAGE;
+			return () -> sendMessage(event, HELP_MESSAGE);
 		}
 
 		if (!Team.isValid(arguments.get(1))) {
-			return getInvalidCodeMessage(arguments.get(1), "subscribe");
+			return () -> sendMessage(event, getInvalidCodeMessage(arguments.get(1), "subscribe"));
 		}
 
 		Team team = Team.parse(arguments.get(1));
@@ -69,7 +68,7 @@ public class SubscribeCommand extends Command {
 		canucksBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
 		canucksBot.getPersistentData().getPreferencesManager().subscribeGuild(guildId, team);
 		canucksBot.getGameDayChannelsManager().initChannels(guild);
-		return buildSubscribedMessage(team, guildId);
+		return () -> sendMessage(event, buildSubscribedMessage(team, guildId));
 	}
 
 	Consumer<MessageCreateSpec> buildSubscribedMessage(Team team, long guildId) {

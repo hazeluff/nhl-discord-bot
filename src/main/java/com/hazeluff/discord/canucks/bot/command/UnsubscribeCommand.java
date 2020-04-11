@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.hazeluff.discord.canucks.bot.CanucksBot;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Team;
 
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -31,19 +30,19 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
-		Guild guild = DiscordManager.request(() -> event.getGuild());
+	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+		Guild guild = canucksBot.getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
-			return MUST_HAVE_PERMISSIONS_MESSAGE;
+			return () -> sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
 		}
 
 		if (arguments.size() < 2) {
-			return SPECIFY_TEAM_MESSAGE;
+			return () -> sendMessage(event, SPECIFY_TEAM_MESSAGE);
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
-			return buildHelpMessage(guild);
+			return () -> sendMessage(event, buildHelpMessage(guild));
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("all")) {
@@ -52,11 +51,11 @@ public class UnsubscribeCommand extends Command {
 					.getPreferencesManager()
 					.unsubscribeGuild(guild.getId().asLong(), null);
 			canucksBot.getGameDayChannelsManager().updateChannels(guild);
-			return UNSUBSCRIBED_FROM_ALL_MESSAGE;
+			return () -> sendMessage(event, UNSUBSCRIBED_FROM_ALL_MESSAGE);
 		}
 
 		if (!Team.isValid(arguments.get(1))) {
-			return getInvalidCodeMessage(arguments.get(1), "unsubscribe");
+			return () -> sendMessage(event, getInvalidCodeMessage(arguments.get(1), "unsubscribe"));
 		}
 
 		// Unsubscribe from a team
@@ -65,7 +64,7 @@ public class UnsubscribeCommand extends Command {
 				.getPreferencesManager()
 				.unsubscribeGuild(guild.getId().asLong(), team);
 		canucksBot.getGameDayChannelsManager().updateChannels(guild);
-		return buildUnsubscribeMessage(team);
+		return () -> sendMessage(event, buildUnsubscribeMessage(team));
 	}
 
 	Consumer<MessageCreateSpec> buildHelpMessage(Guild guild) {

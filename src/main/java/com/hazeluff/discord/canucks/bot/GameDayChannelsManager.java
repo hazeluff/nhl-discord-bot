@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameTracker;
 import com.hazeluff.discord.canucks.nhl.Team;
@@ -233,7 +232,7 @@ public class GameDayChannelsManager extends Thread {
 		GuildPreferences preferences = canucksBot.getPersistentData()
 				.getPreferencesManager()
 				.getGuildPreferences(guild.getId().asLong());
-		for (TextChannel channel : DiscordManager.getTextChannels(guild)) {
+		for (TextChannel channel : canucksBot.getDiscordManager().getTextChannels(guild)) {
 			deleteInactiveTextChannel(channel, preferences);
 		}
 	}
@@ -274,7 +273,7 @@ public class GameDayChannelsManager extends Thread {
 		}
 
 		if (!removedChannel) {
-			DiscordManager.deleteChannel(channel);
+			canucksBot.getDiscordManager().deleteChannel(channel);
 		}
 	}
 
@@ -358,8 +357,8 @@ public class GameDayChannelsManager extends Thread {
 		initChannels(guild);
 	}
 
-	public static boolean isInGameDayCategory(TextChannel channel) {
-		Category category = DiscordManager.getCategory(channel);
+	public boolean isInGameDayCategory(TextChannel channel) {
+		Category category = canucksBot.getDiscordManager().getCategory(channel);
 		return category == null ? false : category.getName().equalsIgnoreCase(GAME_DAY_CHANNEL_CATEGORY_NAME);
 	}
 

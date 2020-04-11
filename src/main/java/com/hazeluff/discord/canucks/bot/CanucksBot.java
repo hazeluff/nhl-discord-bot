@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,14 +23,12 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.json.gateway.StatusUpdate;
 import discord4j.rest.http.client.ClientException;
 import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
-import reactor.core.publisher.Mono;
+import discord4j.rest.route.Routes;
 import reactor.retry.Retry;
-import reactor.util.function.Tuple2;
 
 public class CanucksBot extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CanucksBot.class);
@@ -81,10 +78,8 @@ public class CanucksBot extends Thread {
 		MessageListener messageListener = new MessageListener(canucksBot);
 		canucksBot.getDiscordManager().getClient().getEventDispatcher()
 				.on(MessageCreateEvent.class)
-				.map(event -> messageListener.getReply(event))
 				.doOnError(t -> LOGGER.error("Error occurred when responding to message.", t))
-				.retry()
-				.subscribe(CanucksBot::sendMessage);
+				.subscribe(event -> messageListener.execute(event));
 
 		canucksBot.getDiscordManager().changePresence(STARTING_UP_STATUS);
 		LOGGER.info("CanucksBot Started. id [" + canucksBot.getDiscordManager().getId() + "]");
@@ -118,13 +113,6 @@ public class CanucksBot extends Thread {
 		return canucksBot;
 	}
 
-	private static void sendMessage(Mono<Tuple2<Consumer<MessageCreateSpec>, TextChannel>> replyMono) {
-		Tuple2<Consumer<MessageCreateSpec>, TextChannel> reply = replyMono.block();
-		if (reply != null) {
-			reply.getT2().createMessage(reply.getT1()).subscribe();
-		}
-	}
-
 	/**
 	 * This needs to be done in its own Thread. login().block() hold the execution.
 	 * 
@@ -137,14 +125,13 @@ public class CanucksBot extends Thread {
 			DiscordClient discordClient = DiscordClientBuilder.create(botToken)
 					// globally suppress any not found (404) error
 					.onClientResponse(ResponseFunction.emptyIfNotFound())
-					// 403 Forbidden will not be retried.
-					.onClientResponse(ResponseFunction
-							.emptyOnErrorStatus(RouteMatcher.any(), 403))
-					.onClientResponse(ResponseFunction.retryWhen(RouteMatcher.any(),
+					// (403) Forbidden will not be retried.
+					.onClientResponse(ResponseFunction.emptyOnErrorStatus(RouteMatcher.any(), 403))
+	                // (500) while creating a message will be retried, with backoff, until it succeeds
+	                .onClientResponse(ResponseFunction.retryWhen(RouteMatcher.route(Routes.MESSAGE_CREATE),
 	                        Retry.onlyIf(ClientException.isRetryContextStatusCode(500))
-	                                .exponentialBackoffWithJitter(
-	                                		Duration.ofSeconds(2), 
-	                                		Duration.ofSeconds(10))))
+									.retryMax(3)
+	                        		.fixedBackoff(Duration.ofSeconds(5))))
 					.build();
 
 			// Login

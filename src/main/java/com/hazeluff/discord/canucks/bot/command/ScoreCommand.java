@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 
 import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.GameDayChannel;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameStatus;
 import com.hazeluff.discord.canucks.nhl.Team;
@@ -25,26 +24,26 @@ public class ScoreCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
+	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
 		List<Team> preferredTeam = canucksBot.getPersistentData()
 				.getPreferencesManager()
 				.getGuildPreferences(event.getGuildId().get().asLong())
 				.getTeams();
 		if (preferredTeam.isEmpty()) {
-			return SUBSCRIBE_FIRST_MESSAGE;
+			return () -> sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
 		}
 
-		TextChannel channel = (TextChannel) DiscordManager.request(() -> event.getMessage().getChannel());
+		TextChannel channel = (TextChannel) canucksBot.getDiscordManager().block(event.getMessage().getChannel());
 		Game game = canucksBot.getGameScheduler().getGameByChannelName(channel.getName());
 		if (game == null) {
-			return getRunInGameDayChannelsMessage(DiscordManager.request(() -> event.getGuild()), preferredTeam);
+			return () -> sendMessage(event, getRunInGameDayChannelsMessage(getGuild(event), preferredTeam));
 		}
 
 		if (game.getStatus() == GameStatus.PREVIEW) {
-			return GAME_NOT_STARTED_MESSAGE;
+			return () -> sendMessage(event, GAME_NOT_STARTED_MESSAGE);
 		}
 
-		return getScoreMessage(game);
+		return () -> sendMessage(event, getScoreMessage(game));
 	}
 
 	Consumer<MessageCreateSpec> getScoreMessage(Game game) {

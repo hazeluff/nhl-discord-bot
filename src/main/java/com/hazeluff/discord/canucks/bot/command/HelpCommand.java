@@ -42,8 +42,8 @@ public class HelpCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
-		return getReply();
+	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+		return () -> sendMessage(event, getReply());
 	}
 
 	public Consumer<MessageCreateSpec> getReply() {

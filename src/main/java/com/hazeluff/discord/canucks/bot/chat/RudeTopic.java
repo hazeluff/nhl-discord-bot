@@ -1,14 +1,12 @@
 package com.hazeluff.discord.canucks.bot.chat;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.utils.Utils;
 
-import discord4j.core.object.entity.Message;
-import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 
 public class RudeTopic extends Topic {
 
@@ -17,7 +15,7 @@ public class RudeTopic extends Topic {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(Message message) {
+	public Runnable getReply(MessageCreateEvent event) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Nah, you should fuck off.", 
 				"Go kill yourself.", 
@@ -33,14 +31,14 @@ public class RudeTopic extends Topic {
 				"I'm just doing my job. :cry:", 
 				"That's not nice.",
 				String.format("Hazeluff worked really hard on me.")));
-		return spec -> spec.setContent(reply);
+		return () -> sendMessage(event, reply);
 	}
 
 	@Override
-	public boolean isReplyTo(Message message) {
+	public boolean isReplyTo(MessageCreateEvent event) {
 		return isStringMatch(
 				Pattern.compile("\\b((fuck\\s*off)|(shut\\s*(up|it))|(fuck\\s*(you|u)))\\b"),
-				message.getContent().toLowerCase());
+				event.getMessage().getContent().toLowerCase());
 	}
 
 }

@@ -1,13 +1,12 @@
 package com.hazeluff.discord.canucks.bot.chat;
 
 
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.hazeluff.discord.canucks.bot.CanucksBot;
 
-import discord4j.core.object.entity.Message;
-import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.channel.TextChannel;
 
 /**
  * Interface for topics that the CanucksBot replies to and the replies to them.
@@ -22,14 +21,14 @@ public abstract class Topic {
 	/**
 	 * Replies to the message provided.
 	 * 
-	 * @param message
-	 *            message to reply to.
+	 * @param event
+	 *            event to reply to.
 	 * @param arguments
 	 *            command arguments
 	 * 
 	 * @return Spec for the reply; null if no reply.
 	 */
-	public abstract Consumer<MessageCreateSpec> getReply(Message message);
+	public abstract Runnable getReply(MessageCreateEvent event);
 
 	/**
 	 * Determines if the message is a topic we can reply to
@@ -39,7 +38,12 @@ public abstract class Topic {
 	 * @return true, if accepted<br>
 	 *         false, otherwise
 	 */
-	public abstract boolean isReplyTo(Message message);
+	public abstract boolean isReplyTo(MessageCreateEvent event);
+
+	protected void sendMessage(MessageCreateEvent event, String message) {
+		TextChannel channel = (TextChannel) canucksBot.getDiscordManager().block(event.getMessage().getChannel());
+		canucksBot.getDiscordManager().sendMessage(channel, spec -> spec.setContent(message));
+	}
 
 	/**
 	 * Determines if the string matches the regex pattern.

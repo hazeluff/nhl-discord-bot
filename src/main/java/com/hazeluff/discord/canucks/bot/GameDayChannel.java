@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucks.bot.database.pole.PollMessage;
 import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameEvent;
 import com.hazeluff.discord.canucks.nhl.GameEventStrength;
@@ -218,7 +217,7 @@ public class GameDayChannel extends Thread {
 				"Predict the outcome of this game!\n🏠 %s\n✈️  %s", 
 				game.getHomeTeam().getFullName(), game.getAwayTeam().getFullName());
 		
-		Message message = sendMessage(pollMessage);
+		Message message = sendAndGetMessage(pollMessage);
 		message.addReaction(ReactionEmoji.unicode("🏠")).subscribe();
 		message.addReaction(ReactionEmoji.unicode("✈️")).subscribe();
 
@@ -234,7 +233,7 @@ public class GameDayChannel extends Thread {
 
 		Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
 
-		if (!DiscordManager.getTextChannels(guild).stream().anyMatch(channelMatcher)) {
+		if (!canucksBot.getDiscordManager().getTextChannels(guild).stream().anyMatch(channelMatcher)) {
 			Consumer<TextChannelCreateSpec> channelSpec = spec -> {
 				spec.setName(channelName);
 				spec.setTopic(preferences.getCheer());
@@ -242,18 +241,21 @@ public class GameDayChannel extends Thread {
 					spec.setParentId(category.getId());
 				}
 			};
-			channel = DiscordManager.createChannel(guild, channelSpec);
+			channel = canucksBot.getDiscordManager().createAndGetChannel(guild, channelSpec);
 			if (channel != null) {
 				ZoneId timeZone = preferences.getTimeZone();
-				Message message = sendMessage(getDetailsMessage(timeZone));
-				DiscordManager.pinMessage(message);
+				Message message = sendAndGetMessage(getDetailsMessage(timeZone));
+				canucksBot.getDiscordManager().pinMessage(message);
 			}
 		} else {
 			LOGGER.debug("Channel [" + channelName + "] already exists in [" + guild.getName() + "]");
-			channel = DiscordManager.getTextChannels(guild).stream().filter(channelMatcher).findAny().orElse(null);
+			channel = canucksBot.getDiscordManager().getTextChannels(guild).stream()
+					.filter(channelMatcher)
+					.findAny()
+					.orElse(null);
 
 			if (!channel.getCategoryId().isPresent() && category != null) {
-				DiscordManager.moveChannel(category, channel);
+				canucksBot.getDiscordManager().moveChannel(category, channel);
 			}
 		}
 	}
@@ -269,7 +271,7 @@ public class GameDayChannel extends Thread {
 	 * @return the {@link ICategory}
 	 */
 	Category getCategory(Guild guild, String categoryName) {
-		Category category = DiscordManager.getCategory(guild, categoryName);
+		Category category = canucksBot.getDiscordManager().getCategory(guild, categoryName);
 		if (category == null) {
 			category = canucksBot.getDiscordManager().createCategory(guild, categoryName);
 		}
@@ -280,7 +282,7 @@ public class GameDayChannel extends Thread {
 	 * Stops the thread and deletes the channel from the Discord Guild.
 	 */
 	void stopAndRemoveGuildChannel() {
-		DiscordManager.deleteChannel(channel);
+		canucksBot.getDiscordManager().deleteChannel(channel);
 		interrupt();
 	}
 
@@ -436,7 +438,7 @@ public class GameDayChannel extends Thread {
 	void sendEventMessage(GameEvent event) {
 		LOGGER.info("Sending message for event [" + event + "].");
 		String strMessage = buildEventMessage(event);
-		Message message = sendMessage(strMessage);
+		Message message = sendAndGetMessage(strMessage);
 		if (message != null) {
 			eventMessages.put(event.getId(), message);
 		}
@@ -457,7 +459,8 @@ public class GameDayChannel extends Thread {
 			LOGGER.warn("No message exists for the event: {}", event);
 		} else {
 			String message = buildEventMessage(event);
-			Message updatedMessage = DiscordManager.updateMessage(eventMessages.get(event.getId()), message);
+			Message updatedMessage = canucksBot.getDiscordManager()
+					.updateAndGetMessage(eventMessages.get(event.getId()), message);
 			eventMessages.put(event.getId(), updatedMessage);
 		}
 	}
@@ -531,16 +534,17 @@ public class GameDayChannel extends Thread {
 	void updateEndOfGameMessage() {
 		if (endOfGameMessage == null) {
 			if (channel != null) {
-				endOfGameMessage = sendMessage(buildEndOfGameMessage());
+				endOfGameMessage = sendAndGetMessage(buildEndOfGameMessage());
 			}
 			if (endOfGameMessage != null) {
 				LOGGER.info("Sent end of game message for game. Pinning it...");
-				DiscordManager.pinMessage(endOfGameMessage);
+				canucksBot.getDiscordManager().pinMessage(endOfGameMessage);
 			}
 		} else {
 			LOGGER.trace("End of game message already sent.");
 			String newEndOfGameMessage = buildEndOfGameMessage();
-			Message updatedMessage = DiscordManager.updateMessage(endOfGameMessage, newEndOfGameMessage);
+			Message updatedMessage = canucksBot.getDiscordManager()
+					.updateAndGetMessage(endOfGameMessage, newEndOfGameMessage);
 			if (updatedMessage != null) {
 				endOfGameMessage = updatedMessage;
 			}
@@ -794,8 +798,15 @@ public class GameDayChannel extends Thread {
 		return channelName.matches(regex);
 	}
 
-	protected Message sendMessage(String message) {
-		return channel == null ? null : DiscordManager.sendMessage(channel, spec -> spec.setContent(message));
+	protected void sendMessage(String message) {
+		if (channel != null) {
+			canucksBot.getDiscordManager().sendMessage(channel, message);
+		}
+	}
+
+	protected Message sendAndGetMessage(String message) {
+		return channel == null ? null
+				: canucksBot.getDiscordManager().sendAndGetMessage(channel, message);
 	}
 
 	static List<Team> getRelevantTeams(List<Team> teams, Game game) {

@@ -26,7 +26,7 @@ import com.hazeluff.discord.canucks.bot.command.ScoreCommand;
 import com.hazeluff.discord.canucks.bot.command.StatsCommand;
 import com.hazeluff.discord.canucks.bot.command.SubscribeCommand;
 import com.hazeluff.discord.canucks.bot.command.UnsubscribeCommand;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
+import com.hazeluff.discord.canucks.utils.DiscordThreadFactory;
 import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -35,9 +35,6 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.Snowflake;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 public class MessageListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
@@ -84,16 +81,19 @@ public class MessageListener {
 		this.userThrottler = userThrottler;
 	}
 
+	public void execute(MessageCreateEvent event) {
+		DiscordThreadFactory.getInstance().createThread(MessageListener.class, getReply(event)).start();
+	}
+
 	/**
 	 * Gets a specification for the message to reply with.
 	 * 
 	 * @return MessageCreateSpec of the reply; null if no reply.
 	 */
-	public Mono<Tuple2<Consumer<MessageCreateSpec>, TextChannel>> getReply(MessageCreateEvent event) {
-
+	public Runnable getReply(MessageCreateEvent event) {
 		User author = event.getMessage().getAuthor().orElse(null);
 		if (author == null || author.getId().equals(canucksBot.getDiscordManager().getId())) {
-			return Mono.empty();
+			return null;
 		}
 
 		Snowflake authorId = author.getId();
@@ -101,12 +101,12 @@ public class MessageListener {
 		userThrottler.add(authorId);
 
 		if (userThrottler.isThrottle(authorId)) {
-			return Mono.empty();
+			return null;
 		}
 		
 		Snowflake guildId = event.getGuildId().orElse(null);
 		if (guildId == null) {
-			return Mono.empty();
+			return null;
 		}
 
 		Message message = event.getMessage();
@@ -116,29 +116,23 @@ public class MessageListener {
 				author.getUsername(), 
 				message.getContent()));
 
-		Consumer<MessageCreateSpec> commandReply = null;
+		Runnable commandReply = null;
 		if ((commandReply = replyToCommand(event)) != null) {
-			return Mono.just(zipReply(commandReply, event));
+			return commandReply;
 		}
 
-		Consumer<MessageCreateSpec> mentionReply = null;
-		if ((mentionReply = replyToMention(message)) != null) {
-			return Mono.just(zipReply(mentionReply, event));
+		Runnable mentionReply = null;
+		if ((mentionReply = replyToMention(event)) != null) {
+			return mentionReply;
 		}
 
 		// Message is a command
 		if (getCommand(message) != null) {
 			userThrottler.add(authorId);
-			return Mono.just(zipReply(UNKNOWN_COMMAND_REPLY, event));
+			return () -> sendMessage(event, UNKNOWN_COMMAND_REPLY);
 		}
 
-		return Mono.empty();
-	}
-
-	private static Tuple2<Consumer<MessageCreateSpec>, TextChannel> zipReply(Consumer<MessageCreateSpec> message,
-			MessageCreateEvent event) {
-		TextChannel channel = (TextChannel) DiscordManager.request(() -> event.getMessage().getChannel());
-		return Tuples.of(message, channel);
+		return null;
 	}
 
 	/**
@@ -149,7 +143,7 @@ public class MessageListener {
 	 *            event that we are replying to
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	Consumer<MessageCreateSpec> replyToCommand(MessageCreateEvent event) {
+	Runnable replyToCommand(MessageCreateEvent event) {
 		Command command = getCommand(event.getMessage());
 		if (command != null) {
 			List<String> commandArgs = parseToCommandArguments(event.getMessage());
@@ -160,18 +154,18 @@ public class MessageListener {
 	}
 
 	/**
-	 * Gets the specification for the reply message for if the CanucksBot is mentioned
-	 * and phrases match ones that have responses.
+	 * Gets the specification for the reply message for if the CanucksBot is
+	 * mentioned and phrases match ones that have responses.
 	 * 
-	 * @param message
-	 *            message received
+	 * @param event
+	 *            event that we are replying to
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	Consumer<MessageCreateSpec> replyToMention(Message message) {
-		if (isBotMentioned(message)) {
-			Optional<Topic> matchedCommand = topics.stream().filter(topic -> topic.isReplyTo(message)).findFirst();
+	Runnable replyToMention(MessageCreateEvent event) {
+		if (isBotMentioned(event)) {
+			Optional<Topic> matchedCommand = topics.stream().filter(topic -> topic.isReplyTo(event)).findFirst();
 			if (matchedCommand.isPresent()) {
-				return matchedCommand.get().getReply(message);
+				return matchedCommand.get().getReply(event);
 			}
 		}
 
@@ -232,11 +226,16 @@ public class MessageListener {
 	 * @return true, if NHL Bot is mentioned.<br>
 	 *         false, otherwise.
 	 */
-	boolean isBotMentioned(Message message) {
-		return message.getUserMentionIds().contains(canucksBot.getDiscordManager().getId());
+	boolean isBotMentioned(MessageCreateEvent event) {
+		return event.getMessage().getUserMentionIds().contains(canucksBot.getDiscordManager().getId());
 	}
 
 	long getCurrentTime() {
 		return Utils.getCurrentTime();
+	}
+
+	private void sendMessage(MessageCreateEvent event, Consumer<MessageCreateSpec> spec) {
+		TextChannel channel = (TextChannel) canucksBot.getDiscordManager().block(event.getMessage().getChannel());
+		canucksBot.getDiscordManager().sendMessage(channel, spec);
 	}
 }

@@ -30,32 +30,32 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
+	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
 		GuildPreferences preferences = canucksBot.getPersistentData()
 				.getPreferencesManager()
 				.getGuildPreferences(event.getGuildId().get().asLong());
 		List<Team> preferredTeams = preferences.getTeams();
 		
 		if (preferredTeams.isEmpty()) {
-			return SUBSCRIBE_FIRST_MESSAGE;
+			return () -> sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
 		}
 
 		if (preferredTeams.size() == 1) {
 			Game nextGame = canucksBot.getGameScheduler().getNextGame(preferredTeams.get(0));
 			if(nextGame == null) {
-				return NO_NEXT_GAME_MESSAGE;
+				return () -> sendMessage(event, NO_NEXT_GAME_MESSAGE);
 			}
 
-			return getNextGameDetailsMessage(nextGame, preferences);
+			return () -> sendMessage(event, getNextGameDetailsMessage(nextGame, preferences));
 		}
 
 		Set<Game> games = preferredTeams.stream().map(team -> canucksBot.getGameScheduler().getNextGame(team))
 				.filter(Objects::nonNull).collect(Collectors.toSet());
 		if (games.isEmpty()) {
-			return NO_NEXT_GAMES_MESSAGE;
+			return () -> sendMessage(event, NO_NEXT_GAMES_MESSAGE);
 		}
 
-		return getNextGameDetailsMessage(games, preferences);
+		return () -> sendMessage(event, getNextGameDetailsMessage(games, preferences));
 	}
 
 	Consumer<MessageCreateSpec> getNextGameDetailsMessage(Game game, GuildPreferences preferences) {

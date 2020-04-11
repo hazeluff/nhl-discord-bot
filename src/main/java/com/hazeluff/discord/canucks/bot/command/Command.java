@@ -10,7 +10,6 @@ import org.apache.commons.lang.StringUtils;
 import com.hazeluff.discord.canucks.Config;
 import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.GameDayChannel;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.Team;
 
@@ -55,7 +54,7 @@ public abstract class Command {
 	 *            command arguments
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	public abstract Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments);
+	public abstract Runnable getReply(MessageCreateEvent event, List<String> arguments);
 
 	/**
 	 * Determines if the command arguments are accepted by this command. i.e the
@@ -69,6 +68,11 @@ public abstract class Command {
 	 *         false, otherwise
 	 */
 	public abstract boolean isAccept(Message message, List<String> arguments);
+
+	protected void sendMessage(MessageCreateEvent event, Consumer<MessageCreateSpec> spec) {
+		TextChannel channel = (TextChannel) canucksBot.getDiscordManager().block(event.getMessage().getChannel());
+		canucksBot.getDiscordManager().sendMessage(channel, spec);
+	}
 
 	/**
 	 * Gets the channel (mention) in the specified guild that represents the latest game of the team that guild is
@@ -84,7 +88,7 @@ public abstract class Command {
 		Game game = getLatestGame(team);
 		String channelName = GameDayChannel.getChannelName(game).toLowerCase();
 
-		List<TextChannel> channels = DiscordManager.getTextChannels(guild);
+		List<TextChannel> channels = canucksBot.getDiscordManager().getTextChannels(guild);
 		if(channels != null && !channels.isEmpty()) {
 			TextChannel channel = channels.stream()
 					.filter(chnl -> chnl.getName().equalsIgnoreCase(channelName))
@@ -152,11 +156,11 @@ public abstract class Command {
 	}
 
 	Member getMessageAuthor(Message message) {
-		return DiscordManager.request(() -> message.getAuthorAsMember());
+		return canucksBot.getDiscordManager().block(message.getAuthorAsMember());
 	}
 
 	PermissionSet getPermissions(Member user) {
-		return DiscordManager.request(() -> user.getBasePermissions());
+		return canucksBot.getDiscordManager().block(user.getBasePermissions());
 	}
 
 	boolean isOwner(Guild guild, User user) {
@@ -212,5 +216,9 @@ public abstract class Command {
 		}
 		strBuilder.append("```\n");
 		return strBuilder.toString();
+	}
+
+	protected Guild getGuild(MessageCreateEvent event) {
+		return canucksBot.getDiscordManager().block(event.getGuild());
 	}
 }

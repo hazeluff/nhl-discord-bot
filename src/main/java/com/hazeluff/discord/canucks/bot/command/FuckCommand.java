@@ -8,7 +8,6 @@ import java.util.function.Consumer;
 import org.apache.commons.lang.StringUtils;
 
 import com.hazeluff.discord.canucks.bot.CanucksBot;
-import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
 import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -37,27 +36,27 @@ public class FuckCommand extends Command {
 	}
 
 	@Override
-	public Consumer<MessageCreateSpec> getReply(MessageCreateEvent event, List<String> arguments) {
+	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
 		
 		if(arguments.size() < 2) {
-			return NOT_ENOUGH_PARAMETERS_REPLY;
+			return () -> sendMessage(event, NOT_ENOUGH_PARAMETERS_REPLY);
 		}
 		
 		if (arguments.get(1).toLowerCase().equals("you") 
 				|| arguments.get(1).toLowerCase().equals("u")) {
-			return NO_YOU_REPLY;
+			return () -> sendMessage(event, NO_YOU_REPLY);
 		}
 		
 		if (arguments.get(1).toLowerCase().equals("hazeluff") 
 				|| arguments.get(1).toLowerCase().equals("hazel")
 				|| arguments.get(1).toLowerCase().equals("haze")
 				|| arguments.get(1).toLowerCase().equals("haz")) {
-			return HAZELUFF_REPLY;
+			return () -> sendMessage(event, HAZELUFF_REPLY);
 		}
 
 		if (arguments.get(1).startsWith("<@") && arguments.get(1).endsWith(">")) {
-			DiscordManager.deleteMessage(event.getMessage());
-			return buildDontAtReply(event.getMessage());
+			canucksBot.getDiscordManager().deleteMessage(event.getMessage());
+			return () -> sendMessage(event, buildDontAtReply(event.getMessage()));
 		}
 
 		if (arguments.get(1).toLowerCase().equals("add")) {
@@ -67,13 +66,13 @@ public class FuckCommand extends Command {
 				List<String> response = new ArrayList<>(arguments);
 				String strResponse = StringUtils.join(response.subList(3, response.size()), " ");				
 				add(subject, strResponse);
-				return buildAddReply(subject, strResponse);
+				return () -> sendMessage(event, spec -> spec.setContent(strResponse));
 			}
 			return null;
 		}
 
 		if (hasResponses(arguments.get(1))) {
-			return getRandomResponse(arguments.get(1));
+			return () -> sendMessage(event, getRandomResponse(arguments.get(1)));
 		}
 
 		// Default
