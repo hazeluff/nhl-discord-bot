@@ -24,27 +24,31 @@ public class GoalsCommand extends Command {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, List<String> arguments) {
 		List<Team> preferredTeams = canucksBot.getPersistentData()
 				.getPreferencesManager()
 				.getGuildPreferences(event.getGuildId().get().asLong())
 				.getTeams();
 
 		if (preferredTeams.isEmpty()) {
-			return () -> sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
+			sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
+			return;
 		}
 
 		TextChannel channel = (TextChannel) canucksBot.getDiscordManager().block(event.getMessage().getChannel());
 		Game game = canucksBot.getGameScheduler().getGameByChannelName(channel.getName());
 		if (game == null) {
-			return () -> sendMessage(event, getRunInGameDayChannelsMessage(getGuild(event), preferredTeams));
+			sendMessage(event, getRunInGameDayChannelsMessage(getGuild(event), preferredTeams));
+			return;
 		}
 
 		if (game.getStatus() == GameStatus.PREVIEW) {
-			return () -> sendMessage(event, GAME_NOT_STARTED_MESSAGE);
+			sendMessage(event, GAME_NOT_STARTED_MESSAGE);
+			return;
 		}
 
-		return () -> sendMessage(event, getGoalsMessage(game));
+		sendMessage(event, getGoalsMessage(game));
+		return;
 	}
 
 	public Consumer<MessageCreateSpec> getGoalsMessage(Game game) {

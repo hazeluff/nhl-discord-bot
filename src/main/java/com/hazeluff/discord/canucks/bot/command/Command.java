@@ -54,7 +54,7 @@ public abstract class Command {
 	 *            command arguments
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	public abstract Runnable getReply(MessageCreateEvent event, List<String> arguments);
+	public abstract void execute(MessageCreateEvent event, List<String> arguments);
 
 	/**
 	 * Determines if the command arguments are accepted by this command. i.e the

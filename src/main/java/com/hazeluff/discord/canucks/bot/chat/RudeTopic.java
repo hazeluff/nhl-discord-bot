@@ -15,7 +15,7 @@ public class RudeTopic extends Topic {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event) {
+	public void execute(MessageCreateEvent event) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Nah, you should fuck off.", 
 				"Go kill yourself.", 
@@ -31,7 +31,7 @@ public class RudeTopic extends Topic {
 				"I'm just doing my job. :cry:", 
 				"That's not nice.",
 				String.format("Hazeluff worked really hard on me.")));
-		return () -> sendMessage(event, reply);
+		sendMessage(event, reply);
 	}
 
 	@Override

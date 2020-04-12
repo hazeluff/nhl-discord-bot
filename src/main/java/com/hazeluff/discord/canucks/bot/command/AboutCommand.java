@@ -24,8 +24,8 @@ public class AboutCommand extends Command {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
-		return () -> sendMessage(event, getReply());
+	public void execute(MessageCreateEvent event, List<String> arguments) {
+		sendMessage(event, getReply());
 	}
 
 	public Consumer<MessageCreateSpec> getReply() {

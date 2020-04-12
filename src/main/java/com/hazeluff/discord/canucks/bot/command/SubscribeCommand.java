@@ -43,23 +43,27 @@ public class SubscribeCommand extends Command {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, List<String> arguments) {
 		Guild guild = canucksBot.getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
-			return () -> sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
+			sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
+			return;
 		}
 
 		if (arguments.size() < 2) {
-			return () -> sendMessage(event, SPECIFY_TEAM_MESSAGE);
+			sendMessage(event, SPECIFY_TEAM_MESSAGE);
+			return;
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
-			return () -> sendMessage(event, HELP_MESSAGE);
+			sendMessage(event, HELP_MESSAGE);
+			return;
 		}
 
 		if (!Team.isValid(arguments.get(1))) {
-			return () -> sendMessage(event, getInvalidCodeMessage(arguments.get(1), "subscribe"));
+			sendMessage(event, getInvalidCodeMessage(arguments.get(1), "subscribe"));
+			return;
 		}
 
 		Team team = Team.parse(arguments.get(1));
@@ -68,7 +72,7 @@ public class SubscribeCommand extends Command {
 		canucksBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
 		canucksBot.getPersistentData().getPreferencesManager().subscribeGuild(guildId, team);
 		canucksBot.getGameDayChannelsManager().initChannels(guild);
-		return () -> sendMessage(event, buildSubscribedMessage(team, guildId));
+		sendMessage(event, buildSubscribedMessage(team, guildId));
 	}
 
 	Consumer<MessageCreateSpec> buildSubscribedMessage(Team team, long guildId) {

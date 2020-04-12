@@ -36,27 +36,31 @@ public class FuckCommand extends Command {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, List<String> arguments) {
 		
 		if(arguments.size() < 2) {
-			return () -> sendMessage(event, NOT_ENOUGH_PARAMETERS_REPLY);
+			sendMessage(event, NOT_ENOUGH_PARAMETERS_REPLY);
+			return;
 		}
 		
 		if (arguments.get(1).toLowerCase().equals("you") 
 				|| arguments.get(1).toLowerCase().equals("u")) {
-			return () -> sendMessage(event, NO_YOU_REPLY);
+			sendMessage(event, NO_YOU_REPLY);
+			return;
 		}
 		
 		if (arguments.get(1).toLowerCase().equals("hazeluff") 
 				|| arguments.get(1).toLowerCase().equals("hazel")
 				|| arguments.get(1).toLowerCase().equals("haze")
 				|| arguments.get(1).toLowerCase().equals("haz")) {
-			return () -> sendMessage(event, HAZELUFF_REPLY);
+			sendMessage(event, HAZELUFF_REPLY);
+			return;
 		}
 
 		if (arguments.get(1).startsWith("<@") && arguments.get(1).endsWith(">")) {
 			canucksBot.getDiscordManager().deleteMessage(event.getMessage());
-			return () -> sendMessage(event, buildDontAtReply(event.getMessage()));
+			sendMessage(event, buildDontAtReply(event.getMessage()));
+			return;
 		}
 
 		if (arguments.get(1).toLowerCase().equals("add")) {
@@ -66,17 +70,15 @@ public class FuckCommand extends Command {
 				List<String> response = new ArrayList<>(arguments);
 				String strResponse = StringUtils.join(response.subList(3, response.size()), " ");				
 				add(subject, strResponse);
-				return () -> sendMessage(event, spec -> spec.setContent(strResponse));
+				sendMessage(event, spec -> spec.setContent(strResponse));
 			}
-			return null;
+			return;
 		}
 
 		if (hasResponses(arguments.get(1))) {
-			return () -> sendMessage(event, getRandomResponse(arguments.get(1)));
+			sendMessage(event, getRandomResponse(arguments.get(1)));
+			return;
 		}
-
-		// Default
-		return null;
 	}
 
 	static Consumer<MessageCreateSpec> buildDontAtReply(Message message) {

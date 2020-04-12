@@ -33,7 +33,7 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, List<String> arguments) {
 		if (arguments.size() <= 1) {
 			List<Team> preferredTeams = canucksBot.getPersistentData()
 					.getPreferencesManager()
@@ -41,23 +41,27 @@ public class ScheduleCommand extends Command {
 					.getTeams();
 
 			if (preferredTeams.isEmpty()) {
-				return () -> sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
+				sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
+				return;
 			}
 
-			return () -> sendMessage(event, getScheduleMessage(preferredTeams));
+			sendMessage(event, getScheduleMessage(preferredTeams));
+			return;
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
 			// Send Help Message
-			return () -> sendMessage(event, HELP_MESSAGE);
+			sendMessage(event, HELP_MESSAGE);
+			return;
 		}
 
 		if (Team.isValid(arguments.get(1))) {
 			// Send schedule for a specific team
-			return () -> sendMessage(event, getScheduleMessage(Team.parse(arguments.get(1))));
+			sendMessage(event, getScheduleMessage(Team.parse(arguments.get(1))));
+			return;
 		}
 
-		return () -> sendMessage(event, getInvalidCodeMessage(arguments.get(1), "schedule"));
+		sendMessage(event, getInvalidCodeMessage(arguments.get(1), "schedule"));
 	}
 
 	Consumer<MessageCreateSpec> getScheduleMessage(Team team) {

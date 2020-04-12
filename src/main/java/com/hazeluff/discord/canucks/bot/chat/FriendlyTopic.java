@@ -16,7 +16,7 @@ public class FriendlyTopic extends Topic {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event) {
+	public void execute(MessageCreateEvent event) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Hi There. :kissing_heart:",
 				"Hey, How you doin'? :wink:",
@@ -24,7 +24,7 @@ public class FriendlyTopic extends Topic {
 				"Hi, How's your day?",
 				"I'm glad you noticed me. :D", 
 				"Hi there!"));
-		return () -> sendMessage(event, reply);
+		sendMessage(event, reply);
 	}
 
 	@Override

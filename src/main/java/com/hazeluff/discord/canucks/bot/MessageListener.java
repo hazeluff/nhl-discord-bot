@@ -84,7 +84,7 @@ public class MessageListener {
 	}
 
 	public void execute(MessageCreateEvent event) {
-		DiscordThreadFactory.getInstance().createThread(MessageListener.class, getReply(event)).start();
+		DiscordThreadFactory.getInstance().createThread(MessageListener.class, () -> reply(event)).start();
 	}
 
 	/**
@@ -92,10 +92,10 @@ public class MessageListener {
 	 * 
 	 * @return MessageCreateSpec of the reply; null if no reply.
 	 */
-	public Runnable getReply(MessageCreateEvent event) {
+	public void reply(MessageCreateEvent event) {
 		User author = event.getMessage().getAuthor().orElse(null);
 		if (author == null || author.getId().equals(canucksBot.getDiscordManager().getId())) {
-			return null;
+			return;
 		}
 
 		Snowflake authorId = author.getId();
@@ -103,12 +103,12 @@ public class MessageListener {
 		userThrottler.add(authorId);
 
 		if (userThrottler.isThrottle(authorId)) {
-			return null;
+			return;
 		}
 		
 		Snowflake guildId = event.getGuildId().orElse(null);
 		if (guildId == null) {
-			return null;
+			return;
 		}
 
 		Message message = event.getMessage();
@@ -118,23 +118,18 @@ public class MessageListener {
 				author.getUsername(), 
 				message.getContent()));
 
-		Runnable commandReply = null;
-		if ((commandReply = replyToCommand(event)) != null) {
-			return commandReply;
+		if (replyToCommand(event)) {
+			return;
 		}
 
-		Runnable mentionReply = null;
-		if ((mentionReply = replyToMention(event)) != null) {
-			return mentionReply;
+		if (replyToMention(event)) {
+			return;
 		}
 
 		// Message is a command
 		if (getCommand(message) != null) {
-			userThrottler.add(authorId);
-			return () -> sendMessage(event, UNKNOWN_COMMAND_REPLY);
+			sendMessage(event, UNKNOWN_COMMAND_REPLY);
 		}
-
-		return null;
 	}
 
 	/**
@@ -143,16 +138,16 @@ public class MessageListener {
 	 * 
 	 * @param event
 	 *            event that we are replying to
-	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
+	 * @return true - if command was found and executed
 	 */
-	Runnable replyToCommand(MessageCreateEvent event) {
+	boolean replyToCommand(MessageCreateEvent event) {
 		Command command = getCommand(event.getMessage());
 		if (command != null) {
 			List<String> commandArgs = parseToCommandArguments(event.getMessage());
-			return command.getReply(event, commandArgs);
+			command.execute(event, commandArgs);
+			return true;
 		}
-
-		return null;
+		return false;
 	}
 
 	/**
@@ -161,17 +156,19 @@ public class MessageListener {
 	 * 
 	 * @param event
 	 *            event that we are replying to
-	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
+	 * @return true if mention topic is found and excuted
 	 */
-	Runnable replyToMention(MessageCreateEvent event) {
+	boolean replyToMention(MessageCreateEvent event) {
+
 		if (isBotMentioned(event)) {
 			Optional<Topic> matchedCommand = topics.stream().filter(topic -> topic.isReplyTo(event)).findFirst();
 			if (matchedCommand.isPresent()) {
-				return matchedCommand.get().getReply(event);
+				matchedCommand.get().execute(event);
+				return true;
 			}
 		}
 
-		return null;
+		return false;
 	}
 
 	/**

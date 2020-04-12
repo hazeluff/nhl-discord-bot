@@ -15,14 +15,14 @@ public class WhatsUpTopic extends Topic {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event) {
+	public void execute(MessageCreateEvent event) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Nothing Much. You?",
 				"Bot stuff. You?",
 				"Chillin. Want to join?",
 				"Listening to some music.\nhttps://www.youtube.com/watch?v=cU8HrO7XuiE",
 				"nm, u?"));
-		return () -> sendMessage(event, reply);
+		sendMessage(event, reply);
 	}
 
 	@Override

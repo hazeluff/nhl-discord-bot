@@ -30,19 +30,22 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, List<String> arguments) {
 		Guild guild = canucksBot.getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
-			return () -> sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
+			sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
+			return;
 		}
 
 		if (arguments.size() < 2) {
-			return () -> sendMessage(event, SPECIFY_TEAM_MESSAGE);
+			sendMessage(event, SPECIFY_TEAM_MESSAGE);
+			return;
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("help")) {
-			return () -> sendMessage(event, buildHelpMessage(guild));
+			sendMessage(event, buildHelpMessage(guild));
+			return;
 		}
 
 		if (arguments.get(1).equalsIgnoreCase("all")) {
@@ -51,11 +54,13 @@ public class UnsubscribeCommand extends Command {
 					.getPreferencesManager()
 					.unsubscribeGuild(guild.getId().asLong(), null);
 			canucksBot.getGameDayChannelsManager().updateChannels(guild);
-			return () -> sendMessage(event, UNSUBSCRIBED_FROM_ALL_MESSAGE);
+			sendMessage(event, UNSUBSCRIBED_FROM_ALL_MESSAGE);
+			return;
 		}
 
 		if (!Team.isValid(arguments.get(1))) {
-			return () -> sendMessage(event, getInvalidCodeMessage(arguments.get(1), "unsubscribe"));
+			sendMessage(event, getInvalidCodeMessage(arguments.get(1), "unsubscribe"));
+			return;
 		}
 
 		// Unsubscribe from a team
@@ -64,7 +69,7 @@ public class UnsubscribeCommand extends Command {
 				.getPreferencesManager()
 				.unsubscribeGuild(guild.getId().asLong(), team);
 		canucksBot.getGameDayChannelsManager().updateChannels(guild);
-		return () -> sendMessage(event, buildUnsubscribeMessage(team));
+		sendMessage(event, buildUnsubscribeMessage(team));
 	}
 
 	Consumer<MessageCreateSpec> buildHelpMessage(Guild guild) {

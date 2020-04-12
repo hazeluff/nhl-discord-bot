@@ -15,7 +15,7 @@ public class LovelyTopic extends Topic {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event) {
+	public void execute(MessageCreateEvent event) {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Love you too.",
 				"<3",
@@ -25,7 +25,7 @@ public class LovelyTopic extends Topic {
 				":heart_eyes:", 
 				"愛してる。",
 				"https://www.youtube.com/watch?v=25QyCxVkXwQ"));
-		return () -> sendMessage(event, reply);
+		sendMessage(event, reply);
 	}
 
 	@Override

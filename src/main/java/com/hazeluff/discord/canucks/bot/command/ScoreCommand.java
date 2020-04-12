@@ -24,26 +24,30 @@ public class ScoreCommand extends Command {
 	}
 
 	@Override
-	public Runnable getReply(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, List<String> arguments) {
 		List<Team> preferredTeam = canucksBot.getPersistentData()
 				.getPreferencesManager()
 				.getGuildPreferences(event.getGuildId().get().asLong())
 				.getTeams();
 		if (preferredTeam.isEmpty()) {
-			return () -> sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
+			sendMessage(event, SUBSCRIBE_FIRST_MESSAGE);
+			return;
 		}
 
 		TextChannel channel = (TextChannel) canucksBot.getDiscordManager().block(event.getMessage().getChannel());
 		Game game = canucksBot.getGameScheduler().getGameByChannelName(channel.getName());
 		if (game == null) {
-			return () -> sendMessage(event, getRunInGameDayChannelsMessage(getGuild(event), preferredTeam));
+			sendMessage(event, getRunInGameDayChannelsMessage(getGuild(event), preferredTeam));
+			return;
 		}
 
 		if (game.getStatus() == GameStatus.PREVIEW) {
-			return () -> sendMessage(event, GAME_NOT_STARTED_MESSAGE);
+			sendMessage(event, GAME_NOT_STARTED_MESSAGE);
+			return;
 		}
 
-		return () -> sendMessage(event, getScoreMessage(game));
+		sendMessage(event, getScoreMessage(game));
+		return;
 	}
 
 	Consumer<MessageCreateSpec> getScoreMessage(Game game) {

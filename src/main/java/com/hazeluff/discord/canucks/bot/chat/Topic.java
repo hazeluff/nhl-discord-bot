@@ -26,9 +26,8 @@ public abstract class Topic {
 	 * @param arguments
 	 *            command arguments
 	 * 
-	 * @return Spec for the reply; null if no reply.
 	 */
-	public abstract Runnable getReply(MessageCreateEvent event);
+	public abstract void execute(MessageCreateEvent event);
 
 	/**
 	 * Determines if the message is a topic we can reply to
