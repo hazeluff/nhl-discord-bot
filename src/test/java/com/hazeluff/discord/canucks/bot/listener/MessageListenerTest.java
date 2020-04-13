@@ -1,4 +1,4 @@
-package com.hazeluff.discord.canucks.bot;
+package com.hazeluff.discord.canucks.bot.listener;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -22,8 +22,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.command.Command;
 import com.hazeluff.discord.canucks.nhl.Game;
+import com.hazeluff.discord.canucks.utils.UserThrottler;
 
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;

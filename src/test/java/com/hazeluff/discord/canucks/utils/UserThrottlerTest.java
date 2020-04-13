@@ -1,4 +1,4 @@
-package com.hazeluff.discord.canucks.bot;
+package com.hazeluff.discord.canucks.utils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,9 +22,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.hazeluff.discord.canucks.utils.DateUtils;
-import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.rest.util.Snowflake;
 

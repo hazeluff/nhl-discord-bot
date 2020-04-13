@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.canucks.Config;
 import com.hazeluff.discord.canucks.bot.database.PersistentData;
 import com.hazeluff.discord.canucks.bot.discord.DiscordManager;
+import com.hazeluff.discord.canucks.bot.listener.MessageListener;
+import com.hazeluff.discord.canucks.bot.listener.ReactionListener;
 import com.hazeluff.discord.canucks.nhl.GameScheduler;
 import com.hazeluff.discord.canucks.utils.Utils;
 import com.mongodb.client.MongoDatabase;
@@ -19,6 +22,8 @@ import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.message.ReactionAddEvent;
+import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.presence.Activity;
@@ -74,14 +79,13 @@ public class CanucksBot extends Thread {
 			LOGGER.info("Waiting for Discord client to be ready.");
 			Utils.sleep(5000);
 		}
-		LOGGER.info("Attaching Listener.");
-		MessageListener messageListener = new MessageListener(canucksBot);
-		canucksBot.getDiscordManager().getClient().getEventDispatcher()
-				.on(MessageCreateEvent.class)
-				.doOnError(t -> LOGGER.error("Error occurred when responding to message.", t))
-				.subscribe(event -> messageListener.execute(event));
 
+		// Set starting up status
 		canucksBot.getDiscordManager().changePresence(STARTING_UP_STATUS);
+
+		// Attach Listeners
+		attachListeners(canucksBot);
+
 		LOGGER.info("CanucksBot Started. id [" + canucksBot.getDiscordManager().getId() + "]");
 
 		// Start the Game Day Channels Manager
@@ -118,7 +122,7 @@ public class CanucksBot extends Thread {
 	 * 
 	 * @param botToken
 	 */
-	public void initDiscord(String botToken) {
+	private void initDiscord(String botToken) {
 		new Thread(() -> {
 			LOGGER.info("Initializing Discord.");
 			// Init DiscordClient and DiscordManager
@@ -142,6 +146,25 @@ public class CanucksBot extends Thread {
 			discordManager.set(new DiscordManager(gatewayDiscordClient));
 		}).start();
 		LOGGER.info("Discord Initializer started.");
+	}
+
+	private static void attachListeners(CanucksBot canucksBot) {
+		LOGGER.info("Attaching Listeners.");
+		
+		Consumer<? super Throwable> logError = t -> LOGGER.error("Error occurred when responding to message.", t);
+		
+		MessageListener messageListener = new MessageListener(canucksBot);
+		canucksBot.getDiscordManager().getClient().getEventDispatcher().on(MessageCreateEvent.class)
+				.doOnError(logError)
+				.subscribe(event -> messageListener.execute(event));
+
+		ReactionListener reactionListener = new ReactionListener(canucksBot);
+		canucksBot.getDiscordManager().getClient().getEventDispatcher().on(ReactionAddEvent.class)
+				.doOnError(logError)
+				.subscribe(event -> reactionListener.execute(event));
+		canucksBot.getDiscordManager().getClient().getEventDispatcher().on(ReactionRemoveEvent.class)
+				.doOnError(logError)
+				.subscribe(event -> reactionListener.execute(event));
 	}
 
 	@Override

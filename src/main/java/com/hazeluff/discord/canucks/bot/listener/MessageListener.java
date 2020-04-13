@@ -1,4 +1,4 @@
-package com.hazeluff.discord.canucks.bot;
+package com.hazeluff.discord.canucks.bot.listener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.chat.FriendlyTopic;
 import com.hazeluff.discord.canucks.bot.chat.LovelyTopic;
 import com.hazeluff.discord.canucks.bot.chat.RudeTopic;
@@ -27,9 +28,10 @@ import com.hazeluff.discord.canucks.bot.command.StatsCommand;
 import com.hazeluff.discord.canucks.bot.command.SubscribeCommand;
 import com.hazeluff.discord.canucks.bot.command.ThreadsCommand;
 import com.hazeluff.discord.canucks.bot.command.UnsubscribeCommand;
-import com.hazeluff.discord.canucks.utils.DiscordThreadFactory;
+import com.hazeluff.discord.canucks.utils.UserThrottler;
 import com.hazeluff.discord.canucks.utils.Utils;
 
+import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
@@ -37,7 +39,7 @@ import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.Snowflake;
 
-public class MessageListener {
+public class MessageListener extends EventListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);
 
 	static final Consumer<MessageCreateSpec> UNKNOWN_COMMAND_REPLY = spec -> spec
@@ -49,11 +51,10 @@ public class MessageListener {
 	private final List<Command> commands;
 	private final List<Topic> topics;
 
-	private final CanucksBot canucksBot;
 	private final UserThrottler userThrottler;
 
 	public MessageListener(CanucksBot canucksBot) {
-		this.canucksBot = canucksBot;
+		super(canucksBot);
 		commands = new ArrayList<>();
 		commands.add(new FuckCommand(canucksBot));
 		commands.add(new HelpCommand(canucksBot));
@@ -76,25 +77,31 @@ public class MessageListener {
 		userThrottler = new UserThrottler();
 	}
 
+	/**
+	 * For Tests
+	 */
 	MessageListener(CanucksBot canucksBot, List<Command> commands, List<Topic> topics, UserThrottler userThrottler) {
-		this.canucksBot = canucksBot;
+		super(canucksBot);
 		this.commands = commands;
 		this.topics = topics;
 		this.userThrottler = userThrottler;
 	}
 
-	public void execute(MessageCreateEvent event) {
-		DiscordThreadFactory.getInstance().createThread(MessageListener.class, () -> reply(event)).start();
+	@Override
+	public void processEvent(Event event) {
+		if (event instanceof MessageCreateEvent) {
+			processEvent((MessageCreateEvent) event);
+		} else {
+			LOGGER.warn("Event provided is of unknown type: " + event.getClass().getSimpleName());
+		}
 	}
 
 	/**
 	 * Gets a specification for the message to reply with.
-	 * 
-	 * @return MessageCreateSpec of the reply; null if no reply.
 	 */
-	public void reply(MessageCreateEvent event) {
+	public void processEvent(MessageCreateEvent event) {
 		User author = event.getMessage().getAuthor().orElse(null);
-		if (author == null || author.getId().equals(canucksBot.getDiscordManager().getId())) {
+		if (author == null || author.getId().equals(getCanucksBot().getDiscordManager().getId())) {
 			return;
 		}
 
@@ -126,9 +133,10 @@ public class MessageListener {
 			return;
 		}
 
-		// Message is a command
+		// Message is not a command
 		if (getCommand(message) != null) {
 			sendMessage(event, UNKNOWN_COMMAND_REPLY);
+			return;
 		}
 	}
 
@@ -180,8 +188,8 @@ public class MessageListener {
 	 */
 	List<String> parseToCommandArguments(Message message) {
 		String messageContent = message.getContent();
-		if (messageContent.startsWith(canucksBot.getMention())
-				|| messageContent.startsWith(canucksBot.getNicknameMentionId())
+		if (messageContent.startsWith(getCanucksBot().getMention())
+				|| messageContent.startsWith(getCanucksBot().getNicknameMentionId())
 				|| messageContent.toLowerCase().startsWith("?canucksbot")) {
 			List<String> commandArgs = Arrays.stream(messageContent.split("\\s+")).collect(Collectors.toList());
 			commandArgs.remove(0);
@@ -226,7 +234,7 @@ public class MessageListener {
 	 *         false, otherwise.
 	 */
 	boolean isBotMentioned(MessageCreateEvent event) {
-		return event.getMessage().getUserMentionIds().contains(canucksBot.getDiscordManager().getId());
+		return event.getMessage().getUserMentionIds().contains(getCanucksBot().getDiscordManager().getId());
 	}
 
 	long getCurrentTime() {
@@ -234,7 +242,7 @@ public class MessageListener {
 	}
 
 	private void sendMessage(MessageCreateEvent event, Consumer<MessageCreateSpec> spec) {
-		TextChannel channel = (TextChannel) canucksBot.getDiscordManager().block(event.getMessage().getChannel());
-		canucksBot.getDiscordManager().sendMessage(channel, spec);
+		TextChannel channel = (TextChannel) getCanucksBot().getDiscordManager().block(event.getMessage().getChannel());
+		getCanucksBot().getDiscordManager().sendMessage(channel, spec);
 	}
 }

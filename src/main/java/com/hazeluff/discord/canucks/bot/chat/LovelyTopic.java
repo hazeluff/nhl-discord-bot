@@ -19,6 +19,8 @@ public class LovelyTopic extends Topic {
 		String reply = Utils.getRandom(Arrays.asList(
 				"Love you too.",
 				"<3",
+				"Baka",
+				"UwU",
 				":blush:",
 				":wink:",
 				"I think it's better we stay friends...",

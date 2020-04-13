@@ -1,4 +1,4 @@
-package com.hazeluff.discord.canucks.bot;
+package com.hazeluff.discord.canucks.utils;
 
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -9,9 +9,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.hazeluff.discord.canucks.utils.DateUtils;
-import com.hazeluff.discord.canucks.utils.Utils;
 
 import discord4j.rest.util.Snowflake;
 
@@ -31,9 +28,6 @@ public class UserThrottler extends Thread {
 
 	private Map<Snowflake, List<ZonedDateTime>> userTimeStamps = new ConcurrentHashMap<>();
 	
-	UserThrottler() {
-
-	}
 
 	public UserThrottler get() {
 		UserThrottler throttler = new UserThrottler();
