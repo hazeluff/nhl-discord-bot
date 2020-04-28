@@ -6,14 +6,14 @@ import com.hazeluff.discord.canucks.bot.database.DatabaseManager;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-public class PollsManager extends DatabaseManager {
+public class PollsData extends DatabaseManager {
 
-	protected PollsManager(MongoDatabase database) {
+	protected PollsData(MongoDatabase database) {
 		super(database);
 	}
 
-	public static PollsManager load(MongoDatabase database) {
-		return new PollsManager(database);
+	public static PollsData load(MongoDatabase database) {
+		return new PollsData(database);
 	}
 
 	private MongoCollection<Document> getCollection() {
@@ -26,5 +26,9 @@ public class PollsManager extends DatabaseManager {
 
 	public PollMessage loadPoll(long channelId, String poleId) {
 		return PollMessage.findFromCollection(getCollection(), channelId, poleId);
+	}
+
+	public PollMessage loadPoll(long messageId) {
+		return PollMessage.findFromCollection(getCollection(), messageId);
 	}
 }

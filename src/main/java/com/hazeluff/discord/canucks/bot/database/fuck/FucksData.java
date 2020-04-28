@@ -18,18 +18,18 @@ import com.mongodb.client.model.UpdateOptions;
 /**
  * This class is used to manage fucks. Preferences are stored in MongoDB.
  */
-public class FucksManager extends DatabaseManager {
-	private static final Logger LOGGER = LoggerFactory.getLogger(FucksManager.class);
+public class FucksData extends DatabaseManager {
+	private static final Logger LOGGER = LoggerFactory.getLogger(FucksData.class);
 
 	private final Map<String, List<String>> fuckResponses;
 
-	FucksManager(MongoDatabase database, Map<String, List<String>> fuckResponses) {
+	FucksData(MongoDatabase database, Map<String, List<String>> fuckResponses) {
 		super(database);
 		this.fuckResponses = fuckResponses;
 	}
 
-	public static FucksManager load(MongoDatabase database) {
-		return new FucksManager(database, loadFuckResponses(getCollection(database)));
+	public static FucksData load(MongoDatabase database) {
+		return new FucksData(database, loadFuckResponses(getCollection(database)));
 	}
 
 	private MongoCollection<Document> getCollection() {
@@ -61,7 +61,6 @@ public class FucksManager extends DatabaseManager {
 
 	public void saveToFuckSubjectResponses(String subject, List<String> subjectResponses) {
 		fuckResponses.put(subject, subjectResponses);
-		System.out.println("Putting " + subject + " - " + subjectResponses);
 		getCollection().updateOne(
 				new Document("subject", subject),
 				new Document("$set", new Document("responses", subjectResponses)), 

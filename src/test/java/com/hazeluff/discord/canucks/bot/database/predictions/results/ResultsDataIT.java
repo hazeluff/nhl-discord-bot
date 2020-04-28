@@ -17,10 +17,10 @@ import com.hazeluff.discord.canucks.nhl.Team;
 import com.hazeluff.test.DatabaseIT;
 import com.mongodb.MongoClient;
 
-public class ResultsManagerIT extends DatabaseIT {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ResultsManagerIT.class);
+public class ResultsDataIT extends DatabaseIT {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ResultsDataIT.class);
 
-	ResultsManager resultsManager;
+	ResultsData resultsManager;
 
 	private static MongoClient client;
 
@@ -42,7 +42,7 @@ public class ResultsManagerIT extends DatabaseIT {
 	@Before
 	public void before() {
 		super.before();
-		resultsManager = new ResultsManager(getDatabase());
+		resultsManager = new ResultsData(getDatabase());
 	}
 
 	@Test
@@ -58,7 +58,7 @@ public class ResultsManagerIT extends DatabaseIT {
 		resultsManager.saveTeamSeasonResults(results);
 		assertEquals(results, resultsManager.loadTeamSeasonResults(campaignKey));
 
-		resultsManager = new ResultsManager(getDatabase());
+		resultsManager = new ResultsData(getDatabase());
 		assertEquals(results, resultsManager.loadTeamSeasonResults(campaignKey));
 	}
 

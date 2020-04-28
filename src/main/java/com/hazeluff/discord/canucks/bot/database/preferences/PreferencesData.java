@@ -21,19 +21,19 @@ import com.mongodb.client.model.UpdateOptions;
 /**
  * This class is used to manage preferences of Guilds and Users. Preferences are stored in MongoDB.
  */
-public class PreferencesManager extends DatabaseManager {
-	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManager.class);
+public class PreferencesData extends DatabaseManager {
+	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesData.class);
 
 	// GuildID -> GuildPreferences
 	private final Map<Long, GuildPreferences> guildPreferences;
 
-	PreferencesManager(MongoDatabase database, Map<Long, GuildPreferences> guildPreferences) {
+	PreferencesData(MongoDatabase database, Map<Long, GuildPreferences> guildPreferences) {
 		super(database);
 		this.guildPreferences = guildPreferences;
 	}
 
-	public static PreferencesManager load(MongoDatabase database) {
-		return new PreferencesManager(database, loadGuildPreferences(database.getCollection("guilds")));
+	public static PreferencesData load(MongoDatabase database) {
+		return new PreferencesData(database, loadGuildPreferences(database.getCollection("guilds")));
 	}
 
 	private MongoCollection<Document> getCollection() {

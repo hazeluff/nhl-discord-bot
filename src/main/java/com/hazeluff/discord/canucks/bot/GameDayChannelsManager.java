@@ -171,7 +171,7 @@ public class GameDayChannelsManager extends Thread {
 		return canucksBot.getDiscordManager().getGuilds().stream().filter(guild -> {
 			long guildId = guild.getId().asLong();
 			return canucksBot.getPersistentData()
-					.getPreferencesManager()
+					.getPreferencesData()
 					.getGuildPreferences(guildId)
 					.getTeams()
 					.contains(team);
@@ -230,7 +230,7 @@ public class GameDayChannelsManager extends Thread {
 	public void deleteInactiveGuildChannels(Guild guild) {
 		LOGGER.info("Cleaning up old channels: guild={}", guild.getName());
 		GuildPreferences preferences = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong());
 		for (TextChannel channel : canucksBot.getDiscordManager().getTextChannels(guild)) {
 			deleteInactiveTextChannel(channel, preferences);
@@ -283,7 +283,7 @@ public class GameDayChannelsManager extends Thread {
 
 	boolean isGameDayChannelActive(GameDayChannel gameDayChannel) {
 		List<Team> teams = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(gameDayChannel.getGuild().getId().asLong())
 				.getTeams();
 		String channelName = gameDayChannel.getChannelName();
@@ -306,7 +306,7 @@ public class GameDayChannelsManager extends Thread {
 
 	void initGuildChannels(Guild guild) {
 		List<Team> subscribedTeams = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong())
 				.getTeams();
 		List<Game> activeGames = canucksBot.getGameScheduler().getActiveGames(subscribedTeams);
@@ -325,7 +325,7 @@ public class GameDayChannelsManager extends Thread {
 	public void initChannels(Guild guild) {
 		LOGGER.info("Initializing channels for guild [" + guild.getName() + "]");
 		List<Team> teams = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong())
 				.getTeams();
 

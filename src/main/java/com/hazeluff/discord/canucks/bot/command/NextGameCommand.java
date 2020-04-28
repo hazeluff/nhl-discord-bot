@@ -32,7 +32,7 @@ public class NextGameCommand extends Command {
 	@Override
 	public void execute(MessageCreateEvent event, List<String> arguments) {
 		GuildPreferences preferences = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(event.getGuildId().get().asLong());
 		List<Team> preferredTeams = preferences.getTeams();
 		

@@ -198,7 +198,7 @@ public abstract class Command {
 	 */
 	List<Team> getTeams(Guild guild) {
 		return canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong())
 				.getTeams();
 	}

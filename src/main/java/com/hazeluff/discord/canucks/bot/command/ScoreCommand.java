@@ -26,7 +26,7 @@ public class ScoreCommand extends Command {
 	@Override
 	public void execute(MessageCreateEvent event, List<String> arguments) {
 		List<Team> preferredTeam = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(event.getGuildId().get().asLong())
 				.getTeams();
 		if (preferredTeam.isEmpty()) {

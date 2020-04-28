@@ -36,7 +36,7 @@ public class ScheduleCommand extends Command {
 	public void execute(MessageCreateEvent event, List<String> arguments) {
 		if (arguments.size() <= 1) {
 			List<Team> preferredTeams = canucksBot.getPersistentData()
-					.getPreferencesManager()
+					.getPreferencesData()
 					.getGuildPreferences(event.getGuildId().get().asLong())
 					.getTeams();
 

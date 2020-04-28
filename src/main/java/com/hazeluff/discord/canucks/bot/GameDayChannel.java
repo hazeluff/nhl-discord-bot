@@ -19,8 +19,13 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.Config;
 import com.hazeluff.discord.canucks.bot.database.pole.PollMessage;
+import com.hazeluff.discord.canucks.bot.database.predictions.Predictions;
+import com.hazeluff.discord.canucks.bot.database.predictions.Predictions.SeasonGames;
+import com.hazeluff.discord.canucks.bot.database.predictions.Predictions.SeasonGames.Prediction;
 import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
+import com.hazeluff.discord.canucks.bot.listener.IEventProcessor;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.GameEvent;
 import com.hazeluff.discord.canucks.nhl.GameEventStrength;
@@ -33,14 +38,18 @@ import com.hazeluff.discord.canucks.nhl.custommessages.CanucksCustomMessages;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
+import discord4j.core.event.domain.Event;
+import discord4j.core.event.domain.message.ReactionAddEvent;
+import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.Category;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.reaction.ReactionEmoji.Unicode;
 import discord4j.core.spec.TextChannelCreateSpec;
 
-public class GameDayChannel extends Thread {
+public class GameDayChannel extends Thread implements IEventProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameDayChannel.class);
 
 	// Number of retries to do when NHL API returns no events.
@@ -76,9 +85,11 @@ public class GameDayChannel extends Thread {
 	private int eventsRetries = 0;
 
 	// Map<eventId, message>
-	private Map<Integer, Message> eventMessages = new HashMap<>();
+	private final Map<Integer, Message> eventMessages = new HashMap<>();
 
 	private Message endOfGameMessage;
+
+	private PollMessage poll;
 
 	private AtomicBoolean started = new AtomicBoolean(false);
 
@@ -108,10 +119,6 @@ public class GameDayChannel extends Thread {
 		return gameDayChannel;
 	}
 
-	void updateEvents(List<GameEvent> events) {
-		this.events = events;
-	}
-
 	/**
 	 * Gets a {@link GameDayChannel} object for any game.
 	 * 
@@ -122,6 +129,14 @@ public class GameDayChannel extends Thread {
 	private GameDayChannel getGameDayChannel(Game game) {
 		return new GameDayChannel(canucksBot, game, guild);
 	}
+
+	void updateEvents(List<GameEvent> events) {
+		this.events = events;
+	}
+
+	/*
+	 * Thread
+	 */
 
 	@Override
 	public void start() {
@@ -148,6 +163,7 @@ public class GameDayChannel extends Thread {
 		createPredictionPoll();
 
 		if (game.getStatus() != GameStatus.FINAL) {
+
 			// Wait until close to start of game
 			LOGGER.info("Idling until near game start.");
 			sendReminders();
@@ -179,56 +195,20 @@ public class GameDayChannel extends Thread {
 		} else {
 			LOGGER.info("Game is already finished");
 		}
+		// Deregister processing on ReactionListener
+		unregisterFromListener();
 		LOGGER.info("Thread Completed");
 	}
 
-	public Guild getGuild() {
-		return guild;
-	}
-
-	public Game getGame() {
-		return game;
-	}
-
-	private void createPredictionPoll() {
-		String pollId = "gameday-" + getChannelName();
-		PollMessage poll = canucksBot.getPersistentData().getPolesManager().loadPoll(channel.getId().asLong(), pollId);
-
-		
-		if (poll == null) {
-			Message message = sendPredictionMessage();
-			
-			poll = PollMessage.of(channel.getId().asLong(), message.getId().asLong(), pollId);
-			poll.addReaction("🏠", "home");
-			poll.addReaction("✈️", "away");
-
-			// Save pole to database
-			canucksBot.getPersistentData().getPolesManager().savePoll(poll);
-		} else {
-			Message message = canucksBot.getDiscordManager().getMessage(poll.getChannelId(), poll.getMessageId());
-			if (message == null) {
-				sendPredictionMessage();
-			}
-		}
-	}
-	
-	private Message sendPredictionMessage() {
-		String pollMessage = String.format(
-				"Predict the outcome of this game!\n🏠 %s\n✈️  %s", 
-				game.getHomeTeam().getFullName(), game.getAwayTeam().getFullName());
-		
-		Message message = sendAndGetMessage(pollMessage);
-		message.addReaction(ReactionEmoji.unicode("🏠")).subscribe();
-		message.addReaction(ReactionEmoji.unicode("✈️")).subscribe();
-
-		return message;
-	}
+	/*
+	 * Other Methods
+	 */
 
 	void createChannel() {
 		String channelName = getChannelName();
 		Predicate<TextChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
 		GuildPreferences preferences = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong());
 
 		Category category = getCategory(guild, GameDayChannelsManager.GAME_DAY_CHANNEL_CATEGORY_NAME);
@@ -284,6 +264,12 @@ public class GameDayChannel extends Thread {
 	void stopAndRemoveGuildChannel() {
 		canucksBot.getDiscordManager().deleteChannel(channel);
 		interrupt();
+	}
+
+	@Override
+	public void interrupt() {
+		unregisterFromListener();
+		super.interrupt();
 	}
 
 	/**
@@ -523,7 +509,7 @@ public class GameDayChannel extends Thread {
 	void sendStartOfGameMessage() {
 		LOGGER.info("Sending start message.");
 		GuildPreferences preferences = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong());
 		sendMessage("Game is about to start! " + preferences.getCheer());
 	}
@@ -565,7 +551,7 @@ public class GameDayChannel extends Thread {
 				+ "Goals Scored:\n" + getGoalsMessage();
 
 		GuildPreferences preferences = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong());
 		List<Game> nextGames = preferences.getTeams().stream()
 				.map(team -> canucksBot.getGameScheduler().getNextGame(team))
@@ -582,6 +568,18 @@ public class GameDayChannel extends Thread {
 			}
 		}
 		return message;
+	}
+
+	/*
+	 * Getters
+	 */
+
+	public Guild getGuild() {
+		return guild;
+	}
+
+	public Game getGame() {
+		return game;
 	}
 
 	/**
@@ -811,5 +809,84 @@ public class GameDayChannel extends Thread {
 
 	static List<Team> getRelevantTeams(List<Team> teams, Game game) {
 		return teams.stream().filter(team -> game.containsTeam(team)).collect(Collectors.toList());
+	}
+
+	/*
+	 * Predictions related
+	 */
+
+	private void createPredictionPoll() {
+		String pollId = "gameday-" + getChannelName();
+		poll = canucksBot.getPersistentData().getPolesData().loadPoll(channel.getId().asLong(), pollId);
+
+		if (poll == null) {
+			Message message = sendPredictionMessage();
+
+			poll = PollMessage.of(channel.getId().asLong(), message.getId().asLong(), pollId);
+
+			// Save pole to database
+			canucksBot.getPersistentData().getPolesData().savePoll(poll);
+		} else {
+			Message message = canucksBot.getDiscordManager().getMessage(poll.getChannelId(), poll.getMessageId());
+			if (message == null) {
+				sendPredictionMessage();
+			}
+		}
+
+		registerToListener();
+	}
+
+	private Message sendPredictionMessage() {
+		String pollMessage = String.format("Predict the outcome of this game!\n🏠 %s\n✈️  %s",
+				game.getHomeTeam().getFullName(), game.getAwayTeam().getFullName());
+
+		Message message = sendAndGetMessage(pollMessage);
+		message.addReaction(ReactionEmoji.unicode("🏠")).subscribe();
+		message.addReaction(ReactionEmoji.unicode("✈️")).subscribe();
+
+		return message;
+	}
+
+	private void registerToListener() {
+		canucksBot.getReactionListener().addProccessor(this, ReactionAddEvent.class);
+		canucksBot.getReactionListener().addProccessor(this, ReactionRemoveEvent.class);
+	}
+
+	private void unregisterFromListener() {
+		// canucksBot.getReactionListener().removeProccessor(this);
+	}
+
+	@Override
+	public void process(Event event) {
+		// Only allow if reaction is done before the start of the game
+		if (/*ZonedDateTime.now().isBefore(game.getDate()) &&*/ poll != null) {
+			if (event instanceof ReactionAddEvent) {
+				ReactionAddEvent addEvent = (ReactionAddEvent) event;
+				Unicode unicodeEmoji = addEvent.getEmoji().asUnicodeEmoji().orElse(null);
+				if (unicodeEmoji != null) {
+					String emoteId = unicodeEmoji.getRaw();
+					String campaignId = SeasonGames.buildCampaignId(Config.SEASON_YEAR_END);
+					long userId = addEvent.getUserId().asLong();
+					
+					switch (emoteId) {
+					case "🏠":
+						Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+								new Prediction(campaignId, userId, game.getGamePk(), game.getHomeTeam().getId()));
+						break;
+					case "✈️":
+						Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+								new Prediction(campaignId, userId, game.getGamePk(), game.getAwayTeam().getId()));
+						break;
+					default:
+						LOGGER.warn("Unknown emoji: " + emoteId);
+						break;
+					}
+				}
+			} else if (event instanceof ReactionRemoveEvent) {
+
+			} else {
+				LOGGER.warn("Event provided is of unknown type: " + event.getClass().getSimpleName());
+			}
+		}
 	}
 }

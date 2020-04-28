@@ -27,12 +27,8 @@ public class FuckCommand extends Command {
 	static final Consumer<MessageCreateSpec> HAZELUFF_REPLY = spec -> spec
 			.setContent("Hazeluff doesn't give a fuck.");
 
-	// Map<name, strResponses>
-	private Map<String, List<String>> responses;
-
 	public FuckCommand(CanucksBot canucksBot) {
 		super(canucksBot);
-		responses = canucksBot.getPersistentData().getFucksManager().getFucks();
 	}
 
 	@Override
@@ -75,8 +71,9 @@ public class FuckCommand extends Command {
 			return;
 		}
 
-		if (hasResponses(arguments.get(1))) {
-			sendMessage(event, getRandomResponse(arguments.get(1)));
+		Map<String, List<String>> responses = loadResponsesFromCollection();
+		if (responses.containsKey(arguments.get(1))) {
+			sendMessage(event, spec -> spec.setContent(Utils.getRandom(responses.get(arguments.get(1)))));
 			return;
 		}
 	}
@@ -98,26 +95,20 @@ public class FuckCommand extends Command {
 
 	void add(String subject, String response) {
 		subject = subject.toLowerCase();
+		Map<String, List<String>> responses = loadResponsesFromCollection();
 		if(!responses.containsKey(subject)) {
+			responses.put(subject, new ArrayList<>());
 		}
 		responses.get(subject).add(response);
 
 		saveToCollection(subject, responses.get(subject));
 	}
+	
+	private Map<String, List<String>> loadResponsesFromCollection() {
+		return canucksBot.getPersistentData().getFucksData().getFucks();
+	}
 
 	void saveToCollection(String subject, List<String> subjectResponses) {
-		canucksBot.getPersistentData().getFucksManager().saveToFuckSubjectResponses(subject, subjectResponses);
-	}
-
-	Consumer<MessageCreateSpec> getRandomResponse(String subject) {
-		return spec -> spec.setContent(Utils.getRandom(getResponses(subject)));
-	}
-
-	List<String> getResponses(String subject) {
-		return new ArrayList<>(responses.get(subject.toLowerCase()));
-	}
-
-	boolean hasResponses(String subject) {
-		return responses.containsKey(subject.toLowerCase());
+		canucksBot.getPersistentData().getFucksData().saveToFuckSubjectResponses(subject, subjectResponses);
 	}
 }

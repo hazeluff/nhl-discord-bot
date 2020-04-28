@@ -16,14 +16,14 @@ import com.hazeluff.discord.canucks.utils.Utils;
 import com.hazeluff.test.DatabaseIT;
 import com.mongodb.MongoClient;
 
-public class PreferencesManagerIT extends DatabaseIT {
-	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesManagerIT.class);
+public class PreferencesDataIT extends DatabaseIT {
+	private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesDataIT.class);
 
 	private static final long GUILD_ID = Utils.getRandomLong();
 	private static final Team TEAM = Team.VANCOUVER_CANUCKS;
 	private static final Team TEAM2 = Team.CALGARY_FLAMES;
 
-	PreferencesManager preferencesManager;
+	PreferencesData preferencesManager;
 
 	private static MongoClient client;
 
@@ -45,7 +45,7 @@ public class PreferencesManagerIT extends DatabaseIT {
 	@Before
 	public void before() {
 		super.before();
-		preferencesManager = PreferencesManager.load(getDatabase());
+		preferencesManager = PreferencesData.load(getDatabase());
 	}
 	
 	@Test
@@ -55,7 +55,7 @@ public class PreferencesManagerIT extends DatabaseIT {
 		preferencesManager.subscribeGuild(GUILD_ID, TEAM2);
 
 		// Reload
-		preferencesManager = PreferencesManager.load(getDatabase());
+		preferencesManager = PreferencesData.load(getDatabase());
 		assertTrue(Utils.isListEquivalent(Arrays.asList(TEAM, TEAM2),
 				preferencesManager.getGuildPreferences(GUILD_ID).getTeams()));
 	}
@@ -68,7 +68,7 @@ public class PreferencesManagerIT extends DatabaseIT {
 		preferencesManager.unsubscribeGuild(GUILD_ID, TEAM);
 
 		// Reload
-		preferencesManager = PreferencesManager.load(getDatabase());
+		preferencesManager = PreferencesData.load(getDatabase());
 		assertTrue(Utils.isListEquivalent(
 				Arrays.asList(TEAM2),
 				preferencesManager.getGuildPreferences(GUILD_ID).getTeams()));

@@ -26,7 +26,7 @@ public class GoalsCommand extends Command {
 	@Override
 	public void execute(MessageCreateEvent event, List<String> arguments) {
 		List<Team> preferredTeams = canucksBot.getPersistentData()
-				.getPreferencesManager()
+				.getPreferencesData()
 				.getGuildPreferences(event.getGuildId().get().asLong())
 				.getTeams();
 

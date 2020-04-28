@@ -1,5 +1,8 @@
 package com.hazeluff.discord.canucks.bot.listener;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,33 +16,39 @@ public class ReactionListener extends EventListener {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReactionListener.class);
 
+	private final List<IEventProcessor> reactionAddProcessors;
+	private final List<IEventProcessor> reactionRemoveProcessors;
+	
 	public ReactionListener(CanucksBot canucksBot) {
 		super(canucksBot);
+		reactionAddProcessors = new CopyOnWriteArrayList<>();
+		reactionRemoveProcessors = new CopyOnWriteArrayList<>();
 	}
 
 
 	@Override
 	public void processEvent(Event event) {
 		if (event instanceof ReactionAddEvent) {
-			processEvent((ReactionAddEvent) event);
+			reactionAddProcessors.forEach(p -> p.process(event));
 		} else if (event instanceof ReactionRemoveEvent) {
-			processEvent((ReactionRemoveEvent) event);
+			reactionRemoveProcessors.forEach(p -> p.process(event));
 		} else {
-			LOGGER.warn("Event provided is of unknown type: " + event.getClass().getSimpleName());
+			LOGGER.warn("Cannot proccess event of type: " + event.getClass().getSimpleName());
 		}
 	}
 
-	/**
-	 * Gets a specification for the message to reply with.
-	 */
-	public void processEvent(ReactionAddEvent event) {
-
+	public void addProccessor(IEventProcessor processor, Class<? extends Event> eventType) {
+		if (eventType.equals(ReactionAddEvent.class)) {
+			reactionAddProcessors.add(processor);
+		} else if (eventType.equals(ReactionRemoveEvent.class)) {
+			reactionRemoveProcessors.add(processor);
+		} else {
+			LOGGER.warn("Cannot add proccessor for type: " + eventType.getClass().getSimpleName());
+		}
 	}
 
-	/**
-	 * Gets a specification for the message to reply with.
-	 */
-	public void processEvent(ReactionRemoveEvent event) {
-
+	public void removeProccessor(IEventProcessor processor) {
+		reactionAddProcessors.remove(processor);
+		reactionRemoveProcessors.remove(processor);
 	}
 }

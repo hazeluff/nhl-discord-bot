@@ -16,7 +16,6 @@ import com.hazeluff.discord.canucks.bot.listener.MessageListener;
 import com.hazeluff.discord.canucks.bot.listener.ReactionListener;
 import com.hazeluff.discord.canucks.nhl.GameScheduler;
 import com.hazeluff.discord.canucks.utils.Utils;
-import com.mongodb.client.MongoDatabase;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
@@ -44,23 +43,30 @@ public class CanucksBot extends Thread {
 	private static long UPDATE_PLAY_STATUS_INTERVAL = 3600000l;
 
 	private AtomicReference<DiscordManager> discordManager = new AtomicReference<>();
-	private PersistentData preferencesManager;
+	private PersistentData persistantData;
 	private GameScheduler gameScheduler;
 	private GameDayChannelsManager gameDayChannelsManager;
 
+	private final MessageListener messageListener;
+	private final ReactionListener reactionListener;
+
 	private CanucksBot() {
-		preferencesManager = null;
+		persistantData = null;
 		gameScheduler = null;
 		gameDayChannelsManager = null;
+
+		this.messageListener = new MessageListener(this);
+		this.reactionListener = new ReactionListener(this);
 	}
 
-	CanucksBot(DiscordManager discordManager, MongoDatabase mongoDatabase,
-			PersistentData preferencesManager, GameScheduler gameScheduler,
-			GameDayChannelsManager gameDayChannelsManager) {
+	CanucksBot(DiscordManager discordManager, PersistentData preferencesManager,
+			GameScheduler gameScheduler, GameDayChannelsManager gameDayChannelsManager) {
 		this.discordManager.set(discordManager);
-		this.preferencesManager = preferencesManager;
+		this.persistantData = preferencesManager;
 		this.gameScheduler = gameScheduler;
 		this.gameDayChannelsManager = gameDayChannelsManager;
+		this.messageListener = new MessageListener(this);
+		this.reactionListener = new ReactionListener(this);
 	}
 
 	public static CanucksBot create(GameScheduler gameScheduler, String botToken) {
@@ -71,7 +77,7 @@ public class CanucksBot extends Thread {
 		canucksBot.gameScheduler = gameScheduler;
 
 		// Init MongoClient/GuildPreferences
-		canucksBot.initPreferences();
+		canucksBot.initPersistentData();
 		// Init Discord Client
 		canucksBot.initDiscord(botToken);
 
@@ -153,18 +159,15 @@ public class CanucksBot extends Thread {
 		
 		Consumer<? super Throwable> logError = t -> LOGGER.error("Error occurred when responding to message.", t);
 		
-		MessageListener messageListener = new MessageListener(canucksBot);
 		canucksBot.getDiscordManager().getClient().getEventDispatcher().on(MessageCreateEvent.class)
 				.doOnError(logError)
-				.subscribe(event -> messageListener.execute(event));
-
-		ReactionListener reactionListener = new ReactionListener(canucksBot);
+				.subscribe(event -> canucksBot.getMessageListener().execute(event));
 		canucksBot.getDiscordManager().getClient().getEventDispatcher().on(ReactionAddEvent.class)
 				.doOnError(logError)
-				.subscribe(event -> reactionListener.execute(event));
+				.subscribe(event -> canucksBot.getReactionListener().execute(event));
 		canucksBot.getDiscordManager().getClient().getEventDispatcher().on(ReactionRemoveEvent.class)
 				.doOnError(logError)
-				.subscribe(event -> reactionListener.execute(event));
+				.subscribe(event -> canucksBot.getReactionListener().execute(event));
 	}
 
 	@Override
@@ -175,9 +178,9 @@ public class CanucksBot extends Thread {
 		}
 	}
 
-	void initPreferences() {
-		LOGGER.info("Initializing Preferences.");
-		this.preferencesManager = PersistentData.getInstance();
+	void initPersistentData() {
+		LOGGER.info("Initializing Persistent Data.");
+		this.persistantData = PersistentData.load();
 	}
 
 	void initGameDayChannelsManager() {
@@ -191,7 +194,7 @@ public class CanucksBot extends Thread {
 	}
 
 	public PersistentData getPersistentData() {
-		return preferencesManager;
+		return persistantData;
 	}
 
 	public DiscordManager getDiscordManager() {
@@ -204,6 +207,14 @@ public class CanucksBot extends Thread {
 
 	public GameDayChannelsManager getGameDayChannelsManager() {
 		return gameDayChannelsManager;
+	}
+
+	public MessageListener getMessageListener() {
+		return messageListener;
+	}
+
+	public ReactionListener getReactionListener() {
+		return reactionListener;
 	}
 
 	/**
