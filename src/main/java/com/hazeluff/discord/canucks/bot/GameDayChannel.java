@@ -45,9 +45,11 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.Category;
 import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.object.reaction.Reaction;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.object.reaction.ReactionEmoji.Unicode;
 import discord4j.core.spec.TextChannelCreateSpec;
+import discord4j.rest.util.Snowflake;
 
 public class GameDayChannel extends Thread implements IEventProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameDayChannel.class);
@@ -858,34 +860,106 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 
 	@Override
 	public void process(Event event) {
+		if (channel == null || poll == null) {
+			return;
+		}
+		
+		/*
 		// Only allow if reaction is done before the start of the game
-		if (/*ZonedDateTime.now().isBefore(game.getDate()) &&*/ poll != null) {
-			if (event instanceof ReactionAddEvent) {
-				ReactionAddEvent addEvent = (ReactionAddEvent) event;
-				Unicode unicodeEmoji = addEvent.getEmoji().asUnicodeEmoji().orElse(null);
-				if (unicodeEmoji != null) {
-					String emoteId = unicodeEmoji.getRaw();
-					String campaignId = SeasonGames.buildCampaignId(Config.SEASON_YEAR_END);
-					long userId = addEvent.getUserId().asLong();
-					
-					switch (emoteId) {
-					case "🏠":
-						Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
-								new Prediction(campaignId, userId, game.getGamePk(), game.getHomeTeam().getId()));
-						break;
-					case "✈️":
-						Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
-								new Prediction(campaignId, userId, game.getGamePk(), game.getAwayTeam().getId()));
-						break;
-					default:
-						LOGGER.warn("Unknown emoji: " + emoteId);
-						break;
-					}
-				}
-			} else if (event instanceof ReactionRemoveEvent) {
+		if (ZonedDateTime.now().isBefore(game.getDate()) ) {
+			return;
+		}
+		*/
+		
+		if (event instanceof ReactionAddEvent) {
+			ReactionAddEvent addEvent = (ReactionAddEvent) event;
 
-			} else {
-				LOGGER.warn("Event provided is of unknown type: " + event.getClass().getSimpleName());
+			if (!addEvent.getChannelId().equals(channel.getId())) {
+				// Not the same channel/game
+				return;
+			}
+			
+			Unicode addedUnicodeEmoji = addEvent.getEmoji().asUnicodeEmoji().orElse(null);
+			if (addedUnicodeEmoji == null) {
+				return;
+			}
+
+			String campaignId = SeasonGames.buildCampaignId(Config.SEASON_YEAR_END);
+			long userId = addEvent.getUserId().asLong();
+
+			String emoteId = addedUnicodeEmoji.getRaw();
+			switch (emoteId) {
+			case "🏠":
+				Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+						new Prediction(campaignId, userId, game.getGamePk(), game.getHomeTeam().getId()));
+				removeReactions(addEvent.getMessage().block(), addedUnicodeEmoji, addEvent.getUserId());
+				break;
+			case "✈️":
+				Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+						new Prediction(campaignId, userId, game.getGamePk(), game.getAwayTeam().getId()));
+				removeReactions(addEvent.getMessage().block(), addedUnicodeEmoji, addEvent.getUserId());
+				break;
+			default:
+				LOGGER.warn("Unknown emoji: " + emoteId);
+				break;
+			}
+		} else if (event instanceof ReactionRemoveEvent) {
+			ReactionRemoveEvent removeEvent = (ReactionRemoveEvent) event;
+
+			if (!removeEvent.getChannelId().equals(channel.getId())) {
+				// Not the same channel/game
+				return;
+			}
+
+			Unicode removedUnicodeEmoji = removeEvent.getEmoji().asUnicodeEmoji().orElse(null);
+			if (removedUnicodeEmoji == null) {
+				return;
+			}
+
+			String campaignId = SeasonGames.buildCampaignId(Config.SEASON_YEAR_END);
+			long userId = removeEvent.getUserId().asLong();
+			
+			// Do not interact with persistent data if removed emoji was not of the stored prediction.
+			// Prevents removing the prediction when CanucksBot removes the reaction.
+			Predictions.SeasonGames.Prediction prediction = Predictions.SeasonGames
+					.loadPrediction(canucksBot.getPersistentData().getMongoDatabase(), 
+							campaignId, game.getGamePk(), userId);
+
+			String emoteId = removedUnicodeEmoji.getRaw();
+			switch (emoteId) {
+			case "🏠":
+				if (!Integer.valueOf(game.getHomeTeam().getId()).equals(prediction.getPrediction())) {
+					return;
+				}
+				break;
+			case "✈️":
+				if (!Integer.valueOf(game.getAwayTeam().getId()).equals(prediction.getPrediction())) {
+					return;
+				}
+				break;
+			default:
+				LOGGER.warn("Unknown emoji: " + emoteId);
+				break;
+			}
+
+			// Remove the prediction from the persistent data
+			Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+					new Prediction(campaignId, userId, game.getGamePk(), null));
+		} else {
+			LOGGER.warn("Event provided is of unknown type: " + event.getClass().getSimpleName());
+		}
+	}
+
+	/**
+	 * 
+	 * @param excludedReaction
+	 * @param userId
+	 */
+	private static void removeReactions(Message message, Unicode excludedReaction, Snowflake userId) {
+		for (Reaction messageReaction : message.getReactions()) {
+			Unicode messageReactionUnicode = messageReaction.getEmoji().asUnicodeEmoji().orElse(null);
+			if (messageReactionUnicode != null && !messageReactionUnicode.equals(excludedReaction)) {
+				message.removeReaction(messageReactionUnicode, userId).subscribe();
 			}
 		}
 	}
