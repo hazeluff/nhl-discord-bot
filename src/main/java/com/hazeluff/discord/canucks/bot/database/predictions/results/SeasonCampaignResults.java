@@ -14,24 +14,24 @@ import com.hazeluff.discord.canucks.nhl.Team;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 
-public class TeamSeasonResults {
+public class SeasonCampaignResults {
 	private static final String CAMPAIGN_ID_KEY = "campaignId";
 	private static final String RESULTS_KEY = "results";
 
 	private final String campaignId;
 	private final Map<Integer, Team> gamesResults;
 
-	public TeamSeasonResults(String campaignId, Map<Integer, Team> gamesResults) {
+	SeasonCampaignResults(String campaignId, Map<Integer, Team> gamesResults) {
 		this.campaignId = campaignId;
 		this.gamesResults = new ConcurrentHashMap<>(gamesResults);
 	}
 
-	public TeamSeasonResults(String campaignId, List<Document> resultDocuments) {
-		this.campaignId = campaignId;
-		gamesResults = new ConcurrentHashMap<>();
+	static SeasonCampaignResults parseDocuments(String campaignId, List<Document> resultDocuments) {
+		Map<Integer, Team> gamesResults = new ConcurrentHashMap<>();
 		for (Document doc : resultDocuments) {
 			gamesResults.put(doc.getInteger("gamePk"), Team.parse(doc.getInteger("winner")));
 		}
+		return new SeasonCampaignResults(campaignId, gamesResults);
 	}
 
 	/**
@@ -44,13 +44,13 @@ public class TeamSeasonResults {
 	 *         exist.
 	 */
 	@SuppressWarnings("unchecked")
-	public static TeamSeasonResults findFromCollection(MongoCollection<Document> collection, String campaignId) {
-		Document doc = collection.find(new Document(CAMPAIGN_ID_KEY, campaignId)).first();
+	public static SeasonCampaignResults findFromCollection(MongoCollection<Document> collection, String campaignId) {
+		Document doc = collection.find(new Document(RESULTS_KEY, new Document("$exists", true))).first();
 		if (doc == null) {
 			return null;
 		}
 		List<Document> resultDocs = doc.get(RESULTS_KEY, List.class);
-		return new TeamSeasonResults(campaignId, resultDocs);
+		return parseDocuments(campaignId, resultDocs);
 	}
 
 	public void saveResults(MongoCollection<Document> collection) {
@@ -95,6 +95,9 @@ public class TeamSeasonResults {
 				.collect(Collectors.toList());
 	}
 
+	/*
+	 * Other
+	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -112,7 +115,7 @@ public class TeamSeasonResults {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		TeamSeasonResults other = (TeamSeasonResults) obj;
+		SeasonCampaignResults other = (SeasonCampaignResults) obj;
 		if (campaignId == null) {
 			if (other.campaignId != null)
 				return false;

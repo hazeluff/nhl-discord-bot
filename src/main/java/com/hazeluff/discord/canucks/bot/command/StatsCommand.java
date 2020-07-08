@@ -22,7 +22,7 @@ public class StatsCommand extends Command {
 
 	List<Long> excludedGuilds = Arrays.asList(
 			264445053596991498l, // https://discordbots.org/
-			110373943822540800l // https://bots.discord.pw/
+			110373943822540800l  // https://bots.discord.pw/
 	);
 
 	public StatsCommand(CanucksBot canucksBot) {

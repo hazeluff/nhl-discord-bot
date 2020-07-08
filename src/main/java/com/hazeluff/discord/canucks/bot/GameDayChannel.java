@@ -21,9 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.canucks.Config;
 import com.hazeluff.discord.canucks.bot.database.pole.PollMessage;
-import com.hazeluff.discord.canucks.bot.database.predictions.Predictions;
-import com.hazeluff.discord.canucks.bot.database.predictions.Predictions.SeasonGames;
-import com.hazeluff.discord.canucks.bot.database.predictions.Predictions.SeasonGames.Prediction;
+import com.hazeluff.discord.canucks.bot.database.predictions.campaigns.SeasonCampaign;
+import com.hazeluff.discord.canucks.bot.database.predictions.campaigns.SeasonCampaign.Prediction;
 import com.hazeluff.discord.canucks.bot.database.preferences.GuildPreferences;
 import com.hazeluff.discord.canucks.bot.listener.IEventProcessor;
 import com.hazeluff.discord.canucks.nhl.Game;
@@ -855,7 +854,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 	}
 
 	private void unregisterFromListener() {
-		// canucksBot.getReactionListener().removeProccessor(this);
+		// TODO uncomment canucksBot.getReactionListener().removeProccessor(this);
 	}
 
 	@Override
@@ -864,12 +863,10 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 			return;
 		}
 		
-		/*
 		// Only allow if reaction is done before the start of the game
 		if (ZonedDateTime.now().isBefore(game.getDate()) ) {
 			return;
 		}
-		*/
 		
 		if (event instanceof ReactionAddEvent) {
 			ReactionAddEvent addEvent = (ReactionAddEvent) event;
@@ -884,18 +881,18 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 				return;
 			}
 
-			String campaignId = SeasonGames.buildCampaignId(Config.SEASON_YEAR_END);
+			String campaignId = SeasonCampaign.buildCampaignId(Config.SEASON_YEAR_END);
 			long userId = addEvent.getUserId().asLong();
 
 			String emoteId = addedUnicodeEmoji.getRaw();
 			switch (emoteId) {
 			case "🏠":
-				Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+				SeasonCampaign.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
 						new Prediction(campaignId, userId, game.getGamePk(), game.getHomeTeam().getId()));
 				removeReactions(addEvent.getMessage().block(), addedUnicodeEmoji, addEvent.getUserId());
 				break;
 			case "✈️":
-				Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+				SeasonCampaign.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
 						new Prediction(campaignId, userId, game.getGamePk(), game.getAwayTeam().getId()));
 				removeReactions(addEvent.getMessage().block(), addedUnicodeEmoji, addEvent.getUserId());
 				break;
@@ -916,34 +913,35 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 				return;
 			}
 
-			String campaignId = SeasonGames.buildCampaignId(Config.SEASON_YEAR_END);
+			String campaignId = SeasonCampaign.buildCampaignId(Config.SEASON_YEAR_END);
 			long userId = removeEvent.getUserId().asLong();
 			
 			// Do not interact with persistent data if removed emoji was not of the stored prediction.
 			// Prevents removing the prediction when CanucksBot removes the reaction.
-			Predictions.SeasonGames.Prediction prediction = Predictions.SeasonGames
-					.loadPrediction(canucksBot.getPersistentData().getMongoDatabase(), 
-							campaignId, game.getGamePk(), userId);
+			SeasonCampaign.Prediction prediction = SeasonCampaign.loadPrediction(
+					canucksBot.getPersistentData().getMongoDatabase(), campaignId, game.getGamePk(), userId);
 
-			String emoteId = removedUnicodeEmoji.getRaw();
-			switch (emoteId) {
-			case "🏠":
-				if (!Integer.valueOf(game.getHomeTeam().getId()).equals(prediction.getPrediction())) {
-					return;
+			if (prediction != null) {
+				String emoteId = removedUnicodeEmoji.getRaw();
+				switch (emoteId) {
+				case "🏠":
+					if (!Integer.valueOf(game.getHomeTeam().getId()).equals(prediction.getPrediction())) {
+						return;
+					}
+					break;
+				case "✈️":
+					if (!Integer.valueOf(game.getAwayTeam().getId()).equals(prediction.getPrediction())) {
+						return;
+					}
+					break;
+				default:
+					LOGGER.warn("Unknown emoji: " + emoteId);
+					break;
 				}
-				break;
-			case "✈️":
-				if (!Integer.valueOf(game.getAwayTeam().getId()).equals(prediction.getPrediction())) {
-					return;
-				}
-				break;
-			default:
-				LOGGER.warn("Unknown emoji: " + emoteId);
-				break;
 			}
 
 			// Remove the prediction from the persistent data
-			Predictions.SeasonGames.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+			SeasonCampaign.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
 					new Prediction(campaignId, userId, game.getGamePk(), null));
 		} else {
 			LOGGER.warn("Event provided is of unknown type: " + event.getClass().getSimpleName());

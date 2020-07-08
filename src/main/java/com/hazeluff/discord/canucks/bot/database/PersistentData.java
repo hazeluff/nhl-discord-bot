@@ -3,8 +3,6 @@ package com.hazeluff.discord.canucks.bot.database;
 import com.hazeluff.discord.canucks.Config;
 import com.hazeluff.discord.canucks.bot.database.fuck.FucksData;
 import com.hazeluff.discord.canucks.bot.database.pole.PollsData;
-import com.hazeluff.discord.canucks.bot.database.predictions.PredictionsData;
-import com.hazeluff.discord.canucks.bot.database.predictions.results.ResultsData;
 import com.hazeluff.discord.canucks.bot.database.preferences.PreferencesData;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
@@ -18,18 +16,13 @@ public class PersistentData {
 	private final PreferencesData preferencesData;
 	private final FucksData fucksData;
 	private final PollsData polesData;
-	private final ResultsData resultsData;
-	private final PredictionsData predictionsData;
 
 
-	PersistentData(MongoDatabase database, PreferencesData preferencesData, FucksData fucksData, PollsData polesData,
-			ResultsData resultsData, PredictionsData predictionsData) {
+	PersistentData(MongoDatabase database, PreferencesData preferencesData, FucksData fucksData, PollsData polesData) {
 		this.database = database;
 		this.preferencesData = preferencesData;
 		this.fucksData = fucksData;
 		this.polesData = polesData;
-		this.resultsData = resultsData;
-		this.predictionsData = predictionsData;
 	}
 
 	public static PersistentData load() {
@@ -40,10 +33,7 @@ public class PersistentData {
 		PreferencesData preferencesManager = PreferencesData.load(database);
 		FucksData fucksManager = FucksData.load(database);
 		PollsData polesManager = PollsData.load(database);
-		ResultsData resultsManager = ResultsData.load(database);
-		PredictionsData predictionsManager = PredictionsData.load(database);
-		return new PersistentData(database, preferencesManager, fucksManager, polesManager, resultsManager,
-				predictionsManager);
+		return new PersistentData(database, preferencesManager, fucksManager, polesManager);
 	}
 
 	@SuppressWarnings("resource")
@@ -62,14 +52,6 @@ public class PersistentData {
 
 	public PollsData getPolesData() {
 		return polesData;
-	}
-
-	public ResultsData getResultsData() {
-		return resultsData;
-	}
-
-	public PredictionsData getPredictionsData() {
-		return predictionsData;
 	}
 
 	public MongoDatabase getMongoDatabase() {
