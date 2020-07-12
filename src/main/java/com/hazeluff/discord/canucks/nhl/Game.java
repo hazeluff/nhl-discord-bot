@@ -148,6 +148,20 @@ public class Game {
 		return homeTeam;
 	}
 
+	public Team getWinningTeam() {
+		if (isFinished()) {
+			return null;
+		}
+		if (getHomeScore() > getAwayScore()) {
+			return homeTeam;
+		}
+		if (getAwayScore() > getHomeScore()) {
+			return awayTeam;
+		}
+
+		return null;
+	}
+
 	/**
 	 * Gets both home and aways teams as a list
 	 * 
@@ -178,6 +192,10 @@ public class Game {
 
 	public GameStatus getStatus() {
 		return status;
+	}
+
+	public boolean isFinished() {
+		return getStatus() == GameStatus.FINAL;
 	}
 
 	public List<GameEvent> getEvents() {

@@ -854,7 +854,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 	}
 
 	private void unregisterFromListener() {
-		// TODO uncomment canucksBot.getReactionListener().removeProccessor(this);
+		canucksBot.getReactionListener().removeProccessor(this);
 	}
 
 	@Override
@@ -887,12 +887,12 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 			String emoteId = addedUnicodeEmoji.getRaw();
 			switch (emoteId) {
 			case "🏠":
-				SeasonCampaign.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+				SeasonCampaign.savePrediction(canucksBot,
 						new Prediction(campaignId, userId, game.getGamePk(), game.getHomeTeam().getId()));
 				removeReactions(addEvent.getMessage().block(), addedUnicodeEmoji, addEvent.getUserId());
 				break;
 			case "✈️":
-				SeasonCampaign.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
+				SeasonCampaign.savePrediction(canucksBot,
 						new Prediction(campaignId, userId, game.getGamePk(), game.getAwayTeam().getId()));
 				removeReactions(addEvent.getMessage().block(), addedUnicodeEmoji, addEvent.getUserId());
 				break;
@@ -919,7 +919,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 			// Do not interact with persistent data if removed emoji was not of the stored prediction.
 			// Prevents removing the prediction when CanucksBot removes the reaction.
 			SeasonCampaign.Prediction prediction = SeasonCampaign.loadPrediction(
-					canucksBot.getPersistentData().getMongoDatabase(), campaignId, game.getGamePk(), userId);
+					canucksBot, campaignId, game.getGamePk(), userId);
 
 			if (prediction != null) {
 				String emoteId = removedUnicodeEmoji.getRaw();
@@ -941,8 +941,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 			}
 
 			// Remove the prediction from the persistent data
-			SeasonCampaign.savePrediction(canucksBot.getPersistentData().getMongoDatabase(),
-					new Prediction(campaignId, userId, game.getGamePk(), null));
+			SeasonCampaign.savePrediction(canucksBot, new Prediction(campaignId, userId, game.getGamePk(), null));
 		} else {
 			LOGGER.warn("Event provided is of unknown type: " + event.getClass().getSimpleName());
 		}

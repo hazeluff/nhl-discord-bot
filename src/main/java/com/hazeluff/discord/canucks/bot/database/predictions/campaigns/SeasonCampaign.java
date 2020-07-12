@@ -6,18 +6,25 @@ import static com.hazeluff.discord.canucks.bot.database.predictions.IPrediction.
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.hazeluff.discord.canucks.Config;
+import com.hazeluff.discord.canucks.bot.CanucksBot;
 import com.hazeluff.discord.canucks.bot.database.predictions.IPrediction;
 import com.hazeluff.discord.canucks.bot.database.predictions.results.SeasonCampaignResults;
+import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.Team;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 
 public class SeasonCampaign extends Campaign {
+	private static final Logger LOGGER = LoggerFactory.getLogger(SeasonCampaign.class);
 
 	private static final Map<String, SeasonCampaignResults> seasonResults = new HashMap<>();
 
@@ -26,19 +33,19 @@ public class SeasonCampaign extends Campaign {
 	}
 
 	// Prediction storage
-	public static void savePrediction(MongoDatabase database, Prediction prediction) {
-		prediction.saveToDatabase(database);
+	public static void savePrediction(CanucksBot canucksBot, Prediction prediction) {
+		prediction.saveToDatabase(canucksBot);
 	}
 
-	public static Prediction loadPrediction(MongoDatabase database, String campaignId, int gamePk, long userId) {
-		return Prediction.loadFromDatabase(database, campaignId, gamePk, userId);
+	public static Prediction loadPrediction(CanucksBot canucksBot, String campaignId, int gamePk, long userId) {
+		return Prediction.loadFromDatabase(canucksBot, campaignId, gamePk, userId);
 	}
 
-	static Map<Integer, Team> loadPredictions(MongoDatabase database, String campaignId, long userId) {
-		MongoCollection<Document> collection = getCollection(database, campaignId);
+	static Map<Integer, Team> loadPredictions(CanucksBot canucksBot, String campaignId, long userId) {
+		MongoCollection<Document> collection = getCollection(canucksBot.getPersistentData().getMongoDatabase(),
+				campaignId);
 		MongoCursor<Document> iterator = collection
-				.find(new Document()
-						.append(USER_ID_KEY, userId))
+				.find(new Document().append(USER_ID_KEY, userId))
 				.iterator();
 		Map<Integer, Team> userPredictions = new HashMap<>();
 		while (iterator.hasNext()) {
@@ -77,18 +84,19 @@ public class SeasonCampaign extends Campaign {
 			return prediction;
 		}
 
-		void saveToDatabase(MongoDatabase database) {
-			getCollection(database, campaignId).updateOne(
+		void saveToDatabase(CanucksBot canucksBot) {
+			getCollection(canucksBot.getPersistentData().getMongoDatabase(), campaignId).updateOne(
 					new Document()
 							.append(USER_ID_KEY, userId)
 							.append(GAME_PK_KEY,gamePk),
 					new Document("$set", new Document()
-							.append(PREDICTION_KEY, prediction == null ? null : prediction.toString())),
+							.append(PREDICTION_KEY, prediction == null ? null : prediction)),
 					new UpdateOptions().upsert(true));
 		}
 
-		static Prediction loadFromDatabase(MongoDatabase database, String campaignId, int gamePk, long userId) {
-			Document doc = getDocument(getCollection(database, campaignId), 
+		static Prediction loadFromDatabase(CanucksBot canucksBot, String campaignId, int gamePk, long userId) {
+			Document doc = getDocument(getCollection(canucksBot.getPersistentData().getMongoDatabase(),
+					campaignId), 
 					new Document()
 							.append(USER_ID_KEY, userId)
 							.append(GAME_PK_KEY, gamePk));
@@ -97,8 +105,7 @@ public class SeasonCampaign extends Campaign {
 				return null;
 			}
 
-			String rawPrediction = doc.getString(PREDICTION_KEY);
-			Integer prediction = rawPrediction == null ? null : Integer.valueOf(rawPrediction);
+			Integer prediction = doc.getInteger(PREDICTION_KEY);
 			return new Prediction(campaignId, userId, gamePk, prediction);
 		}
 
@@ -120,13 +127,23 @@ public class SeasonCampaign extends Campaign {
 	 * @param yearEnd
 	 * @return the results of a season for a team
 	 */
-	static SeasonCampaignResults getSeasonCampaignResults(MongoDatabase database, int yearEnd) {
+	static SeasonCampaignResults getSeasonCampaignResults(CanucksBot canucksBot, int yearEnd) {
 		String campaignId = SeasonCampaign.buildCampaignId(yearEnd);
 		SeasonCampaignResults results = seasonResults.get(campaignId);
-		if (results == null) {
-			results = loadTeamSeasonResults(database, campaignId);
+		if (results == null && yearEnd == Config.SEASON_YEAR_END) {
+			results = generateSeasonCampaignResults(canucksBot);
 		}
 		return results;
+	}
+
+	static SeasonCampaignResults generateSeasonCampaignResults(CanucksBot canucksBot) {
+		String campaignId = buildCampaignId(Config.SEASON_YEAR_END);
+		Set<Game> games = canucksBot.getGameScheduler().getGames();
+		Map<Integer, Team> gamesResults = games.stream()
+				.filter(Game::isFinished)
+				.filter(game -> game.getWinningTeam() != null)
+				.collect(Collectors.toMap(Game::getGamePk, Game::getWinningTeam));
+		return new SeasonCampaignResults(campaignId, gamesResults, games.size());
 	}
 
 	/**
@@ -138,29 +155,36 @@ public class SeasonCampaign extends Campaign {
 	 * @return a TeamSeasonsResults of the given campaignKey. null - if it does not
 	 *         exist.
 	 */
-	static SeasonCampaignResults loadTeamSeasonResults(MongoDatabase database, String campaignId) {
-		return SeasonCampaignResults.findFromCollection(getCollection(database, campaignId), RESULTS_KEY);
+	static SeasonCampaignResults loadTeamSeasonResults(CanucksBot canucksBot, String campaignId) {
+		int totalGames = canucksBot.getGameScheduler().getGames().size();
+		return SeasonCampaignResults.findFromCollection(getCollection(canucksBot, campaignId), RESULTS_KEY)
+				.setTotalGames(totalGames);
 	}
 
-	void saveTeamSeasonResults(MongoDatabase database, SeasonCampaignResults results) {
-		results.saveResults(getCollection(database, results.getCampaignId()));
+	static void saveTeamSeasonResults(CanucksBot canucksBot, SeasonCampaignResults results) {
+		results.saveResults(getCollection(canucksBot, results.getCampaignId()));
 	}
 
 	/*
 	 * Scoring
 	 */
-	public static PredictionsScore getScore(MongoDatabase database, int yearEnd, long userId) {
+	public static PredictionsScore getScore(CanucksBot canucksBot, int yearEnd, long userId) {
 		String campaignId = buildCampaignId(yearEnd);
-		Map<Integer, Team> predictions = loadPredictions(database, campaignId, userId);
-		Map<Integer, Team> seasonGameResults = getSeasonCampaignResults(database, yearEnd).getGameResults();
+		Map<Integer, Team> predictions = loadPredictions(canucksBot, campaignId, userId);
+		Map<Integer, Team> seasonGameResults = getSeasonCampaignResults(canucksBot, yearEnd).getGameResults();
+		if (seasonGameResults == null) {
+			return null;
+		}
 		int numCorrect = 0;
 		for (Entry<Integer, Team> prediction : predictions.entrySet()) {
 			int key = prediction.getKey();
 			boolean isCorrect = seasonGameResults.containsKey(key)
-					&& prediction.getValue().equals(seasonGameResults.get(key));
+					&& prediction != null && prediction.getValue().equals(seasonGameResults.get(key));
 			numCorrect += isCorrect ? 1 : 0;
 		}
+		int numGames = canucksBot.getGameScheduler().getGames().size();
+
 		// numCorrect == score
-		return new PredictionsScore(numCorrect, seasonGameResults.size(), predictions.size(), numCorrect);
+		return new PredictionsScore(numCorrect, numGames, predictions.size(), numCorrect);
 	}
 }

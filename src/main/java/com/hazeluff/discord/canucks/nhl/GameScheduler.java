@@ -41,6 +41,14 @@ public class GameScheduler extends Thread {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 
+	// ZonedDateTime START_DATE = ZonedDateTime.of(Config.SEASON_YEAR_END - 1, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+	// ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+	// TODO This needs to be reverted after 2020
+	private static final ZonedDateTime SEASON_START_DATE = ZonedDateTime.of(Config.SEASON_YEAR_END, 7, 31, 
+			0, 0, 0, 0, ZoneOffset.UTC);
+	private static final ZonedDateTime SEASON_END_DATE = ZonedDateTime.of(Config.SEASON_YEAR_END, 10, 1, 
+			0, 0, 0, 0, ZoneOffset.UTC);
+	
 	static final long GAME_SCHEDULE_UPDATE_RATE = 43200000L;
 
 	// Poll for if the day has rolled over every 30 minutes
@@ -134,9 +142,7 @@ public class GameScheduler extends Thread {
 		LOGGER.info("Initializing");
 		// Retrieve schedule/game information from NHL API
 		for (Team team : Team.values()) {
-			ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR_END - 1, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-			ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
-			games.addAll(getGames(team, startDate, endDate));
+			games.addAll(getGames(team, SEASON_START_DATE, SEASON_END_DATE));
 		}
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");
 
@@ -229,9 +235,8 @@ public class GameScheduler extends Thread {
 	 */
 	List<Game> getGames(Team team, ZonedDateTime startDate, ZonedDateTime endDate) throws HttpException {
 		LOGGER.info("Retrieving games of [" + team + "]");
-		ZonedDateTime latestDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
-		if (endDate.compareTo(latestDate) > 0) {
-			endDate = latestDate;
+		if (endDate.compareTo(SEASON_END_DATE) > 0) {
+			endDate = SEASON_END_DATE;
 		}
 		if (endDate.isBefore(startDate)) {
 			return new ArrayList<>();
@@ -264,7 +269,7 @@ public class GameScheduler extends Thread {
 		for (int i = 0; i < jsonDates.length(); i++) {
 			JSONObject jsonGame = jsonDates.getJSONObject(i).getJSONArray("games").getJSONObject(0);
 			Game game = Game.parse(jsonGame);
-			if (game != null && game.getStatus() != GameStatus.SCHEDULED) {
+			if (game != null) {
 				LOGGER.debug("Adding additional game [" + game + "]");
 				games.add(game);
 			}
@@ -332,7 +337,8 @@ public class GameScheduler extends Thread {
 	public Game getFutureGame(Team team, int futureIndex) {
 		List<Game> futureGames = games.stream()
 				.filter(game -> game.containsTeam(team))
-				.filter(game -> game.getStatus() == GameStatus.PREVIEW || game.getStatus() == GameStatus.POSTPONED)
+				.filter(game -> game.getStatus() == GameStatus.PREVIEW || game.getStatus() == GameStatus.SCHEDULED
+						|| game.getStatus() == GameStatus.POSTPONED)
 				.collect(Collectors.toList());
 		if (futureIndex >= futureGames.size()) {
 			return null;

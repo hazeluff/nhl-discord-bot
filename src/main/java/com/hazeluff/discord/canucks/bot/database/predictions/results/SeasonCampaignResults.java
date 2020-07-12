@@ -20,10 +20,12 @@ public class SeasonCampaignResults {
 
 	private final String campaignId;
 	private final Map<Integer, Team> gamesResults;
+	private int totalGames;
 
-	SeasonCampaignResults(String campaignId, Map<Integer, Team> gamesResults) {
+	public SeasonCampaignResults(String campaignId, Map<Integer, Team> gamesResults, int totalGames) {
 		this.campaignId = campaignId;
 		this.gamesResults = new ConcurrentHashMap<>(gamesResults);
+		this.totalGames = totalGames;
 	}
 
 	static SeasonCampaignResults parseDocuments(String campaignId, List<Document> resultDocuments) {
@@ -31,7 +33,7 @@ public class SeasonCampaignResults {
 		for (Document doc : resultDocuments) {
 			gamesResults.put(doc.getInteger("gamePk"), Team.parse(doc.getInteger("winner")));
 		}
-		return new SeasonCampaignResults(campaignId, gamesResults);
+		return new SeasonCampaignResults(campaignId, gamesResults, -1);
 	}
 
 	/**
@@ -74,6 +76,15 @@ public class SeasonCampaignResults {
 	public Map<Integer, Team> getGameResults() {
 		return new HashMap<>(gamesResults);
 	}
+	
+	public int getTotalGames() {
+		return totalGames;
+	}
+	
+	public SeasonCampaignResults setTotalGames(int totalGames) {
+		this.totalGames = totalGames;
+		return this;
+	}
 
 	public int getScore(Map<Integer, Team> predictions) {
 		int score = 0;
@@ -98,12 +109,14 @@ public class SeasonCampaignResults {
 	/*
 	 * Other
 	 */
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((campaignId == null) ? 0 : campaignId.hashCode());
 		result = prime * result + ((gamesResults == null) ? 0 : gamesResults.hashCode());
+		result = prime * result + totalGames;
 		return result;
 	}
 
@@ -126,12 +139,15 @@ public class SeasonCampaignResults {
 				return false;
 		} else if (!gamesResults.equals(other.gamesResults))
 			return false;
+		if (totalGames != other.totalGames)
+			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "TeamSeasonResults [campaignId=" + campaignId + ", gamesResults=" + gamesResults + "]";
+		return "SeasonCampaignResults [campaignId=" + campaignId + ", gamesResults=" + gamesResults + ", totalGames="
+				+ totalGames + "]";
 	}
 
 }

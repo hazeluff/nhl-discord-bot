@@ -25,14 +25,17 @@ public class PredictionsCommand extends Command {
 	public void execute(MessageCreateEvent event, List<String> arguments) {		
 		long userId = event.getMember().get().getId().asLong();
 				
-		PredictionsScore score = SeasonCampaign.getScore(
-				canucksBot.getPersistentData().getMongoDatabase(), 
-				Config.SEASON_YEAR_END, 
-				userId);
+		PredictionsScore score = SeasonCampaign.getScore(canucksBot, Config.SEASON_YEAR_END, userId);
+		String message;
+		if(score == null) {
+			message = "[Internal Error] Required database did not have results for the season.";
+		} else {
+			String place = "x'th";
 
-		String message = String.format("You placed %s.\n"
-				+ "You predicted %s games correctly out of %s. There was a total of %s games to predict on.",
-				score.getNumCorrect(), score.getTotalPredictions(), score.getTotalGames());
+			message = String.format("You placed %s.\n"
+					+ "You predicted %s games correctly out of %s. There are/were a total of %s games to predict on.",
+					place, score.getNumCorrect(), score.getTotalPredictions(), score.getTotalGames());
+		}
 		sendMessage(event, spec -> spec.setContent(message));
 	}
 

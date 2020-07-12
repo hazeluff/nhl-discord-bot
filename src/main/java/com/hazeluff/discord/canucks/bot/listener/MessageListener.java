@@ -22,6 +22,7 @@ import com.hazeluff.discord.canucks.bot.command.FuckCommand;
 import com.hazeluff.discord.canucks.bot.command.GoalsCommand;
 import com.hazeluff.discord.canucks.bot.command.HelpCommand;
 import com.hazeluff.discord.canucks.bot.command.NextGameCommand;
+import com.hazeluff.discord.canucks.bot.command.PredictionsCommand;
 import com.hazeluff.discord.canucks.bot.command.ScheduleCommand;
 import com.hazeluff.discord.canucks.bot.command.ScoreCommand;
 import com.hazeluff.discord.canucks.bot.command.StatsCommand;
@@ -56,17 +57,18 @@ public class MessageListener extends EventListener {
 	public MessageListener(CanucksBot canucksBot) {
 		super(canucksBot);
 		commands = new ArrayList<>();
-		commands.add(new FuckCommand(canucksBot));
-		commands.add(new HelpCommand(canucksBot));
 		commands.add(new AboutCommand(canucksBot));
-		commands.add(new SubscribeCommand(canucksBot));
-		commands.add(new UnsubscribeCommand(canucksBot));
-		commands.add(new NextGameCommand(canucksBot));
-		commands.add(new ScoreCommand(canucksBot));
+		commands.add(new FuckCommand(canucksBot));
 		commands.add(new GoalsCommand(canucksBot));
-		commands.add(new StatsCommand(canucksBot));
+		commands.add(new HelpCommand(canucksBot));
+		commands.add(new NextGameCommand(canucksBot));
+		commands.add(new PredictionsCommand(canucksBot));
+		commands.add(new ScoreCommand(canucksBot));
+		commands.add(new SubscribeCommand(canucksBot));
 		commands.add(new ScheduleCommand(canucksBot));
+		commands.add(new StatsCommand(canucksBot));
 		commands.add(new ThreadsCommand(canucksBot));
+		commands.add(new UnsubscribeCommand(canucksBot));
 
 		topics = new ArrayList<>();
 		topics.add(new FriendlyTopic(canucksBot));
