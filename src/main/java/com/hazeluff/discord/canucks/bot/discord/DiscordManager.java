@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
@@ -15,7 +16,6 @@ import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.TextChannelCreateSpec;
 import discord4j.discordjson.json.gateway.StatusUpdate;
-import discord4j.rest.util.Snowflake;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -38,7 +38,7 @@ public class DiscordManager {
 
 	public Snowflake getId() {
 		if (id == null) {
-			id = getClient().getSelfId().block();
+			id = getClient().getSelfId();
 		}
 		return id;
 	}

@@ -1,6 +1,5 @@
 package com.hazeluff.discord.canucks.bot.command;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -13,6 +12,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.rest.util.Color;
 
 /**
  * Displays information about CanucksBot and the author
@@ -31,7 +31,7 @@ public class AboutCommand extends Command {
 	public Consumer<MessageCreateSpec> getReply() {
 		Resource resource = ResourceLoader.get().getHazeluffAvatar();
 		Consumer<EmbedCreateSpec> embedCreateSpec = spec -> spec
-				.setColor(new Color(0xba9ddf))
+				.setColor(Color.of(0xba9ddf))
 				.setTitle("About CanucksBot")
 				.setAuthor("Hazeluff", Config.HAZELUFF_SITE, "attachment://" + resource.getFileName())
 				.setUrl(Config.GIT_URL)

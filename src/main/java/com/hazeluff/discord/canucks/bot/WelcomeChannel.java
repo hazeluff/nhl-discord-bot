@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.canucks.bot.command.AboutCommand;
 import com.hazeluff.discord.canucks.bot.command.HelpCommand;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
-import discord4j.rest.util.Snowflake;
 
 public class WelcomeChannel extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeChannel.class);

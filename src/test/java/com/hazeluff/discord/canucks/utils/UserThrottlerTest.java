@@ -23,7 +23,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import discord4j.rest.util.Snowflake;
+import discord4j.common.util.Snowflake;
 
 
 @RunWith(PowerMockRunner.class)

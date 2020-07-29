@@ -37,6 +37,7 @@ import com.hazeluff.discord.canucks.nhl.custommessages.CanucksCustomMessages;
 import com.hazeluff.discord.canucks.utils.DateUtils;
 import com.hazeluff.discord.canucks.utils.Utils;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
@@ -48,7 +49,6 @@ import discord4j.core.object.reaction.Reaction;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.object.reaction.ReactionEmoji.Unicode;
 import discord4j.core.spec.TextChannelCreateSpec;
-import discord4j.rest.util.Snowflake;
 
 public class GameDayChannel extends Thread implements IEventProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameDayChannel.class);

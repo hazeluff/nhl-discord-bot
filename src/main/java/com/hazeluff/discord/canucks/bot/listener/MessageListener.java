@@ -32,13 +32,13 @@ import com.hazeluff.discord.canucks.bot.command.UnsubscribeCommand;
 import com.hazeluff.discord.canucks.utils.UserThrottler;
 import com.hazeluff.discord.canucks.utils.Utils;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
-import discord4j.rest.util.Snowflake;
 
 public class MessageListener extends EventListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MessageListener.class);

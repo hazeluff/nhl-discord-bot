@@ -13,6 +13,7 @@ import com.hazeluff.discord.canucks.bot.GameDayChannel;
 import com.hazeluff.discord.canucks.nhl.Game;
 import com.hazeluff.discord.canucks.nhl.Team;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
@@ -22,7 +23,6 @@ import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
-import discord4j.rest.util.Snowflake;
 
 /**
  * Interface for commands that the CanucksBot can accept and the replies to those commands.
