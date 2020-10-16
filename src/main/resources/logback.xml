@@ -56,9 +56,9 @@
     </appender>
     
     <appender name="CanucksBot" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/canucksbot.log</file>
+      <file>logs/nhlbot.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-        <fileNamePattern>logs/canucksbot.%i.log</fileNamePattern>
+        <fileNamePattern>logs/nhlbot.%i.log</fileNamePattern>
         <minIndex>1</minIndex>
         <maxIndex>10</maxIndex>
       </rollingPolicy>
@@ -71,9 +71,9 @@
     </appender>
     
     <appender name="CanucksBotError" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/canucksbot.err</file>
+      <file>logs/nhlbot.err</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-        <fileNamePattern>logs/canucksbot.%i.err</fileNamePattern>
+        <fileNamePattern>logs/nhlbot.%i.err</fileNamePattern>
         <minIndex>1</minIndex>
         <maxIndex>10</maxIndex>
       </rollingPolicy>

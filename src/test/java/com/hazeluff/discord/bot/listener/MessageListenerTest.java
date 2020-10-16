@@ -90,8 +90,8 @@ public class MessageListenerTest {
 		result = messageListener.parseToCommandArguments(mockMessage);
 		assertEquals(Arrays.asList("arg1", "arg2"), result);
 
-		// By ?canucksbot
-		when(mockMessage.getContent()).thenReturn("?canucksbot arg1 arg2");
+		// By ?nhlbot
+		when(mockMessage.getContent()).thenReturn("?nhlbot arg1 arg2");
 		result = messageListener.parseToCommandArguments(mockMessage);
 		assertEquals(Arrays.asList("arg1", "arg2"), result);
 
