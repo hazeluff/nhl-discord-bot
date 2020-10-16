@@ -21,7 +21,6 @@ import com.hazeluff.discord.bot.command.FuckCommand;
 import com.hazeluff.discord.bot.command.GoalsCommand;
 import com.hazeluff.discord.bot.command.HelpCommand;
 import com.hazeluff.discord.bot.command.NextGameCommand;
-import com.hazeluff.discord.bot.command.PredictionsCommand;
 import com.hazeluff.discord.bot.command.ScheduleCommand;
 import com.hazeluff.discord.bot.command.ScoreCommand;
 import com.hazeluff.discord.bot.command.StatsCommand;
@@ -61,7 +60,6 @@ public class MessageListener extends EventListener {
 		commands.add(new GoalsCommand(nhlBot));
 		commands.add(new HelpCommand(nhlBot));
 		commands.add(new NextGameCommand(nhlBot));
-		commands.add(new PredictionsCommand(nhlBot));
 		commands.add(new ScoreCommand(nhlBot));
 		commands.add(new SubscribeCommand(nhlBot));
 		commands.add(new ScheduleCommand(nhlBot));

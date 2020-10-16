@@ -31,7 +31,7 @@ public class AboutCommand extends Command {
 		Resource resource = ResourceLoader.get().getHazeluffAvatar();
 		Consumer<EmbedCreateSpec> embedCreateSpec = spec -> spec
 				.setColor(Color.of(0xba9ddf))
-				.setTitle("About CanucksBot")
+				.setTitle("About NHLBot")
 				.setAuthor("Hazeluff", Config.HAZELUFF_SITE, "attachment://" + resource.getFileName())
 				.setUrl(Config.GIT_URL)
 				.setDescription(

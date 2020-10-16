@@ -45,6 +45,6 @@ public class ResourceLoader {
 	}
 
 	public Resource getNHLBotAvatar() {
-		return getResource("/canucksbot.png");
+		return getResource("/nhlbot.png");
 	}
 }
