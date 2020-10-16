@@ -85,32 +85,32 @@
       </encoder>
     </appender>
     
-    <logger name="com.hazeluff.discord.canucks.bot.GameDayChannelsManager" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.bot.GameDayChannelsManager" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="GameDayChannel"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.canucks.bot.GameDayChannel" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.bot.GameDayChannel" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="GameDayChannel"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.canucks.bot.MessageListener" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.bot.MessageListener" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="Messages"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.canucks.bot.command.*" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.bot.command.*" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="Messages"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.canucks.bot.ConnectionListener" level="info" additivity="false">
+    <logger name="com.hazeluff.discord.bot.ConnectionListener" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="Connectivity"/>
     </logger>
     
-    <logger name="com.hazeluff.discord.canucks" level="info" additivity="false">
+    <logger name="com.hazeluff.discord" level="info" additivity="false">
       <appender-ref ref="Console"/>
       <appender-ref ref="CanucksBot"/>
     </logger>

@@ -6,8 +6,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.mockito.Answers;
 
-import com.hazeluff.discord.canucks.Config;
-import com.hazeluff.discord.canucks.bot.CanucksBot;
+import com.hazeluff.discord.Config;
+import com.hazeluff.discord.bot.NHLBot;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
@@ -19,7 +19,7 @@ import com.mongodb.client.MongoDatabase;
 public abstract class DatabaseIT {
 
 	private MongoDatabase mongoDatabase;
-	private CanucksBot canucksBot;
+	private NHLBot nhlBot;
 
 	public abstract MongoClient getClient();
 
@@ -36,7 +36,7 @@ public abstract class DatabaseIT {
 	@Before
 	public void before() {
 		mongoDatabase = getClient().getDatabase(Config.MONGO_TEST_DATABASE_NAME);
-		canucksBot = mock(CanucksBot.class, Answers.RETURNS_DEEP_STUBS);
+		nhlBot = mock(NHLBot.class, Answers.RETURNS_DEEP_STUBS);
 	}
 
 	@After
@@ -48,7 +48,7 @@ public abstract class DatabaseIT {
 		return mongoDatabase;
 	}
 
-	protected CanucksBot getCanucksBot() {
-		return canucksBot;
+	protected NHLBot getNHLBot() {
+		return nhlBot;
 	}
 }
