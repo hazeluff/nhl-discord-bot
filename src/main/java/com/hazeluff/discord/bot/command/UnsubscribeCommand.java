@@ -31,7 +31,7 @@ public class UnsubscribeCommand extends Command {
 
 	@Override
 	public void execute(MessageCreateEvent event, List<String> arguments) {
-		Guild guild = nhlBot.getDiscordManager().block(event.getGuild());
+		Guild guild = getNHLBot().getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
 			sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
@@ -50,10 +50,10 @@ public class UnsubscribeCommand extends Command {
 
 		if (arguments.get(1).equalsIgnoreCase("all")) {
 			// Unsubscribe from all teams
-			nhlBot.getPersistentData()
+			getNHLBot().getPersistentData()
 					.getPreferencesData()
 					.unsubscribeGuild(guild.getId().asLong(), null);
-			nhlBot.getGameDayChannelsManager().updateChannels(guild);
+			getNHLBot().getGameDayChannelsManager().updateChannels(guild);
 			sendMessage(event, UNSUBSCRIBED_FROM_ALL_MESSAGE);
 			return;
 		}
@@ -65,10 +65,10 @@ public class UnsubscribeCommand extends Command {
 
 		// Unsubscribe from a team
 		Team team = Team.parse(arguments.get(1));
-		nhlBot.getPersistentData()
+		getNHLBot().getPersistentData()
 				.getPreferencesData()
 				.unsubscribeGuild(guild.getId().asLong(), team);
-		nhlBot.getGameDayChannelsManager().updateChannels(guild);
+		getNHLBot().getGameDayChannelsManager().updateChannels(guild);
 		sendMessage(event, buildUnsubscribeMessage(team));
 	}
 
@@ -77,7 +77,7 @@ public class UnsubscribeCommand extends Command {
 				"Unsubscribe from any of your subscribed teams by typing `?unsubscribe [team]`, "
 						+ "where [team] is the one of the three letter codes for your subscribed teams below: ")
 								.append("```");
-		List<Team> teams = nhlBot.getPersistentData()
+		List<Team> teams = getNHLBot().getPersistentData()
 				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong())
 				.getTeams();

@@ -25,7 +25,7 @@ public class ScoreCommand extends Command {
 
 	@Override
 	public void execute(MessageCreateEvent event, List<String> arguments) {
-		List<Team> preferredTeam = nhlBot.getPersistentData()
+		List<Team> preferredTeam = getNHLBot().getPersistentData()
 				.getPreferencesData()
 				.getGuildPreferences(event.getGuildId().get().asLong())
 				.getTeams();
@@ -34,8 +34,8 @@ public class ScoreCommand extends Command {
 			return;
 		}
 
-		TextChannel channel = (TextChannel) nhlBot.getDiscordManager().block(event.getMessage().getChannel());
-		Game game = nhlBot.getGameScheduler().getGameByChannelName(channel.getName());
+		TextChannel channel = (TextChannel) getNHLBot().getDiscordManager().block(event.getMessage().getChannel());
+		Game game = getNHLBot().getGameScheduler().getGameByChannelName(channel.getName());
 		if (game == null) {
 			sendMessage(event, getRunInGameDayChannelsMessage(getGuild(event), preferredTeam));
 			return;

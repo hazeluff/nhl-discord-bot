@@ -44,7 +44,7 @@ public class SubscribeCommand extends Command {
 
 	@Override
 	public void execute(MessageCreateEvent event, List<String> arguments) {
-		Guild guild = nhlBot.getDiscordManager().block(event.getGuild());
+		Guild guild = getNHLBot().getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
 			sendMessage(event, MUST_HAVE_PERMISSIONS_MESSAGE);
@@ -69,14 +69,15 @@ public class SubscribeCommand extends Command {
 		Team team = Team.parse(arguments.get(1));
 		// Subscribe guild
 		long guildId = event.getGuildId().get().asLong();
-		nhlBot.getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
-		nhlBot.getPersistentData().getPreferencesData().subscribeGuild(guildId, team);
-		nhlBot.getGameDayChannelsManager().initChannels(guild);
+		getNHLBot().getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
+		getNHLBot().getPersistentData().getPreferencesData().subscribeGuild(guildId, team);
+		getNHLBot().getGameDayChannelsManager().initChannels(guild);
 		sendMessage(event, buildSubscribedMessage(team, guildId));
 	}
 
 	Consumer<MessageCreateSpec> buildSubscribedMessage(Team team, long guildId) {
-		List<Team> subscribedTeams = nhlBot.getPersistentData().getPreferencesData().getGuildPreferences(guildId)
+		List<Team> subscribedTeams = getNHLBot().getPersistentData().getPreferencesData()
+				.getGuildPreferences(guildId)
 				.getTeams();
 		if (subscribedTeams.size() > 1) {
 			String teamsStr = StringUtils.join(subscribedTeams.stream().map(subbedTeam -> subbedTeam.getFullName())

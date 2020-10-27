@@ -1,7 +1,6 @@
 package com.hazeluff.discord.bot.database.predictions.campaigns;
 
 public class Campaign {
-
 	/**
 	 * For singleton document in campaigns that stores the results to compare user
 	 * predictions against.

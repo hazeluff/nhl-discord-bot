@@ -31,7 +31,7 @@ public class NextGameCommand extends Command {
 
 	@Override
 	public void execute(MessageCreateEvent event, List<String> arguments) {
-		GuildPreferences preferences = nhlBot.getPersistentData()
+		GuildPreferences preferences = getNHLBot().getPersistentData()
 				.getPreferencesData()
 				.getGuildPreferences(event.getGuildId().get().asLong());
 		List<Team> preferredTeams = preferences.getTeams();
@@ -42,7 +42,7 @@ public class NextGameCommand extends Command {
 		}
 
 		if (preferredTeams.size() == 1) {
-			Game nextGame = nhlBot.getGameScheduler().getNextGame(preferredTeams.get(0));
+			Game nextGame = getNHLBot().getGameScheduler().getNextGame(preferredTeams.get(0));
 			if(nextGame == null) {
 				sendMessage(event, NO_NEXT_GAME_MESSAGE);
 				return;
@@ -52,7 +52,7 @@ public class NextGameCommand extends Command {
 			return;
 		}
 
-		Set<Game> games = preferredTeams.stream().map(team -> nhlBot.getGameScheduler().getNextGame(team))
+		Set<Game> games = preferredTeams.stream().map(team -> getNHLBot().getGameScheduler().getNextGame(team))
 				.filter(Objects::nonNull).collect(Collectors.toSet());
 		if (games.isEmpty()) {
 			sendMessage(event, NO_NEXT_GAMES_MESSAGE);

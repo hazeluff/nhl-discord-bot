@@ -1,7 +1,10 @@
 package com.hazeluff.discord.bot.command;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+
+import org.javatuples.Pair;
 
 import com.hazeluff.discord.Config;
 import com.hazeluff.discord.bot.NHLBot;
@@ -25,18 +28,36 @@ public class PredictionsCommand extends Command {
 	public void execute(MessageCreateEvent event, List<String> arguments) {		
 		long userId = event.getMember().get().getId().asLong();
 				
-		PredictionsScore score = SeasonCampaign.getScore(nhlBot, Config.SEASON_YEAR_END, userId);
-		String message;
+		PredictionsScore score = SeasonCampaign.getScore(getNHLBot(), Config.SEASON_YEAR_END, userId);
 		if(score == null) {
-			message = "[Internal Error] Required database did not have results for the season.";
-		} else {
+			String message = "[Internal Error] Required database did not have results for the season.";
+			sendMessage(event, message);
+			return;
+		}
+
+		if (arguments.size() < 2) {
+			List<Pair<Long, Integer>> playerRankings = 
+					SeasonCampaign.getRankings(getNHLBot(), Config.SEASON_YEAR_END);
+			
+			StringBuilder messageBuilder = new StringBuilder("Here are the results for Season Predictions:\n");
+			messageBuilder.append("```");
+			for (Pair<Long, Integer> userRanking : playerRankings) {
+				messageBuilder.append(String.format("%s %s", userRanking.getValue0(), userRanking.getValue1()));
+			}
+			messageBuilder.append("```");
+
+			sendMessage(event, messageBuilder.toString());
+			return;
+		}
+
+		if (Arrays.asList("rank", "score").contains(arguments.get(1).toLowerCase())) {
 			String place = "x'th";
 
-			message = String.format("You placed %s.\n"
+			String message = String.format("You placed %s.\n"
 					+ "You predicted %s games correctly out of %s. There are/were a total of %s games to predict on.",
 					place, score.getNumCorrect(), score.getTotalPredictions(), score.getTotalGames());
+			sendMessage(event, message);
 		}
-		sendMessage(event, spec -> spec.setContent(message));
 	}
 
 	public Consumer<MessageCreateSpec> getReply() {

@@ -3,13 +3,16 @@ package com.hazeluff.discord.bot.database.predictions.campaigns;
 import static com.hazeluff.discord.bot.database.predictions.IPrediction.getCollection;
 import static com.hazeluff.discord.bot.database.predictions.IPrediction.getDocument;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
+import org.javatuples.Pair;
 
 import com.hazeluff.discord.Config;
 import com.hazeluff.discord.bot.NHLBot;
@@ -23,6 +26,7 @@ import com.mongodb.client.model.UpdateOptions;
 
 public class SeasonCampaign extends Campaign {
 
+	// Campaign Id -> Results
 	private static final Map<String, SeasonCampaignResults> seasonResults = new HashMap<>();
 
 	public static String buildCampaignId(int yearEnd) {
@@ -52,6 +56,21 @@ public class SeasonCampaign extends Campaign {
 		return userPredictions;
 	}
 
+	public static List<Prediction> loadPredictions(NHLBot nhlBot, String campaignId) {
+		MongoCollection<Document> collection = getCollection(nhlBot.getPersistentData().getMongoDatabase(), campaignId);
+		MongoCursor<Document> iterator = collection.find().iterator();
+		List<Prediction> userPredictions = new ArrayList<>();
+		while (iterator.hasNext()) {
+			Document doc = iterator.next();
+			userPredictions.add(new Prediction(
+					campaignId, 
+					doc.getInteger(USER_ID_KEY),
+					doc.getInteger(GAME_PK_KEY),
+					doc.getInteger(PREDICTION_KEY)));
+		}
+		return userPredictions;
+	}
+
 	public static class Prediction implements IPrediction {
 		private final String campaignId;
 		private final long userId;
@@ -77,6 +96,11 @@ public class SeasonCampaign extends Campaign {
 			return gamePk;
 		}
 
+		/**
+		 * Id of the team predicted to win.
+		 * 
+		 * @return
+		 */
 		public Integer getPrediction() {
 			return prediction;
 		}
@@ -116,6 +140,36 @@ public class SeasonCampaign extends Campaign {
 	/*
 	 * Results
 	 */
+	/**
+	 * 
+	 * @param nhlBot
+	 * @return Ordered list of rankings (highest score first).<br>
+	 *         Pair is of Player -> Score
+	 */
+	public static List<Pair<Long, Integer>> getRankings(NHLBot nhlBot, int yearEnd) {
+		String campaignId = SeasonCampaign.buildCampaignId(yearEnd);
+
+		List<Prediction> predictions = SeasonCampaign.loadPredictions(nhlBot, campaignId);
+		Map<Integer, Integer> campaignResults = getSeasonCampaignResults(nhlBot, yearEnd).getRawResults();
+
+		// User -> Score
+		Map<Long, Integer> userScores = new HashMap<>();
+		for (Prediction prediction : predictions) {
+			long userId = prediction.getUserId();
+			if (!userScores.containsKey(userId)) {
+				userScores.put(userId, 0);
+			}
+			if (prediction.getPrediction() != null) {
+				if (prediction.getPrediction() == campaignResults.get(prediction.getGamePk())) {
+					userScores.put(userId, userScores.get(userId) + 1);
+				}
+			}
+		}
+		return userScores.entrySet().stream()
+				.sorted(Map.Entry.comparingByValue())
+				.map(entry -> Pair.with(entry.getKey(), entry.getValue()))
+				.collect(Collectors.toList());
+	}
 
 	/**
 	 * Gets the cached results for a given team's season. If not cached, it will be
@@ -129,6 +183,7 @@ public class SeasonCampaign extends Campaign {
 		SeasonCampaignResults results = seasonResults.get(campaignId);
 		if (results == null && yearEnd == Config.SEASON_YEAR_END) {
 			results = generateSeasonCampaignResults(nhlBot);
+			seasonResults.put(campaignId, results);
 		}
 		return results;
 	}
