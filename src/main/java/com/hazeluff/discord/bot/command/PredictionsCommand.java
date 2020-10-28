@@ -43,6 +43,7 @@ public class PredictionsCommand extends Command {
 			messageBuilder.append("```");
 			for (Pair<Long, Integer> userRanking : playerRankings) {
 				messageBuilder.append(String.format("%s %s", userRanking.getValue0(), userRanking.getValue1()));
+				messageBuilder.append("\n");
 			}
 			messageBuilder.append("```");
 

@@ -64,7 +64,7 @@ public class SeasonCampaign extends Campaign {
 			Document doc = iterator.next();
 			userPredictions.add(new Prediction(
 					campaignId, 
-					doc.getInteger(USER_ID_KEY),
+					doc.getLong(USER_ID_KEY),
 					doc.getInteger(GAME_PK_KEY),
 					doc.getInteger(PREDICTION_KEY)));
 		}
@@ -151,6 +151,7 @@ public class SeasonCampaign extends Campaign {
 
 		List<Prediction> predictions = SeasonCampaign.loadPredictions(nhlBot, campaignId);
 		Map<Integer, Integer> campaignResults = getSeasonCampaignResults(nhlBot, yearEnd).getRawResults();
+		System.out.println(campaignResults);
 
 		// User -> Score
 		Map<Long, Integer> userScores = new HashMap<>();
@@ -159,6 +160,7 @@ public class SeasonCampaign extends Campaign {
 			if (!userScores.containsKey(userId)) {
 				userScores.put(userId, 0);
 			}
+
 			if (prediction.getPrediction() != null) {
 				if (prediction.getPrediction() == campaignResults.get(prediction.getGamePk())) {
 					userScores.put(userId, userScores.get(userId) + 1);
@@ -166,7 +168,7 @@ public class SeasonCampaign extends Campaign {
 			}
 		}
 		return userScores.entrySet().stream()
-				.sorted(Map.Entry.comparingByValue())
+				.sorted((e1,e2) -> Integer.compare(e2.getValue(), e1.getValue()))
 				.map(entry -> Pair.with(entry.getKey(), entry.getValue()))
 				.collect(Collectors.toList());
 	}
@@ -183,6 +185,7 @@ public class SeasonCampaign extends Campaign {
 		SeasonCampaignResults results = seasonResults.get(campaignId);
 		if (results == null && yearEnd == Config.SEASON_YEAR_END) {
 			results = generateSeasonCampaignResults(nhlBot);
+			System.out.println("results=" + results);
 			seasonResults.put(campaignId, results);
 		}
 		return results;

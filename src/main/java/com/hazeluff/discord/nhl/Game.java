@@ -149,7 +149,7 @@ public class Game {
 	}
 
 	public Team getWinningTeam() {
-		if (isFinished()) {
+		if (!isFinished()) {
 			return null;
 		}
 		if (getHomeScore() > getAwayScore()) {

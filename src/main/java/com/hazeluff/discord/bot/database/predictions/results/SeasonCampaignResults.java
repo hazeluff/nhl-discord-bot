@@ -4,7 +4,6 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -84,18 +83,6 @@ public class SeasonCampaignResults {
 	public SeasonCampaignResults setTotalGames(int totalGames) {
 		this.totalGames = totalGames;
 		return this;
-	}
-
-	public int getScore(Map<Integer, Team> predictions) {
-		int score = 0;
-		for (Entry<Integer, Team> prediction : predictions.entrySet()) {
-			int key = prediction.getKey();
-			boolean isCorrect = 
-					gamesResults.containsKey(key) && 
-					prediction.getValue().equals(gamesResults.get(key));
-			score += isCorrect ? 1 : 0;
-		}
-		return score;
 	}
 	
 	public List<Object> toDocumentList() {
