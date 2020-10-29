@@ -185,7 +185,6 @@ public class SeasonCampaign extends Campaign {
 		SeasonCampaignResults results = seasonResults.get(campaignId);
 		if (results == null && yearEnd == Config.SEASON_YEAR_END) {
 			results = generateSeasonCampaignResults(nhlBot);
-			System.out.println("results=" + results);
 			seasonResults.put(campaignId, results);
 		}
 		return results;

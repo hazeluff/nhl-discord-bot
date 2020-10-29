@@ -854,7 +854,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 	}
 
 	private void unregisterFromListener() {
-		nhlBot.getReactionListener().removeProccessor(this);
+		// nhlBot.getReactionListener().removeProccessor(this);
 	}
 
 	@Override
@@ -865,7 +865,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 		
 		// Only allow if reaction is done before the start of the game
 		if (ZonedDateTime.now().isBefore(game.getDate()) ) {
-			return;
+			// return;
 		}
 		
 		if (event instanceof ReactionAddEvent) {

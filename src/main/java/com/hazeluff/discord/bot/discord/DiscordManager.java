@@ -1,5 +1,6 @@
 package com.hazeluff.discord.bot.discord;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -62,26 +63,24 @@ public class DiscordManager {
 
 	public <T> T block(Mono<T> mono) {
 		return mono.doOnError(DiscordManager::logError)
-				.onErrorReturn(null)
-				.block();
+				.blockOptional()
+				.orElseGet(() -> null);
 	}
 
 	public <T> void subscribe(Mono<T> mono) {
 		mono.doOnError(DiscordManager::logError)
-				.onErrorReturn(null)
 				.subscribe();
 	}
 
 	public <T> List<T> block(Flux<T> flux) {
 		return flux.doOnError(DiscordManager::logError)
-				.onErrorReturn(null)
 				.collectList()
-				.block();
+				.blockOptional()
+				.orElseGet(() -> null);
 	}
 
 	public <T> void subscribe(Flux<T> flux) {
 		flux.doOnError(DiscordManager::logError)
-				.onErrorReturn(null)
 				.subscribe();
 	}
 
@@ -401,6 +400,14 @@ public class DiscordManager {
 				.filter(channel -> (channel instanceof TextChannel))
 				.cast(TextChannel.class)
 				.collectList());
+	}
+
+	public User getUser(long userId) {
+		return getClient().getUserById(Snowflake.of(userId)).doOnError(DiscordManager::logError)
+				.retry(0)
+				.timeout(Duration.ofMillis(500))
+				.blockOptional()
+				.orElseGet(() -> null);
 	}
 
 	private static void logNullArgumentsStackTrace(String message) {
