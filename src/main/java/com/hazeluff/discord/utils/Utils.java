@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,5 +150,9 @@ public class Utils {
 
 	public static <T> boolean isListEquivalent(List<T> listA, List<T> listB) {
 		return listA.containsAll(listB) && listB.containsAll(listA) && listA.size() == listB.size();
+	}
+
+	public static <T> Predicate<T> not(Predicate<T> predicate) {
+		return predicate.negate();
 	}
 }

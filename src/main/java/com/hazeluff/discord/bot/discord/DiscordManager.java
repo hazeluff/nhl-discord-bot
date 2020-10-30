@@ -63,6 +63,7 @@ public class DiscordManager {
 
 	public <T> T block(Mono<T> mono) {
 		return mono.doOnError(DiscordManager::logError)
+				.onErrorResume(error -> Mono.empty())
 				.blockOptional()
 				.orElseGet(() -> null);
 	}
@@ -75,6 +76,7 @@ public class DiscordManager {
 	public <T> List<T> block(Flux<T> flux) {
 		return flux.doOnError(DiscordManager::logError)
 				.collectList()
+				.onErrorResume(error -> Mono.empty())
 				.blockOptional()
 				.orElseGet(() -> null);
 	}
@@ -403,9 +405,11 @@ public class DiscordManager {
 	}
 
 	public User getUser(long userId) {
-		return getClient().getUserById(Snowflake.of(userId)).doOnError(DiscordManager::logError)
+		return getClient().getUserById(Snowflake.of(userId))
+				.doOnError(DiscordManager::logError)
 				.retry(0)
 				.timeout(Duration.ofMillis(500))
+				.onErrorResume(error -> Mono.empty())
 				.blockOptional()
 				.orElseGet(() -> null);
 	}

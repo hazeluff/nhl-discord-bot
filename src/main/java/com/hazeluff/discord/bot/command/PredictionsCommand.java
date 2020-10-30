@@ -33,7 +33,7 @@ public class PredictionsCommand extends Command {
 			
 			StringBuilder messageBuilder = new StringBuilder("Here are the results for Season Predictions:\n");
 			messageBuilder.append("```");
-			int listedNameLength = 26;
+			int listedNameLength = 32;
 			for (Pair<Long, Integer> userRanking : playerRankings) {
 				long userId = userRanking.getValue0();
 				int score = userRanking.getValue1();

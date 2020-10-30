@@ -151,7 +151,6 @@ public class SeasonCampaign extends Campaign {
 
 		List<Prediction> predictions = SeasonCampaign.loadPredictions(nhlBot, campaignId);
 		Map<Integer, Integer> campaignResults = getSeasonCampaignResults(nhlBot, yearEnd).getRawResults();
-		System.out.println(campaignResults);
 
 		// User -> Score
 		Map<Long, Integer> userScores = new HashMap<>();
