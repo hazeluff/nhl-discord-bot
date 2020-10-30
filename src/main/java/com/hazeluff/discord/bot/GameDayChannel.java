@@ -213,7 +213,6 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 	/*
 	 * Other Methods
 	 */
-
 	void createChannel() {
 		String channelName = getChannelName();
 		Predicate<TextChannel> channelMatcher = c -> c.getName().equalsIgnoreCase(channelName);
@@ -824,62 +823,6 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 	/*
 	 * Predictions related
 	 */
-
-	private Message createPredictionPoll() {
-		String pollId = "gameday-" + getChannelName();
-		PollMessage poll = nhlBot.getPersistentData().getPolesData().loadPoll(channel.getId().asLong(), pollId);
-		Message message;
-		if (poll == null) {
-			message = sendPredictionMessage();
-
-			poll = PollMessage.of(channel.getId().asLong(), message.getId().asLong(), pollId);
-
-			// Save pole to database
-			nhlBot.getPersistentData().getPolesData().savePoll(poll);
-		} else {
-			message = nhlBot.getDiscordManager().getMessage(poll.getChannelId(), poll.getMessageId());
-			if (message == null) {
-				message = sendPredictionMessage();
-			}
-			nhlBot.getDiscordManager().pinMessage(message);
-		}
-
-		registerToListener();
-
-		return message;
-	}
-	
-	private void savePredictions() {
-		LOGGER.info("Saving Predictions: channel={}, pollMessage={}", channel, pollMessage);
-		if (channel != null && pollMessage != null) {
-			String campaignId = SeasonCampaign.buildCampaignId(Config.SEASON_YEAR_END);
-			// Save Home Predictors
-			block(pollMessage.getReactors(HOME_EMOJI)).stream()
-					.filter(not(this::isBotSelf))
-					.forEach(user -> SeasonCampaign.savePrediction(nhlBot,
-							new Prediction(campaignId, user.getId().asLong(), game.getGamePk(),
-									game.getHomeTeam().getId())));
-			// Save Away Predictors
-			block(pollMessage.getReactors(AWAY_EMOJI)).stream()
-					.filter(not(this::isBotSelf))
-					.forEach(user -> SeasonCampaign.savePrediction(nhlBot,
-							new Prediction(campaignId, user.getId().asLong(), game.getGamePk(),
-									game.getAwayTeam().getId())));
-			
-		}
-	}
-
-	private Message sendPredictionMessage() {
-		String pollMessage = String.format("Predict the outcome of this game!\n🏠 %s\n✈️  %s",
-				game.getHomeTeam().getFullName(), game.getAwayTeam().getFullName());
-
-		Message message = sendAndGetMessage(pollMessage);
-		subscribe(message.addReaction(HOME_EMOJI));
-		subscribe(message.addReaction(AWAY_EMOJI));
-
-		return message;
-	}
-
 	private void registerToListener() {
 		nhlBot.getReactionListener().addProccessor(this, ReactionAddEvent.class);
 		nhlBot.getReactionListener().addProccessor(this, ReactionRemoveEvent.class);
@@ -981,6 +924,57 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 				subscribe(message.removeReaction(messageReactionUnicode, userId));
 			}
 		}
+	}
+
+	private Message createPredictionPoll() {
+		String pollId = "gameday-" + getChannelName();
+		PollMessage poll = nhlBot.getPersistentData().getPolesData().loadPoll(channel.getId().asLong(), pollId);
+		Message message;
+		if (poll == null) {
+			message = sendPredictionMessage();
+
+			poll = PollMessage.of(channel.getId().asLong(), message.getId().asLong(), pollId);
+
+			// Save pole to database
+			nhlBot.getPersistentData().getPolesData().savePoll(poll);
+		} else {
+			message = nhlBot.getDiscordManager().getMessage(poll.getChannelId(), poll.getMessageId());
+			if (message == null) {
+				message = sendPredictionMessage();
+			}
+			nhlBot.getDiscordManager().pinMessage(message);
+		}
+
+		registerToListener();
+
+		return message;
+	}
+
+	private void savePredictions() {
+		LOGGER.info("Saving Predictions: channel={}, pollMessage={}", channel, pollMessage);
+		if (channel != null && pollMessage != null) {
+			String campaignId = SeasonCampaign.buildCampaignId(Config.SEASON_YEAR_END);
+			// Save Home Predictors
+			block(pollMessage.getReactors(HOME_EMOJI)).stream().filter(not(this::isBotSelf))
+					.forEach(user -> SeasonCampaign.savePrediction(nhlBot, new Prediction(campaignId,
+							user.getId().asLong(), game.getGamePk(), game.getHomeTeam().getId())));
+			// Save Away Predictors
+			block(pollMessage.getReactors(AWAY_EMOJI)).stream().filter(not(this::isBotSelf))
+					.forEach(user -> SeasonCampaign.savePrediction(nhlBot, new Prediction(campaignId,
+							user.getId().asLong(), game.getGamePk(), game.getAwayTeam().getId())));
+
+		}
+	}
+
+	private Message sendPredictionMessage() {
+		String pollMessage = String.format("Predict the outcome of this game!\n🏠 %s\n✈️  %s",
+				game.getHomeTeam().getFullName(), game.getAwayTeam().getFullName());
+
+		Message message = sendAndGetMessage(pollMessage);
+		subscribe(message.addReaction(HOME_EMOJI));
+		subscribe(message.addReaction(AWAY_EMOJI));
+
+		return message;
 	}
 
 	boolean isBotSelf(User user) {
