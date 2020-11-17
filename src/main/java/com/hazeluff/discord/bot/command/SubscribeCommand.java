@@ -43,7 +43,7 @@ public class SubscribeCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
 		Guild guild = getNHLBot().getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
@@ -51,22 +51,22 @@ public class SubscribeCommand extends Command {
 			return;
 		}
 
-		if (arguments.size() < 2) {
+		if (command.getArguments().isEmpty()) {
 			sendMessage(event, SPECIFY_TEAM_MESSAGE);
 			return;
 		}
 
-		if (arguments.get(1).equalsIgnoreCase("help")) {
+		if (command.getArguments().get(0).equalsIgnoreCase("help")) {
 			sendMessage(event, HELP_MESSAGE);
 			return;
 		}
 
-		if (!Team.isValid(arguments.get(1))) {
-			sendMessage(event, getInvalidCodeMessage(arguments.get(1), "subscribe"));
+		if (!Team.isValid(command.getArguments().get(0))) {
+			sendMessage(event, getInvalidCodeMessage(command.getArguments().get(0), "subscribe"));
 			return;
 		}
 
-		Team team = Team.parse(arguments.get(1));
+		Team team = Team.parse(command.getArguments().get(0));
 		// Subscribe guild
 		long guildId = event.getGuildId().get().asLong();
 		getNHLBot().getGameDayChannelsManager().deleteInactiveGuildChannels(guild);
@@ -91,8 +91,8 @@ public class SubscribeCommand extends Command {
 
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("subscribe");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("subscribe");
 	}
 
 }

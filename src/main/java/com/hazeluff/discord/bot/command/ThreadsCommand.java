@@ -1,6 +1,5 @@
 package com.hazeluff.discord.bot.command;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 import com.hazeluff.discord.bot.NHLBot;
@@ -18,13 +17,13 @@ public class ThreadsCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
 		sendMessage(event, getReply());
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("threads");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("threads");
 	}
 
 	public Consumer<MessageCreateSpec> getReply() {

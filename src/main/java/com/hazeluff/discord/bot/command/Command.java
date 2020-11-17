@@ -54,7 +54,7 @@ public abstract class Command {
 	 *            command arguments
 	 * @return {@link MessageCreateSpec} for the reply; null if no reply.
 	 */
-	public abstract void execute(MessageCreateEvent event, List<String> arguments);
+	public abstract void execute(MessageCreateEvent event, CommandArguments arguments);
 
 	/**
 	 * Determines if the command arguments are accepted by this command. i.e the
@@ -67,7 +67,7 @@ public abstract class Command {
 	 * @return true, if accepted<br>
 	 *         false, otherwise
 	 */
-	public abstract boolean isAccept(Message message, List<String> arguments);
+	public abstract boolean isAccept(Message message, CommandArguments arguments);
 
 	protected void sendMessage(MessageCreateEvent event, String message) {
 		sendMessage(event, spec -> spec.setContent(message));

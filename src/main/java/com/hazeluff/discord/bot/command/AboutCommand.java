@@ -1,6 +1,5 @@
 package com.hazeluff.discord.bot.command;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 import com.hazeluff.discord.Config;
@@ -24,7 +23,7 @@ public class AboutCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
 		sendMessage(event, getReply());
 	}
 
@@ -62,7 +61,7 @@ public class AboutCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("about");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("about");
 	}
 }

@@ -30,7 +30,7 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
 		GuildPreferences preferences = getNHLBot().getPersistentData()
 				.getPreferencesData()
 				.getGuildPreferences(event.getGuildId().get().asLong());
@@ -76,8 +76,8 @@ public class NextGameCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("nextgame");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("nextgame");
 	}
 
 }

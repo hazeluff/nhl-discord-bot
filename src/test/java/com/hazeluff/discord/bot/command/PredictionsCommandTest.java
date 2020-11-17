@@ -8,8 +8,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.utils.DateUtils;
 
@@ -18,8 +16,6 @@ import discord4j.core.object.entity.User;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(DateUtils.class)
 public class PredictionsCommandTest {
-	private static final Logger LOGGER = LoggerFactory.getLogger(PredictionsCommandTest.class);
-
 	@Test
 	public void getAndPadUserNameReturnsExpectedValues() {
 		User mockUser = mock(User.class);

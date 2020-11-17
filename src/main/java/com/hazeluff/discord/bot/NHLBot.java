@@ -233,7 +233,7 @@ public class NHLBot extends Thread {
 	 * 
 	 * @return
 	 */
-	public String getNicknameMentionId() {
+	public String getNicknameMention() {
 		return "<@!" + getDiscordManager().getId().asString() + ">";
 	}
 }

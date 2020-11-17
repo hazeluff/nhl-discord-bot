@@ -25,9 +25,9 @@ public class PredictionsCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {		
+	public void execute(MessageCreateEvent event, CommandArguments command) {		
 
-		if (arguments.size() < 2) {
+		if (command.getArguments().isEmpty()) {
 			List<Pair<Long, Integer>> playerRankings = 
 					SeasonCampaign.getRankings(getNHLBot(), Config.SEASON_YEAR_END);
 			
@@ -51,7 +51,7 @@ public class PredictionsCommand extends Command {
 			return;
 		}
 
-		if (Arrays.asList("rank", "score").contains(arguments.get(1).toLowerCase())) {
+		if (Arrays.asList("rank", "score").contains(command.getArguments().get(0).toLowerCase())) {
 			long userId = event.getMember().get().getId().asLong();
 
 			PredictionsScore score = SeasonCampaign.getScore(getNHLBot(), Config.SEASON_YEAR_END, userId);
@@ -89,7 +89,7 @@ public class PredictionsCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("predictions");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("predictions");
 	}
 }

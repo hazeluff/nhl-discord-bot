@@ -32,38 +32,38 @@ public class FuckCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
 		
-		if(arguments.size() < 2) {
+		if (command.getArguments().isEmpty()) {
 			sendMessage(event, NOT_ENOUGH_PARAMETERS_REPLY);
 			return;
 		}
 		
-		if (arguments.get(1).toLowerCase().equals("you") 
-				|| arguments.get(1).toLowerCase().equals("u")) {
+		if (command.getArguments().get(0).toLowerCase().equals("you")
+				|| command.getArguments().get(0).toLowerCase().equals("u")) {
 			sendMessage(event, NO_YOU_REPLY);
 			return;
 		}
 		
-		if (arguments.get(1).toLowerCase().equals("hazeluff") 
-				|| arguments.get(1).toLowerCase().equals("hazel")
-				|| arguments.get(1).toLowerCase().equals("haze")
-				|| arguments.get(1).toLowerCase().equals("haz")) {
+		if (command.getArguments().get(0).toLowerCase().equals("hazeluff")
+				|| command.getArguments().get(0).toLowerCase().equals("hazel")
+				|| command.getArguments().get(0).toLowerCase().equals("haze")
+				|| command.getArguments().get(0).toLowerCase().equals("haz")) {
 			sendMessage(event, HAZELUFF_REPLY);
 			return;
 		}
 
-		if (arguments.get(1).startsWith("<@") && arguments.get(1).endsWith(">")) {
+		if (command.getArguments().get(0).startsWith("<@") && command.getArguments().get(0).endsWith(">")) {
 			getNHLBot().getDiscordManager().deleteMessage(event.getMessage());
 			sendMessage(event, buildDontAtReply(event.getMessage()));
 			return;
 		}
 
-		if (arguments.get(1).toLowerCase().equals("add")) {
+		if (command.getArguments().get(0).toLowerCase().equals("add")) {
 			User author = event.getMessage().getAuthor().orElse(null);
 			if (author != null && isDev(author.getId())) {
-				String subject = arguments.get(2);
-				List<String> response = new ArrayList<>(arguments);
+				String subject = command.getArguments().get(1);
+				List<String> response = new ArrayList<>(command.getArguments());
 				String strResponse = StringUtils.join(response.subList(3, response.size()), " ");				
 				add(subject, strResponse);
 				sendMessage(event, spec -> spec.setContent(strResponse));
@@ -72,8 +72,8 @@ public class FuckCommand extends Command {
 		}
 
 		Map<String, List<String>> responses = loadResponsesFromCollection();
-		if (responses.containsKey(arguments.get(1))) {
-			sendMessage(event, spec -> spec.setContent(Utils.getRandom(responses.get(arguments.get(1)))));
+		if (responses.containsKey(command.getArguments().get(0))) {
+			sendMessage(event, spec -> spec.setContent(Utils.getRandom(responses.get(command.getArguments().get(0)))));
 			return;
 		}
 	}
@@ -89,8 +89,8 @@ public class FuckCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("fuck");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("fuck");
 	}
 
 	void add(String subject, String response) {

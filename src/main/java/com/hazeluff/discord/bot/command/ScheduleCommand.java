@@ -33,8 +33,8 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
-		if (arguments.size() <= 1) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
+		if (command.getArguments().isEmpty()) {
 			List<Team> preferredTeams = getNHLBot()
 					.getPersistentData()
 					.getPreferencesData()
@@ -50,19 +50,19 @@ public class ScheduleCommand extends Command {
 			return;
 		}
 
-		if (arguments.get(1).equalsIgnoreCase("help")) {
+		if (command.getArguments().get(0).equalsIgnoreCase("help")) {
 			// Send Help Message
 			sendMessage(event, HELP_MESSAGE);
 			return;
 		}
 
-		if (Team.isValid(arguments.get(1))) {
+		if (Team.isValid(command.getArguments().get(0))) {
 			// Send schedule for a specific team
-			sendMessage(event, getScheduleMessage(Team.parse(arguments.get(1))));
+			sendMessage(event, getScheduleMessage(Team.parse(command.getArguments().get(0))));
 			return;
 		}
 
-		sendMessage(event, getInvalidCodeMessage(arguments.get(1), "schedule"));
+		sendMessage(event, getInvalidCodeMessage(command.getArguments().get(0), "schedule"));
 	}
 
 	Consumer<MessageCreateSpec> getScheduleMessage(Team team) {
@@ -190,8 +190,8 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("schedule") || arguments.get(0).equalsIgnoreCase("games");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("schedule") || command.getCommand().equalsIgnoreCase("games");
 	}
 
 }

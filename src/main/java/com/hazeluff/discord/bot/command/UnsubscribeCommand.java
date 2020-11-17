@@ -30,7 +30,7 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
 		Guild guild = getNHLBot().getDiscordManager().block(event.getGuild());
 
 		if (!hasSubscribePermissions(guild, event.getMessage())) {
@@ -38,17 +38,17 @@ public class UnsubscribeCommand extends Command {
 			return;
 		}
 
-		if (arguments.size() < 2) {
+		if (command.getArguments().isEmpty()) {
 			sendMessage(event, SPECIFY_TEAM_MESSAGE);
 			return;
 		}
 
-		if (arguments.get(1).equalsIgnoreCase("help")) {
+		if (command.getArguments().get(0).equalsIgnoreCase("help")) {
 			sendMessage(event, buildHelpMessage(guild));
 			return;
 		}
 
-		if (arguments.get(1).equalsIgnoreCase("all")) {
+		if (command.getArguments().get(0).equalsIgnoreCase("all")) {
 			// Unsubscribe from all teams
 			getNHLBot().getPersistentData()
 					.getPreferencesData()
@@ -58,13 +58,13 @@ public class UnsubscribeCommand extends Command {
 			return;
 		}
 
-		if (!Team.isValid(arguments.get(1))) {
-			sendMessage(event, getInvalidCodeMessage(arguments.get(1), "unsubscribe"));
+		if (!Team.isValid(command.getArguments().get(0))) {
+			sendMessage(event, getInvalidCodeMessage(command.getArguments().get(0), "unsubscribe"));
 			return;
 		}
 
 		// Unsubscribe from a team
-		Team team = Team.parse(arguments.get(1));
+		Team team = Team.parse(command.getArguments().get(0));
 		getNHLBot().getPersistentData()
 				.getPreferencesData()
 				.unsubscribeGuild(guild.getId().asLong(), team);
@@ -95,7 +95,7 @@ public class UnsubscribeCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("unsubscribe");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("unsubscribe");
 	}
 }

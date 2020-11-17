@@ -1,11 +1,9 @@
 package com.hazeluff.discord.bot.listener;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +16,7 @@ import com.hazeluff.discord.bot.chat.Topic;
 import com.hazeluff.discord.bot.chat.WhatsUpTopic;
 import com.hazeluff.discord.bot.command.AboutCommand;
 import com.hazeluff.discord.bot.command.Command;
+import com.hazeluff.discord.bot.command.CommandArguments;
 import com.hazeluff.discord.bot.command.FuckCommand;
 import com.hazeluff.discord.bot.command.GoalsCommand;
 import com.hazeluff.discord.bot.command.HelpCommand;
@@ -153,7 +152,7 @@ public class MessageListener extends EventListener {
 	boolean replyToCommand(MessageCreateEvent event) {
 		Command command = getCommand(event.getMessage());
 		if (command != null) {
-			List<String> commandArgs = parseToCommandArguments(event.getMessage());
+			CommandArguments commandArgs = CommandArguments.parse(getNHLBot(), event.getMessage().getContent());
 			command.execute(event, commandArgs);
 			return true;
 		}
@@ -182,34 +181,6 @@ public class MessageListener extends EventListener {
 	}
 
 	/**
-	 * Returns an array of strings that represent the command input.
-	 * 
-	 * @param strMessage
-	 *            message to determine if NHLBot is mentioned in
-	 * @return list of commands if command; null if not a command
-	 */
-	List<String> parseToCommandArguments(Message message) {
-		String messageContent = message.getContent();
-		if (messageContent.startsWith(getNHLBot().getMention())
-				|| messageContent.startsWith(getNHLBot().getNicknameMentionId())
-				|| messageContent.toLowerCase().startsWith("?canucksbot")) {
-			List<String> commandArgs = Arrays.stream(messageContent.split("\\s+")).collect(Collectors.toList());
-			commandArgs.remove(0);
-			return commandArgs;
-		}
-
-		if (messageContent.startsWith("?")) {
-			String[] commandArray = messageContent.split("\\s+");
-			if (commandArray[0].length() > 1) {
-				commandArray[0] = commandArray[0].substring(1, commandArray[0].length());
-				return Arrays.asList(commandArray);
-			}
-		}
-
-		return null;
-	}
-
-	/**
 	 * Gets the Command for the given message.
 	 * 
 	 * @param message
@@ -217,7 +188,7 @@ public class MessageListener extends EventListener {
 	 * @return the {@link Command} for the message/arguments
 	 */
 	Command getCommand(Message message) {
-		List<String> commandArgs = parseToCommandArguments(message);
+		CommandArguments commandArgs = CommandArguments.parse(getNHLBot(), message.getContent());
 
 		return commandArgs == null
 				? null

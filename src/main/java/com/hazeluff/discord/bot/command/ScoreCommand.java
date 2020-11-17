@@ -24,7 +24,7 @@ public class ScoreCommand extends Command {
 	}
 
 	@Override
-	public void execute(MessageCreateEvent event, List<String> arguments) {
+	public void execute(MessageCreateEvent event, CommandArguments command) {
 		List<Team> preferredTeam = getNHLBot().getPersistentData()
 				.getPreferencesData()
 				.getGuildPreferences(event.getGuildId().get().asLong())
@@ -55,8 +55,8 @@ public class ScoreCommand extends Command {
 	}
 
 	@Override
-	public boolean isAccept(Message message, List<String> arguments) {
-		return arguments.get(0).equalsIgnoreCase("score");
+	public boolean isAccept(Message message, CommandArguments command) {
+		return command.getCommand().equalsIgnoreCase("score");
 	}
 
 }
