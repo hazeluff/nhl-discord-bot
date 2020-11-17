@@ -49,8 +49,8 @@ public class CommandArgumentsTest {
 		assertEquals(expectedArguments, result.getArguments());
 		assertEquals(expectedFlags, result.getFlags());
 
-		// Test ?canucksbot
-		result = CommandArguments.parse(nhlBot, "?canucksbot command arg1 -a arg2 \"arg 3\"  -f");
+		// Test ?nhlbot
+		result = CommandArguments.parse(nhlBot, "?nhlbot command arg1 -a arg2 \"arg 3\"  -f");
 		assertEquals(expectedCommand, result.getCommand());
 		assertEquals(expectedArguments, result.getArguments());
 		assertEquals(expectedFlags, result.getFlags());

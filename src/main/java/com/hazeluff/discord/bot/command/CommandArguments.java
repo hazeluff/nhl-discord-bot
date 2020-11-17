@@ -55,7 +55,7 @@ public class CommandArguments {
 		}
 
 		// Mentioned by shortcut name
-		if (firstArg.equals("?canucksbot")) {
+		if (firstArg.equals("?nhlbot")) {
 			arguments.remove(0);
 			return new CommandArguments(arguments.remove(0), arguments, flags);
 		}
