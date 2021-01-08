@@ -1,11 +1,11 @@
 [Unit]
-Description = NHLBot Service
-After network.target = auditd.service
+Description = CanucksBot Service
+After=network.target auditd.service mongod.service
 
 [Service]
-Environment=PATH_TO_JAR=/nhlbot/builds/nhlbot
+Environment=PATH_TO_JAR=/canucksbot/builds/canucksbot
 Environment=BOT_KEY=<BOT_SECRET_KEY>
-WorkingDirectory=/nhlbot
+WorkingDirectory=/canucksbot
 ExecStart = /usr/bin/java -cp $PATH_TO_JAR com.hazeluff.discord.bot.BotRunner $BOT_KEY
 TimeoutStopSec=10
 Restart=on-failure
