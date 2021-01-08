@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,11 +37,10 @@ import org.slf4j.LoggerFactory;
 import com.hazeluff.discord.nhl.Game;
 import com.hazeluff.discord.nhl.GameEvent;
 import com.hazeluff.discord.nhl.GamePeriod;
-import com.hazeluff.discord.nhl.GameStatus;
+import com.hazeluff.discord.nhl.GamePeriod.Type;
 import com.hazeluff.discord.nhl.GameTracker;
 import com.hazeluff.discord.nhl.Player;
 import com.hazeluff.discord.nhl.Team;
-import com.hazeluff.discord.nhl.GamePeriod.Type;
 import com.hazeluff.discord.utils.DateUtils;
 import com.hazeluff.discord.utils.Utils;
 
@@ -91,88 +89,6 @@ public class GameDayChannelTest {
 
 		gameDayChannel = new GameDayChannel(mockNHLBot, mockGameTracker, mockGame, events, mockGuild, mockChannel);
 		spyGameDayChannel = spy(gameDayChannel);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Test
-	public void runShouldInvokeClasses() {
-		LOGGER.info("runShouldInvokeClasses");
-
-		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED, GameStatus.STARTED, GameStatus.FINAL);
-		doNothing().when(spyGameDayChannel).sendReminders();
-		doReturn(false).when(spyGameDayChannel).waitForStart();
-		doNothing().when(spyGameDayChannel).sendStartOfGameMessage();
-		when(mockGameTracker.isFinished()).thenReturn(false, false, true);
-		doNothing().when(spyGameDayChannel).updateMessages(any());
-		doNothing().when(spyGameDayChannel).updateEvents(any());
-		List<GameEvent> events = Arrays.asList(mock(GameEvent.class));
-		List<GameEvent> newEvents = Arrays.asList(mock(GameEvent.class));
-		when(mockGame.getEvents()).thenReturn(events, newEvents);
-		doReturn(false).when(spyGameDayChannel).isRetryEventFetch(any());
-		doNothing().when(spyGameDayChannel).updateMessages(any());
-		doNothing().when(spyGameDayChannel).updateEvents(any());
-		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
-
-		spyGameDayChannel.run();
-
-		InOrder io = inOrder(spyGameDayChannel);
-		io.verify(spyGameDayChannel).sendReminders();
-		io.verify(spyGameDayChannel).waitForStart();
-		io.verify(spyGameDayChannel).sendStartOfGameMessage();
-		io.verify(spyGameDayChannel).updateMessages(events);
-		io.verify(spyGameDayChannel).updateEvents(events);
-		io.verify(spyGameDayChannel).updateMessages(newEvents);
-		io.verify(spyGameDayChannel).updateEvents(newEvents);
-		io.verify(spyGameDayChannel).updateEndOfGameMessage();
-	}
-
-	@Test
-	public void runShouldDoNothingIfGameIsFinished() {
-		LOGGER.info("runShouldDoNothingIfGameIsFinished");
-
-		when(mockGame.getStatus()).thenReturn(GameStatus.FINAL);
-		doNothing().when(spyGameDayChannel).sendReminders();
-		doReturn(false).when(spyGameDayChannel).waitForStart();
-		doNothing().when(spyGameDayChannel).sendStartOfGameMessage();
-		when(mockGameTracker.isFinished()).thenReturn(false, true);
-		doNothing().when(spyGameDayChannel).updateMessages(any());
-		doNothing().when(spyGameDayChannel).updateEvents(any());
-		doReturn(false).when(spyGameDayChannel).isRetryEventFetch(any());
-		doNothing().when(spyGameDayChannel).updateMessages(any());
-		doNothing().when(spyGameDayChannel).updateEvents(any());
-		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
-
-		spyGameDayChannel.run();
-
-		verify(spyGameDayChannel, never()).sendReminders();
-		verify(spyGameDayChannel, never()).waitForStart();
-		verify(spyGameDayChannel, never()).sendStartOfGameMessage();
-		verify(spyGameDayChannel, never()).updateMessages(any());
-		verify(spyGameDayChannel, never()).updateEvents(any());
-		verify(spyGameDayChannel, never()).updateEndOfGameMessage();
-		verify(spyGameDayChannel, never()).isRetryEventFetch(any());
-	}
-
-	@Test
-	public void runShouldNotSendStartOfGameMessageIfGameIsStarted() {
-		LOGGER.info("runShouldNotSendStartOfGameMessageIfGameIsStarted");
-
-		when(mockGame.getStatus()).thenReturn(GameStatus.STARTED, GameStatus.STARTED, GameStatus.FINAL);
-		doNothing().when(spyGameDayChannel).sendReminders();
-		doReturn(true).when(spyGameDayChannel).waitForStart();
-		doNothing().when(spyGameDayChannel).sendStartOfGameMessage();
-		when(mockGameTracker.isFinished()).thenReturn(true);
-		doNothing().when(spyGameDayChannel).updateMessages(any());
-		doNothing().when(spyGameDayChannel).updateEvents(any());
-		doReturn(true).when(spyGameDayChannel).isRetryEventFetch(any());
-		doNothing().when(spyGameDayChannel).updateMessages(any());
-		doNothing().when(spyGameDayChannel).updateEvents(any());
-		doNothing().when(spyGameDayChannel).updateEndOfGameMessage();
-
-		spyGameDayChannel.run();
-
-		InOrder io = inOrder(spyGameDayChannel);
-		io.verify(spyGameDayChannel, never()).sendStartOfGameMessage();
 	}
 
 	@Test
@@ -453,7 +369,7 @@ public class GameDayChannelTest {
 		when(mockGame.getDate()).thenReturn(mockGameTime);
 		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(7200000l, 3500000l,
 				3400000l, 1700000l, 1600000l, 500000l, 400000l, 0l);
-		doReturn(null).when(spyGameDayChannel).sendMessage(anyString());
+		doNothing().when(spyGameDayChannel).sendMessage(anyString());
 
 		spyGameDayChannel.sendReminders();
 
@@ -474,7 +390,7 @@ public class GameDayChannelTest {
 		when(mockGame.getDate()).thenReturn(mockGameTime);
 		when(DateUtils.diffMs(any(ZonedDateTime.class), any(ZonedDateTime.class))).thenReturn(1900000l, 1700000l,
 				500000l, 0l);
-		doReturn(null).when(spyGameDayChannel).sendMessage(anyString());
+		doNothing().when(spyGameDayChannel).sendMessage(anyString());
 
 		spyGameDayChannel.sendReminders();
 
