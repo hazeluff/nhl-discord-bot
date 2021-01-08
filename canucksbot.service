@@ -6,7 +6,7 @@ After=network.target auditd.service mongod.service
 Environment=PATH_TO_JAR=/canucksbot/builds/canucksbot
 Environment=BOT_KEY=<BOT_SECRET_KEY>
 WorkingDirectory=/canucksbot
-ExecStart = /usr/bin/java -cp $PATH_TO_JAR com.hazeluff.discord.canucks.bot.BotRunner $BOT_KEY
+ExecStart = /usr/bin/java -cp $PATH_TO_JAR com.hazeluff.discord.bot.BotRunner $BOT_KEY
 TimeoutStopSec=10
 Restart=on-failure
 RestartSec=5
