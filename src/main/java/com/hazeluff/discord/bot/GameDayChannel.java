@@ -520,7 +520,8 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 		GuildPreferences preferences = nhlBot.getPersistentData()
 				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong());
-		sendMessage("Game is about to start! " + preferences.getCheer());
+		sendMessage("Game is about to start! " + preferences.getCheer() +
+				"\nRemember: Be Kind, Be Calm, Be Safe");
 	}
 
 	/**
@@ -856,7 +857,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 				return;
 			}
 
-			String campaignId = SeasonCampaign.buildCampaignId(Config.SEASON_YEAR_END);
+			String campaignId = SeasonCampaign.buildCampaignId(Config.CURRENT_SEASON.getAbbreviation());
 			long userId = addEvent.getUserId().asLong();
 
 			if (addedUnicodeEmoji.equals(HOME_EMOJI)) {
@@ -883,7 +884,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 				return;
 			}
 
-			String campaignId = SeasonCampaign.buildCampaignId(Config.SEASON_YEAR_END);
+			String campaignId = SeasonCampaign.buildCampaignId(Config.CURRENT_SEASON.getAbbreviation());
 			long userId = removeEvent.getUserId().asLong();
 			
 			// Do not interact with persistent data if removed emoji was not of the stored prediction.
@@ -953,7 +954,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 	private void savePredictions() {
 		LOGGER.info("Saving Predictions: channel={}, pollMessage={}", channel, pollMessage);
 		if (channel != null && pollMessage != null) {
-			String campaignId = SeasonCampaign.buildCampaignId(Config.SEASON_YEAR_END);
+			String campaignId = SeasonCampaign.buildCampaignId(Config.CURRENT_SEASON.getAbbreviation());
 			// Save Home Predictors
 			block(pollMessage.getReactors(HOME_EMOJI)).stream().filter(not(this::isBotSelf))
 					.forEach(user -> SeasonCampaign.savePrediction(nhlBot, new Prediction(campaignId,
@@ -973,6 +974,7 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 		Message message = sendAndGetMessage(pollMessage);
 		subscribe(message.addReaction(HOME_EMOJI));
 		subscribe(message.addReaction(AWAY_EMOJI));
+		subscribe(message.pin());
 
 		return message;
 	}

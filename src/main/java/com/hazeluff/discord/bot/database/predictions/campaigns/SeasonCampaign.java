@@ -29,8 +29,8 @@ public class SeasonCampaign extends Campaign {
 	// Campaign Id -> Results
 	private static final Map<String, SeasonCampaignResults> seasonResults = new HashMap<>();
 
-	public static String buildCampaignId(int yearEnd) {
-		return String.format("season_%s-%s", yearEnd - 1, yearEnd);
+	public static String buildCampaignId(String seasonAbbreviation) {
+		return "season_" + seasonAbbreviation;
 	}
 
 	// Prediction storage
@@ -146,11 +146,11 @@ public class SeasonCampaign extends Campaign {
 	 * @return Ordered list of rankings (highest score first).<br>
 	 *         Pair is of Player -> Score
 	 */
-	public static List<Pair<Long, Integer>> getRankings(NHLBot nhlBot, int yearEnd) {
-		String campaignId = SeasonCampaign.buildCampaignId(yearEnd);
+	public static List<Pair<Long, Integer>> getRankings(NHLBot nhlBot, String abbreviation) {
+		String campaignId = SeasonCampaign.buildCampaignId(abbreviation);
 
 		List<Prediction> predictions = SeasonCampaign.loadPredictions(nhlBot, campaignId);
-		Map<Integer, Integer> campaignResults = getSeasonCampaignResults(nhlBot, yearEnd).getRawResults();
+		Map<Integer, Integer> campaignResults = getSeasonCampaignResults(nhlBot, abbreviation).getRawResults();
 
 		// User -> Score
 		Map<Long, Integer> userScores = new HashMap<>();
@@ -179,10 +179,10 @@ public class SeasonCampaign extends Campaign {
 	 * @param yearEnd
 	 * @return the results of a season for a team
 	 */
-	static SeasonCampaignResults getSeasonCampaignResults(NHLBot nhlBot, int yearEnd) {
-		String campaignId = SeasonCampaign.buildCampaignId(yearEnd);
+	static SeasonCampaignResults getSeasonCampaignResults(NHLBot nhlBot, String abbreviation) {
+		String campaignId = SeasonCampaign.buildCampaignId(abbreviation);
 		SeasonCampaignResults results = seasonResults.get(campaignId);
-		if (results == null && yearEnd == Config.SEASON_YEAR_END) {
+		if (results == null && Config.CURRENT_SEASON.getAbbreviation().equals(abbreviation)) {
 			results = generateSeasonCampaignResults(nhlBot);
 			seasonResults.put(campaignId, results);
 		}
@@ -190,7 +190,7 @@ public class SeasonCampaign extends Campaign {
 	}
 
 	static SeasonCampaignResults generateSeasonCampaignResults(NHLBot nhlBot) {
-		String campaignId = buildCampaignId(Config.SEASON_YEAR_END);
+		String campaignId = buildCampaignId(Config.CURRENT_SEASON.getAbbreviation());
 		Set<Game> games = nhlBot.getGameScheduler().getGames();
 		Map<Integer, Team> gamesResults = games.stream()
 				.filter(Game::isFinished)
@@ -221,10 +221,10 @@ public class SeasonCampaign extends Campaign {
 	/*
 	 * Scoring
 	 */
-	public static PredictionsScore getScore(NHLBot nhlBot, int yearEnd, long userId) {
-		String campaignId = buildCampaignId(yearEnd);
+	public static PredictionsScore getScore(NHLBot nhlBot, String seasonAbbreviation, long userId) {
+		String campaignId = buildCampaignId(seasonAbbreviation);
 		Map<Integer, Team> predictions = loadPredictions(nhlBot, campaignId, userId);
-		Map<Integer, Team> seasonGameResults = getSeasonCampaignResults(nhlBot, yearEnd).getGameResults();
+		Map<Integer, Team> seasonGameResults = getSeasonCampaignResults(nhlBot, seasonAbbreviation).getGameResults();
 		if (seasonGameResults == null) {
 			return null;
 		}

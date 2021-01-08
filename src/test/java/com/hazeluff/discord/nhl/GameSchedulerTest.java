@@ -367,8 +367,8 @@ public class GameSchedulerTest {
 	@PrepareForTest({ HttpUtils.class, GameScheduler.class, GameDayChannel.class })
 	public void getGamesShouldLimitEndDate() throws Exception {
 		LOGGER.info("getGamesShouldLimitEndDate");
-		ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR_END - 1, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-		ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 7, 5, 0, 0, 0, 0, ZoneOffset.UTC);
+		ZonedDateTime startDate = Config.CURRENT_SEASON.getStartDate();
+		ZonedDateTime endDate = Config.CURRENT_SEASON.getEndDate();
 
 		URIBuilder mockURIBuilder = mock(URIBuilder.class);
 		whenNew(URIBuilder.class).withAnyArguments().thenReturn(mockURIBuilder);
@@ -379,7 +379,7 @@ public class GameSchedulerTest {
 		
 		gameScheduler.getGames(TEAM, startDate, endDate);
 
-		verify(mockURIBuilder).addParameter("endDate", (Config.SEASON_YEAR_END) + "-06-15");
+		verify(mockURIBuilder).addParameter("endDate", (endDate.getYear()) + "-06-15");
 	}
 
 	@Test

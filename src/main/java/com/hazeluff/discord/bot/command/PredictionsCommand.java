@@ -29,7 +29,7 @@ public class PredictionsCommand extends Command {
 
 		if (command.getArguments().isEmpty()) {
 			List<Pair<Long, Integer>> playerRankings = 
-					SeasonCampaign.getRankings(getNHLBot(), Config.SEASON_YEAR_END);
+					SeasonCampaign.getRankings(getNHLBot(), Config.CURRENT_SEASON.getAbbreviation());
 			
 			StringBuilder messageBuilder = new StringBuilder("Here are the results for Season Predictions:\n");
 			messageBuilder.append("```");
@@ -54,7 +54,8 @@ public class PredictionsCommand extends Command {
 		if (Arrays.asList("rank", "score").contains(command.getArguments().get(0).toLowerCase())) {
 			long userId = event.getMember().get().getId().asLong();
 
-			PredictionsScore score = SeasonCampaign.getScore(getNHLBot(), Config.SEASON_YEAR_END, userId);
+			PredictionsScore score = SeasonCampaign.getScore(getNHLBot(),
+					Config.CURRENT_SEASON.getAbbreviation(), userId);
 			if (score == null) {
 				String message = "[Internal Error] Required database did not have results for the season.";
 				sendMessage(event, message);

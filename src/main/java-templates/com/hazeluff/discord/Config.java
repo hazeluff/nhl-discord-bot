@@ -3,6 +3,9 @@ package com.hazeluff.discord;
 import java.time.ZoneId;
 import java.util.Properties;
 
+import com.hazeluff.discord.nhl.Seasons;
+import com.hazeluff.discord.nhl.Seasons.Season;
+
 public class Config {
 	public static class Debug {
 		private static final String LOAD_GAMES_KEY = "load.games";
@@ -17,10 +20,7 @@ public class Config {
 		}
 	}
 
-	/**
-	 * The starting year of season (e.g. 2017 for the 2017-2018 season)
-	 */
-	public static final int SEASON_YEAR_END = 2020;
+	public static final Season CURRENT_SEASON = Seasons.S20_21;
 
 	public static final String GIT_URL = "http://canucks-discord.hazeluff.com/";
 	public static final String DONATION_URL = "https://paypal.me/hazeluff";
