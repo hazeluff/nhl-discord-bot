@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.internal.util.collections.Sets;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -63,6 +64,7 @@ import discord4j.core.object.entity.channel.TextChannel;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GameDayChannel.class)
+@PowerMockIgnore({ "javax.net.ssl.*" })
 public class GameSchedulerTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameSchedulerTest.class);
 	@Mock
@@ -361,36 +363,6 @@ public class GameSchedulerTest {
 		assertEquals(Arrays.asList(mockGame1, mockGame2, mockGame3), result);
 		verify(mockURIBuilder).addParameter("startDate", "2016-10-01");
 		verify(mockURIBuilder).addParameter("endDate", "2017-06-05");
-	}
-
-	@Test
-	@PrepareForTest({ HttpUtils.class, GameScheduler.class, GameDayChannel.class })
-	public void getGamesShouldLimitEndDate() throws Exception {
-		LOGGER.info("getGamesShouldLimitEndDate");
-		ZonedDateTime startDate = ZonedDateTime.of(Config.SEASON_YEAR_END - 1, 10, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-		ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 7, 5, 0, 0, 0, 0, ZoneOffset.UTC);
-
-		URIBuilder mockURIBuilder = mock(URIBuilder.class);
-		whenNew(URIBuilder.class).withAnyArguments().thenReturn(mockURIBuilder);
-		when(mockURIBuilder.build()).thenReturn(new URI("mockURI"));
-		
-		mockStatic(HttpUtils.class);
-		when(HttpUtils.getAndRetry(any(URI.class), anyInt(), anyLong(), anyString())).thenReturn("{dates:[]}");
-		
-		gameScheduler.getGames(TEAM, startDate, endDate);
-
-		verify(mockURIBuilder).addParameter("endDate", (Config.SEASON_YEAR_END) + "-06-15");
-	}
-
-	@Test
-	public void getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate() throws HttpException {
-		LOGGER.info("getGamesShouldReturnEmptyListIfEndDateIsBeforeStartDate");
-		ZonedDateTime startDate = ZonedDateTime.of(2016, 7, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-		ZonedDateTime endDate = ZonedDateTime.of(2016, 6, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-
-		List<Game> result = gameScheduler.getGames(TEAM, startDate, endDate);
-
-		assertTrue(result.isEmpty());
 	}
 
 	@Test

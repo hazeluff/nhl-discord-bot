@@ -3,7 +3,6 @@ package com.hazeluff.discord.nhl;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazeluff.discord.Config;
 import com.hazeluff.discord.bot.GameDayChannel;
+import com.hazeluff.discord.nhl.Seasons.Season;
 import com.hazeluff.discord.utils.DateUtils;
 import com.hazeluff.discord.utils.HttpException;
 import com.hazeluff.discord.utils.HttpUtils;
@@ -41,13 +41,7 @@ public class GameScheduler extends Thread {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameScheduler.class);
 
-	// ZonedDateTime START_DATE = ZonedDateTime.of(Config.SEASON_YEAR_END - 1, 8, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-	// ZonedDateTime endDate = ZonedDateTime.of(Config.SEASON_YEAR_END, 6, 15, 0, 0, 0, 0, ZoneOffset.UTC);
-	// TODO This needs to be reverted after 2020
-	private static final ZonedDateTime SEASON_START_DATE = ZonedDateTime.of(Config.SEASON_YEAR_END, 7, 31, 
-			0, 0, 0, 0, ZoneOffset.UTC);
-	private static final ZonedDateTime SEASON_END_DATE = ZonedDateTime.of(Config.SEASON_YEAR_END, 10, 1, 
-			0, 0, 0, 0, ZoneOffset.UTC);
+	private Season currentSeason = Config.CURRENT_SEASON;
 	
 	static final long GAME_SCHEDULE_UPDATE_RATE = 43200000L;
 
@@ -142,7 +136,7 @@ public class GameScheduler extends Thread {
 		LOGGER.info("Initializing");
 		// Retrieve schedule/game information from NHL API
 		for (Team team : Team.values()) {
-			games.addAll(getGames(team, SEASON_START_DATE, SEASON_END_DATE));
+			games.addAll(getGames(team, currentSeason.getStartDate(), currentSeason.getEndDate()));
 		}
 		LOGGER.info("Retrieved all games: [" + games.size() + "]");
 
@@ -235,12 +229,6 @@ public class GameScheduler extends Thread {
 	 */
 	List<Game> getGames(Team team, ZonedDateTime startDate, ZonedDateTime endDate) throws HttpException {
 		LOGGER.info("Retrieving games of [" + team + "]");
-		if (endDate.compareTo(SEASON_END_DATE) > 0) {
-			endDate = SEASON_END_DATE;
-		}
-		if (endDate.isBefore(startDate)) {
-			return new ArrayList<>();
-		}
 		String strStartDate = startDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 		String strEndDate = endDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 

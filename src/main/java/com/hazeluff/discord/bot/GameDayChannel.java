@@ -503,7 +503,8 @@ public class GameDayChannel extends Thread implements IEventProcessor {
 		GuildPreferences preferences = nhlBot.getPersistentData()
 				.getPreferencesData()
 				.getGuildPreferences(guild.getId().asLong());
-		sendMessage("Game is about to start! " + preferences.getCheer());
+		sendMessage("Game is about to start! " + preferences.getCheer() +
+				"\nRemember: Be Kind, Be Calm, Be Safe");
 	}
 
 	/**
